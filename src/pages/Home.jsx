@@ -26,7 +26,7 @@ const LocalSpotIcon = ({ className = "" }) => (
   </svg>
 );
 
-// Map categories to high-quality Unsplash images so there are no broken images
+
 const getPlaceImage = (place) => {
   const cat = (place.category || "").toLowerCase();
   if (cat.includes("hotel")) {
@@ -67,7 +67,7 @@ const getCategoryLabel = (category) => {
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Extract category and search query from URL search params
+ 
   const categoryFilter = searchParams.get("category") || "all";
   const searchQuery = searchParams.get("search") || "";
   
@@ -83,12 +83,12 @@ export default function Home() {
 
   const categoriesRef = useRef(null);
 
-  // Sync state search input with URL search param changes
+
   useEffect(() => {
     setSearchInput(searchQuery);
   }, [searchQuery]);
 
-  // Smooth scroll to categories ref if ?scroll=categories is set
+
   useEffect(() => {
     if (searchParams.get("scroll") === "categories" && categoriesRef.current) {
       categoriesRef.current.scrollIntoView({ behavior: "smooth" });
@@ -181,9 +181,9 @@ export default function Home() {
   return (
     <div className="w-full min-h-screen bg-white font-sans text-gray-900 overflow-x-hidden flex flex-col justify-between">
       <div>
-        {/* ================= NAVBAR ================= */}
+     
         <header className="w-full bg-white border-b border-gray-100 flex items-center justify-between px-6 py-4 md:px-12 lg:px-24 relative">
-          {/* Logo */}
+    
           <Link to="/" className="flex items-center gap-2">
             <LocalSpotIcon className="w-6 h-6 text-[#1655F2]" />
             <span className="font-bold text-gray-900 text-lg md:text-xl tracking-tight">
@@ -191,7 +191,7 @@ export default function Home() {
             </span>
           </Link>
 
-          {/* Desktop Navigation Link */}
+       
           <nav className="hidden md:flex items-center justify-center">
             <Link
               to="/"
@@ -201,7 +201,7 @@ export default function Home() {
             </Link>
           </nav>
 
-          {/* Desktop Favorites Link */}
+          
           <div className="hidden md:flex">
             <Link
               to="/favorites"
@@ -212,7 +212,7 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Mobile Burger Menu Button */}
+      
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden text-gray-900 focus:outline-none cursor-pointer p-1"
@@ -225,7 +225,7 @@ export default function Home() {
             )}
           </button>
 
-          {/* Mobile Dropdown Menu */}
+         
           {mobileMenuOpen && (
             <div className="absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-lg z-50 flex flex-col p-5 md:hidden gap-4">
               <Link
@@ -247,18 +247,18 @@ export default function Home() {
           )}
         </header>
 
-        {/* ================= HERO SECTION ================= */}
+   
         <div className="relative w-full bg-gray-50 flex items-center min-h-[460px] md:min-h-[520px] lg:min-h-[580px]">
-          {/* Background Image of Eiffel Tower */}
+        
           <img
             src="https://images.unsplash.com/photo-1431274172761-fca41d930114?auto=format&fit=crop&w=1600&q=80"
             alt="Eiffel Tower Paris"
             className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
           />
-          {/* Subtle light overlay */}
+        
           <div className="absolute inset-0 bg-white/10 pointer-events-none" />
 
-          {/* Hero text overlay */}
+       
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-12 md:py-20 flex flex-col items-start text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-[1.1]">
               Explore the best
@@ -271,7 +271,7 @@ export default function Home() {
               around you.
             </p>
 
-            {/* HERO SEARCH BAR */}
+     
             <form
               onSubmit={handleSearchSubmit}
               className="mt-8 flex items-center w-full max-w-lg md:max-w-2xl bg-white rounded-xl shadow-lg border border-gray-100 p-2 gap-2"
@@ -287,7 +287,7 @@ export default function Home() {
                 />
               </div>
 
-              {/* Hides Search button on mobile to match screenshot */}
+            
               <button
                 type="submit"
                 className="hidden sm:block bg-black hover:bg-gray-800 text-white rounded-lg text-sm md:text-base font-semibold px-6 py-2.5 transition-colors duration-150 shrink-0 cursor-pointer"
@@ -298,12 +298,12 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ================= CATEGORY SELECTOR PILLS ================= */}
+       
         <div
           ref={categoriesRef}
           className="w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 mt-10"
         >
-          {/* Arranges pills in a 2-column grid on mobile, and a horizontal flex row on larger screens */}
+         
           <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
             <button
               onClick={() => handleCategoryChange("all")}
@@ -358,12 +358,12 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ================= CATEGORY SECTIONS AND PLACES GRID ================= */}
+       
         <main className="w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-8 space-y-12">
           {activeSections.map((section) => {
             const places = getPlacesForCategory(section.key);
 
-            // Hide section if no items match query
+            
             if (places.length === 0) {
               return categoryFilter !== "all" ? (
                 <div key={section.key} className="py-12 text-center text-gray-500">
@@ -375,7 +375,7 @@ export default function Home() {
               ) : null;
             }
 
-            // In "All" view, limit to 4 places per category, otherwise show all
+            
             const displayPlaces =
               categoryFilter === "all" ? places.slice(0, 4) : places;
 
@@ -394,7 +394,7 @@ export default function Home() {
                         to={`/details/${place.id}`}
                         className="group flex flex-col bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-md transition-all duration-150"
                       >
-                        {/* Image wrapper */}
+                     
                         <div className="relative w-full aspect-video sm:h-44 md:h-48 overflow-hidden bg-gray-100">
                           <img
                             src={getPlaceImage(place)}
@@ -402,7 +402,7 @@ export default function Home() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                           />
 
-                          {/* Heart icon button */}
+                        
                           <button
                             onClick={(e) => toggleFavorite(place.id, e)}
                             className="absolute top-3 right-3 w-8 h-8 bg-white hover:bg-gray-100 rounded-full flex items-center justify-center shadow-sm z-10 transition-colors cursor-pointer"
@@ -417,20 +417,20 @@ export default function Home() {
                           </button>
                         </div>
 
-                        {/* Card Information */}
+                   
                         <div className="p-4 flex-1 flex flex-col justify-between">
                           <div>
-                            {/* Category badge */}
+                           
                             <span className="inline-block bg-[#111111] text-white text-[10px] uppercase font-semibold px-2 py-0.5 rounded">
                               {getCategoryLabel(place.category)}
                             </span>
 
-                            {/* Name */}
+                       
                             <h3 className="mt-2 text-sm md:text-base font-bold text-gray-900 group-hover:text-[#1655F2] transition-colors leading-snug line-clamp-1">
                               {place.name}
                             </h3>
 
-                            {/* Rating */}
+                         
                             <div className="flex items-center gap-1.5 mt-2.5 text-xs text-gray-800">
                               <span className="text-[#FFB800] text-sm">★</span>
                               <span className="font-semibold">
@@ -443,7 +443,7 @@ export default function Home() {
                             </div>
                           </div>
 
-                          {/* Location */}
+                        
                           <div className="flex items-center gap-1 mt-3.5 text-xs text-gray-500">
                             <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                             <span className="truncate">
@@ -462,15 +462,13 @@ export default function Home() {
         </main>
       </div>
 
-      {/* ================= FOOTER ================= */}
       <footer className="w-full bg-white border-t border-gray-100 px-6 py-8 md:px-12 lg:px-24 flex flex-col md:flex-row items-center justify-between gap-6">
-        {/* Logo */}
         <div className="flex items-center gap-2">
           <LocalSpotIcon className="w-7 h-7 text-[#1655F2]" />
           <span className="font-bold text-gray-900 text-lg">LocalSpot</span>
         </div>
 
-        {/* Footer Navigation */}
+       
         <div className="flex items-center gap-8 text-sm md:text-base font-medium">
           <Link
             to="/"
@@ -492,7 +490,7 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Social Icons */}
+       
         <div className="flex items-center gap-5 text-gray-500">
           <a
             href="#"
