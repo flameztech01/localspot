@@ -1,23 +1,10 @@
-
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  Search,
-  Heart,
-  MapPin,
-} from "lucide-react";
-
-import {
-  FaFacebookF,
-  FaInstagram,
-  FaTiktok,
-} from "react-icons/fa";
-
+import { useState, useEffect, useRef } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Search, Heart, MapPin, Menu, X } from "lucide-react";
+import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 import directoryData from "../data/places.json";
 
-
-// ================= LOCALSPOT ICON =================
 
 const LocalSpotIcon = ({ className = "" }) => (
   <svg
@@ -30,7 +17,6 @@ const LocalSpotIcon = ({ className = "" }) => (
       d="M12 22C12 22 20 14.8 20 9.5C20 5.36 16.42 2 12 2C7.58 2 4 5.36 4 9.5C4 14.8 12 22 12 22Z"
       fill="#1655F2"
     />
-
     <circle
       cx="12"
       cy="9.5"
@@ -40,606 +26,504 @@ const LocalSpotIcon = ({ className = "" }) => (
   </svg>
 );
 
+// Map categories to high-quality Unsplash images so there are no broken images
+const getPlaceImage = (place) => {
+  const cat = (place.category || "").toLowerCase();
+  if (cat.includes("hotel")) {
+    return "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80";
+  } else if (
+    cat.includes("restaurant") ||
+    cat.includes("lounge") ||
+    cat.includes("dining")
+  ) {
+    return "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80";
+  } else if (cat.includes("cafe")) {
+    return "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80";
+  } else {
+    return "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80";
+  }
+};
 
-// ================= HOTEL ICON =================
-
-const HotelIcon = ({ className = "" }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path
-      d="M4 19V6"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-
-    <path
-      d="M4 10H16C18.2 10 20 11.8 20 14V19"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-
-    <path
-      d="M4 14H20"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-
-    <path
-      d="M7 10V7H11V10"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-
-    <path
-      d="M13 10V7H17V10"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-
-// ================= RESTAURANT ICON =================
-
-const RestaurantIcon = ({ className = "" }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path
-      d="M6 3V10"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-
-    <path
-      d="M3.5 3V8C3.5 9.38 4.62 10.5 6 10.5C7.38 10.5 8.5 9.38 8.5 8V3"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-
-    <path
-      d="M6 10.5V21"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-
-    <path
-      d="M15 3V21"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-
-    <path
-      d="M15 3C17.2 3 18.5 5 18.5 7.5V10H15"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-
-    <path
-      d="M15 10H18.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-
-// ================= CAFE ICON =================
-
-const CafeIcon = ({ className = "" }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path
-      d="M5 9H17V14C17 17.31 14.31 20 11 20H11C7.69 20 5 17.31 5 14V9Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-    />
-
-    <path
-      d="M17 11H19C20.1 11 21 11.9 21 13C21 14.1 20.1 15 19 15H17"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-
-    <path
-      d="M8 5C8 3.9 8.9 3 10 3"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-
-    <path
-      d="M12 5C12 3.9 12.9 3 14 3"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-
-    <path
-      d="M5 21H19"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-
-// ================= ATTRACTION ICON =================
-
-const AttractionIcon = ({ className = "" }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path
-      d="M12 21C12 21 19 14.7 19 9.2C19 5.22 15.87 2 12 2C8.13 2 5 5.22 5 9.2C5 14.7 12 21 12 21Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-    />
-
-    <circle
-      cx="12"
-      cy="9"
-      r="2.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    />
-
-    <path
-      d="M8 17.5L6 21H18L16 17.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+const getCategoryLabel = (category) => {
+  if (!category) return "";
+  const cat = category.toLowerCase();
+  if (cat.includes("hotel")) return "Hotel";
+  if (
+    cat.includes("restaurant") ||
+    cat.includes("lounge") ||
+    cat.includes("dining")
+  )
+    return "Restaurant";
+  if (cat.includes("cafe")) return "Cafe";
+  if (
+    cat.includes("attraction") ||
+    cat.includes("museum") ||
+    cat.includes("park")
+  )
+    return "Attraction";
+  return category.charAt(0).toUpperCase() + category.slice(1);
+};
 
 export default function Home() {
-    const [isLiked, setIsLiked] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Extract category and search query from URL search params
+  const categoryFilter = searchParams.get("category") || "all";
+  const searchQuery = searchParams.get("search") || "";
+  
+  const [searchInput, setSearchInput] = useState(searchQuery);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("favorites") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  const categoriesRef = useRef(null);
+
+  // Sync state search input with URL search param changes
+  useEffect(() => {
+    setSearchInput(searchQuery);
+  }, [searchQuery]);
+
+  // Smooth scroll to categories ref if ?scroll=categories is set
+  useEffect(() => {
+    if (searchParams.get("scroll") === "categories" && categoriesRef.current) {
+      categoriesRef.current.scrollIntoView({ behavior: "smooth" });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("scroll");
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    const newParams = new URLSearchParams(searchParams);
+    if (searchInput.trim()) {
+      newParams.set("search", searchInput.trim());
+    } else {
+      newParams.delete("search");
+    }
+    newParams.set("category", categoryFilter);
+    setSearchParams(newParams);
+  };
+
+  const handleCategoryChange = (cat) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("category", cat);
+    if (searchQuery) {
+      newParams.set("search", searchQuery);
+    }
+    setSearchParams(newParams);
+  };
+
+  const toggleFavorite = (id, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFavorites((prev) => {
+      const next = prev.includes(id)
+        ? prev.filter((item) => item !== id)
+        : [...prev, id];
+      localStorage.setItem("favorites", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const getPlacesForCategory = (categoryKey) => {
+    let filtered = directoryData.filter((place) => {
+      const cat = (place.category || "").toLowerCase();
+      if (categoryKey === "hotel") return cat.includes("hotel");
+      if (categoryKey === "restaurant") {
+        return (
+          cat.includes("restaurant") ||
+          cat.includes("lounge") ||
+          cat.includes("dining")
+        );
+      }
+      if (categoryKey === "cafe") return cat.includes("cafe");
+      if (categoryKey === "attraction") {
+        return (
+          cat.includes("attraction") ||
+          cat.includes("museum") ||
+          cat.includes("park")
+        );
+      }
+      return false;
+    });
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (place) =>
+          (place.name || "").toLowerCase().includes(q) ||
+          (place.location.address || "").toLowerCase().includes(q) ||
+          (place.description || "").toLowerCase().includes(q)
+      );
+    }
+
+    return filtered;
+  };
+
+  const sectionsToRender = [
+    { key: "hotel", label: "Hotels" },
+    { key: "restaurant", label: "Restaurants" },
+    { key: "cafe", label: "Cafes" },
+    { key: "attraction", label: "Attractions" },
+  ];
+
+  const activeSections =
+    categoryFilter === "all"
+      ? sectionsToRender
+      : sectionsToRender.filter((s) => s.key === categoryFilter);
+
   return (
-    <div className="w-full bg-white overflow-x-hidden">
-
-      {/* ================= HERO SECTION ================= */}
-
-      <div className="relative w-full h-[650px] sm:h-[700px] md:h-[750px] lg:h-[850px] xl:h-[930px]">
-
-        {/* Background Image */}
-
-        <img
-          src="/local.jpg"
-          alt="Paris"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-
-
+    <div className="w-full min-h-screen bg-white font-sans text-gray-900 overflow-x-hidden flex flex-col justify-between">
+      <div>
         {/* ================= NAVBAR ================= */}
-
-        <div className="absolute z-10 top-0 left-0 w-full min-h-17.5 sm:min-h-[80px] md:h-[88px] lg:h-[92px] xl:h-[100px] bg-white flex items-center px-3 sm:px-5 md:px-8 lg:px-10 xl:px-14">
-
-          {/* LOGO */}
-
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-
-            <LocalSpotIcon
-              className="w-6 h-7 sm:w-7 sm:h-8 md:w-8 md:h-9 lg:w-8 lg:h-9"
-            />
-
-            <span className="font-geist font-medium text-[19px] sm:text-[22px] md:text-[25px] lg:text-[28px] leading-none">
+        <header className="w-full bg-white border-b border-gray-100 flex items-center justify-between px-6 py-4 md:px-12 lg:px-24 relative">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2">
+            <LocalSpotIcon className="w-6 h-6 text-[#1655F2]" />
+            <span className="font-bold text-gray-900 text-lg md:text-xl tracking-tight">
               LocalSpot
             </span>
+          </Link>
 
-          </div>
-
-
-          {/* NAV LINKS */}
-
-          <div className="flex items-center ml-auto gap-2 sm:gap-3 md:gap-5 lg:gap-8 xl:gap-12">
-
-            <a
-              href="/"
-              className="font-geist font-semibold text-[12px] sm:text-[14px] md:text-[16px] lg:text-[18px] xl:text-[20px] leading-none text-[#111111]"
+          {/* Desktop Navigation Link */}
+          <nav className="hidden md:flex items-center justify-center">
+            <Link
+              to="/"
+              className="font-medium text-gray-900 text-sm md:text-base hover:text-blue-600 transition-colors"
             >
               Home
-            </a>
+            </Link>
+          </nav>
 
-            <a
-              href="/categories"
-              className="font-geist font-normal text-[12px] sm:text-[14px] md:text-[16px] lg:text-[18px] xl:text-[20px] leading-none text-[#111111]"
+          {/* Desktop Favorites Link */}
+          <div className="hidden md:flex">
+            <Link
+              to="/favorites"
+              className="flex items-center gap-1.5 font-medium text-gray-900 text-sm md:text-base hover:text-red-500 transition-colors"
             >
-              Categories
-            </a>
-
-            <a
-              href="/favorites"
-              className="font-geist font-normal text-[12px] sm:text-[14px] md:text-[16px] lg:text-[18px] xl:text-[20px] leading-none text-[#111111]"
-            >
-              Favorites
-            </a>
-
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+              <span>Favorites</span>
+            </Link>
           </div>
 
+          {/* Mobile Burger Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden text-gray-900 focus:outline-none cursor-pointer p-1"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
+          </button>
 
-          {/* NAV SEARCH */}
+          {/* Mobile Dropdown Menu */}
+          {mobileMenuOpen && (
+            <div className="absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-lg z-50 flex flex-col p-5 md:hidden gap-4">
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="font-medium text-gray-950 text-base pb-3 border-b border-gray-100 hover:text-blue-600 transition-colors"
+              >
+                Home
+              </Link>
+              <Link
+                to="/favorites"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 font-medium text-gray-950 text-base hover:text-red-500 transition-colors"
+              >
+                <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                <span>Favorites</span>
+              </Link>
+            </div>
+          )}
+        </header>
 
-          <div className="hidden sm:flex items-center ml-3 md:ml-5 lg:ml-8 xl:ml-auto w-[170px] md:w-[210px] lg:w-[300px] xl:w-[550px] h-10 md:h-12 lg:h-15 border border-[#565555] rounded-xl lg:rounded-2xl px-3 lg:px-4 gap-2 lg:gap-4">
+        {/* ================= HERO SECTION ================= */}
+        <div className="relative w-full bg-gray-50 flex items-center min-h-[460px] md:min-h-[520px] lg:min-h-[580px]">
+          {/* Background Image of Eiffel Tower */}
+          <img
+            src="https://images.unsplash.com/photo-1431274172761-fca41d930114?auto=format&fit=crop&w=1600&q=80"
+            alt="Eiffel Tower Paris"
+            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+          />
+          {/* Subtle light overlay */}
+          <div className="absolute inset-0 bg-white/10 pointer-events-none" />
 
-            <Search
-              size={18}
-              className="text-[#2C2C2C] w-5 h-5 lg:w-7.5 lg:h-7.5 shrink-0"
-            />
-
-            <input
-              type="text"
-              placeholder="Search for places..."
-              className="w-full min-w-0 h-5 font-geist font-normal outline-none text-[12px] lg:text-[16px]"
-            />
-
-          </div>
-
-        </div>
-
-
-        {/* ================= HERO TEXT ================= */}
-
-        <div className="absolute z-10 left-4 sm:left-8 md:left-12 lg:left-20 top-[170px] sm:top-[200px] md:top-[250px] lg:top-[300px] xl:top-[300px] w-[calc(100%-32px)] sm:w-[600px] md:w-[700px] lg:w-[720px]">
-
-          <div className="w-full">
-
-            <h1 className="w-full font-geist font-semibold text-[40px] sm:text-[50px] md:text-[64px] lg:text-[72px] xl:text-[80px] leading-none">
-
+          {/* Hero text overlay */}
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-12 md:py-20 flex flex-col items-start text-left">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-[1.1]">
               Explore the best
               <br />
               places in your city
-
             </h1>
 
-
-            <p className="mt-4 w-full sm:w-[520px] md:w-[580px] lg:w-[517px] font-geist font-normal text-[17px] sm:text-[19px] md:text-[21px] lg:text-[24px] leading-tight lg:leading-none">
-
-              Find and discover top hotels, restaurants, cafes
-              <br className="hidden sm:block" />
-              and attractions around you.
-
+            <p className="mt-4 text-gray-700 text-sm md:text-base lg:text-lg max-w-xl font-normal leading-relaxed">
+              Find and discover top hotels, restaurants, cafes and attractions
+              around you.
             </p>
 
-
-            {/* HERO SEARCH */}
-
-            <div className="mt-8 sm:mt-10 lg:mt-12 flex items-center w-full sm:w-[560px] md:w-[620px] lg:w-[712px] h-[70px] lg:h-[87px] bg-white rounded-2xl p-3 sm:p-4">
-
-              <div className="flex items-center flex-1 min-w-0 gap-3 sm:gap-4">
-
-                <Search
-                  size={18}
-                  className="text-[#111111] w-5 h-5 shrink-0"
-                />
-
+            {/* HERO SEARCH BAR */}
+            <form
+              onSubmit={handleSearchSubmit}
+              className="mt-8 flex items-center w-full max-w-lg md:max-w-2xl bg-white rounded-xl shadow-lg border border-gray-100 p-2 gap-2"
+            >
+              <div className="flex items-center flex-1 min-w-0 pl-3 gap-2.5">
+                <Search className="text-gray-400 w-5 h-5 shrink-0" />
                 <input
                   type="text"
                   placeholder="Search for places e.g hotels, cafes..."
-                  className="w-full min-w-0 font-geist font-normal text-[13px] sm:text-[14px] lg:text-[16px] outline-none text-[#111111]"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="w-full bg-transparent font-normal text-sm md:text-base outline-none text-gray-900 placeholder-gray-400 py-1.5"
                 />
-
               </div>
 
-
-              <button className="ml-3 bg-black w-[85px] sm:w-[105px] lg:w-[124px] h-[48px] sm:h-[52px] lg:h-[55px] rounded-lg text-white px-3 sm:px-5 lg:px-8 py-3 lg:py-4 shrink-0">
-
-                <span className="font-geist font-medium text-[14px] sm:text-[16px] lg:text-[18px] leading-none">
-                  Search
-                </span>
-
+              {/* Hides Search button on mobile to match screenshot */}
+              <button
+                type="submit"
+                className="hidden sm:block bg-black hover:bg-gray-800 text-white rounded-lg text-sm md:text-base font-semibold px-6 py-2.5 transition-colors duration-150 shrink-0 cursor-pointer"
+              >
+                Search
               </button>
-
-            </div>
-
+            </form>
           </div>
-
         </div>
 
-      </div>
-
-
-      {/* ================= CATEGORIES ================= */}
-
-      <div className="w-full min-h-[270px] px-4 sm:px-6 md:px-8 lg:px-14 py-8 bg-[#FAFAF8]">
-
-        <h2 className="w-full font-geist text-[28px] sm:text-[30px] md:text-[32px] lg:text-[36px] font-medium leading-none text-[#111111]">
-          Categories
-        </h2>
-
-
-        {/* CATEGORY CARDS */}
-
-        <div className="w-full flex flex-wrap justify-center items-center gap-4 sm:gap-5 md:gap-6 lg:gap-10 xl:gap-16 mt-6">
-
-
-          {/* HOTEL */}
-
-          <div className="w-[145px] sm:w-[155px] md:w-[170px] lg:w-44.25 h-[125px] sm:h-[130px] md:h-[135px] lg:h-33.75 bg-black text-white rounded-lg flex flex-col items-center justify-center gap-3 lg:gap-4 p-4">
-
-            <HotelIcon className="w-7 h-7 lg:w-8 lg:h-8" />
-
-            <p className="font-geist font-medium text-[17px] sm:text-[18px] lg:text-[20px] leading-none">
-              Hotels
-            </p>
-
-            <span className="text-[10px] text-gray-300">
-              120 places
-            </span>
-
-          </div>
-
-
-          {/* RESTAURANTS */}
-
-          <div className="w-[145px] sm:w-[155px] md:w-[170px] lg:w-44.25 h-[125px] sm:h-[130px] md:h-[135px] lg:h-33.75 bg-black text-white rounded-lg flex flex-col items-center justify-center gap-3 lg:gap-4 p-4">
-
-            <RestaurantIcon className="w-7 h-7 lg:w-8 lg:h-8" />
-
-            <p className="font-geist font-medium text-[17px] sm:text-[18px] lg:text-[20px] leading-none">
-              Restaurants
-            </p>
-
-            <span className="text-[10px] text-gray-300">
-              120 places
-            </span>
-
-          </div>
-
-
-          {/* CAFES */}
-
-          <div className="w-[145px] sm:w-[155px] md:w-[170px] lg:w-44.25 h-[125px] sm:h-[130px] md:h-[135px] lg:h-33.75 bg-black text-white rounded-lg flex flex-col items-center justify-center gap-3 lg:gap-4 p-4">
-
-            <CafeIcon className="w-7 h-7 lg:w-8 lg:h-8" />
-
-            <p className="font-geist font-medium text-[17px] sm:text-[18px] lg:text-[20px] leading-none">
-              Cafes
-            </p>
-
-            <span className="text-[10px] text-gray-300">
-              120 places
-            </span>
-
-          </div>
-
-
-          {/* ATTRACTIONS */}
-
-          <div className="w-[145px] sm:w-[155px] md:w-[170px] lg:w-44.25 h-[125px] sm:h-[130px] md:h-[135px] lg:h-33.75 bg-black text-white rounded-lg flex flex-col items-center justify-center gap-3 lg:gap-4 p-4">
-
-            <AttractionIcon className="w-7 h-7 lg:w-8 lg:h-8" />
-
-            <p className="font-geist font-medium text-[17px] sm:text-[18px] lg:text-[20px] leading-none">
-              Attractions
-            </p>
-
-            <span className="text-[10px] text-gray-300">
-              120 places
-            </span>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* ================= TOP PLACES ================= */}
-
-      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-14 mt-7">
-
-        <h2 className="font-geist text-[20px] font-medium leading-none text-[#111111]">
-          Top Places
-        </h2>
-
-
-        {/* PLACE CARDS */}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-3 mt-4">
-
-          {directoryData.map((place) => (
-
+        {/* ================= CATEGORY SELECTOR PILLS ================= */}
         <div
-        key={place.id}
-        className="w-full h-[240px] sm:h-[250px] md:h-[270px] lg:h-[280px] xl:h-59 bg-white rounded-2xl overflow-hidden">
-              {/* IMAGE */}
-
-              <div className="relative w-full h-[240px] sm:h-[250px] md:h-[270px] lg:h-[280px] xl:h-59">
-
-            <img
-            src={place.images[0]}
-            alt={place.name}
-            className="w-full h-full rounded-t-2xl object-cover"/>
-
-                {/* HEART */}
-
-                <button onClick={(e) => {e.stopPropagation(); setIsLiked((prev) => ({ ...prev, [place.id]: !prev[place.id] }));}} className="absolute top-3 right-3 w-9 h-9 bg-white rounded-full flex items-center justify-center">
-
-
-                  <Heart
-                    size={20}
-                    className={isLiked[place.id] ? "text-red-500 fill-red-500" : "text-[#111111]"}
-                  />
-
-                </button>
-
-              </div>
-
-
-              {/* CARD INFORMATION */}
-
-              <div className="p-4 w-full min-h-[178px] rounded-b-2xl border gap-4 outline-none border-[#FFFFFF]">
-
-
-                {/* CATEGORY */}
-
-                <span className="inline-flex items-center bg-[#111111] text-white px-4 py-2 font-geist text-[14px] sm:text-[16px] font-medium leading-none w-auto min-w-[78px] h-9.25 rounded-lg gap-2.5 justify-center">
-
-                  {place.category}
-
-                </span>
-
-
-                {/* NAME */}
-
-                <h3 className="mt-3 font-geist text-[21px] sm:text-[22px] lg:text-[24px] font-medium leading-tight text-[#111111]">
-
-                {place.name}
-
-                </h3>
-
-
-                {/* RATING */}
-
-                <div className="flex items-center gap-1 mt-3 flex-wrap">
-
-                  <span className="text-[#FFB800] text-[16px] w-5 h-5">
-                    ★
-                  </span>
-
-                  <span className="font-geist text-[16px] sm:text-[18px] font-normal text-[#111111]">
-                    {place.rating.average}
-                </span>
-
-                    <span className="font-geist text-[16px] sm:text-[18px] font-normal text-[#555555]">
-                     ({place.rating.totalReviews} reviews)
-                </span>
-
-                </div>
-
-
-                {/* LOCATION */}
-
-                <div className="flex items-center gap-1.5 mt-2">
-
-                  <MapPin
-                    size={14}
-                    className="text-[#111111] w-5 h-5 shrink-0"
-                  />
-
-                  <span className="font-geist text-[15px] sm:text-[17px] lg:text-[18px] font-normal text-[#555555]">
-                    {place.location.address}
-                  </span>
-
-                </div>
-
-              </div>
-
-            </div>
-          ))}
-
+          ref={categoriesRef}
+          className="w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 mt-10"
+        >
+          {/* Arranges pills in a 2-column grid on mobile, and a horizontal flex row on larger screens */}
+          <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
+            <button
+              onClick={() => handleCategoryChange("all")}
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold tracking-wide border transition-all duration-150 cursor-pointer text-center ${
+                categoryFilter === "all"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-900 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => handleCategoryChange("hotel")}
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold tracking-wide border transition-all duration-150 cursor-pointer text-center ${
+                categoryFilter === "hotel"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-900 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Hotels
+            </button>
+            <button
+              onClick={() => handleCategoryChange("restaurant")}
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold tracking-wide border transition-all duration-150 cursor-pointer text-center ${
+                categoryFilter === "restaurant"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-900 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Restaurants
+            </button>
+            <button
+              onClick={() => handleCategoryChange("cafe")}
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold tracking-wide border transition-all duration-150 cursor-pointer text-center ${
+                categoryFilter === "cafe"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-900 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Cafes
+            </button>
+            <button
+              onClick={() => handleCategoryChange("attraction")}
+              className={`px-5 py-2.5 rounded-lg col-span-2 sm:col-span-1 text-sm font-semibold tracking-wide border transition-all duration-150 cursor-pointer text-center ${
+                categoryFilter === "attraction"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-900 border-gray-300 hover:border-gray-900"
+              }`}
+            >
+              Attractions
+            </button>
+          </div>
         </div>
 
+        {/* ================= CATEGORY SECTIONS AND PLACES GRID ================= */}
+        <main className="w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-8 space-y-12">
+          {activeSections.map((section) => {
+            const places = getPlacesForCategory(section.key);
 
+            // Hide section if no items match query
+            if (places.length === 0) {
+              return categoryFilter !== "all" ? (
+                <div key={section.key} className="py-12 text-center text-gray-500">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {section.label}
+                  </h2>
+                  <p>No places match your search query.</p>
+                </div>
+              ) : null;
+            }
+
+            // In "All" view, limit to 4 places per category, otherwise show all
+            const displayPlaces =
+              categoryFilter === "all" ? places.slice(0, 4) : places;
+
+            return (
+              <section key={section.key} className="space-y-4">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+                  {section.label}
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {displayPlaces.map((place) => {
+                    const isLiked = favorites.includes(place.id);
+                    return (
+                      <Link
+                        key={place.id}
+                        to={`/details/${place.id}`}
+                        className="group flex flex-col bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-md transition-all duration-150"
+                      >
+                        {/* Image wrapper */}
+                        <div className="relative w-full aspect-video sm:h-44 md:h-48 overflow-hidden bg-gray-100">
+                          <img
+                            src={getPlaceImage(place)}
+                            alt={place.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+
+                          {/* Heart icon button */}
+                          <button
+                            onClick={(e) => toggleFavorite(place.id, e)}
+                            className="absolute top-3 right-3 w-8 h-8 bg-white hover:bg-gray-100 rounded-full flex items-center justify-center shadow-sm z-10 transition-colors cursor-pointer"
+                          >
+                            <Heart
+                              className={`w-4 h-4 transition-colors ${
+                                isLiked
+                                  ? "text-red-500 fill-red-500"
+                                  : "text-gray-900"
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        {/* Card Information */}
+                        <div className="p-4 flex-1 flex flex-col justify-between">
+                          <div>
+                            {/* Category badge */}
+                            <span className="inline-block bg-[#111111] text-white text-[10px] uppercase font-semibold px-2 py-0.5 rounded">
+                              {getCategoryLabel(place.category)}
+                            </span>
+
+                            {/* Name */}
+                            <h3 className="mt-2 text-sm md:text-base font-bold text-gray-900 group-hover:text-[#1655F2] transition-colors leading-snug line-clamp-1">
+                              {place.name}
+                            </h3>
+
+                            {/* Rating */}
+                            <div className="flex items-center gap-1.5 mt-2.5 text-xs text-gray-800">
+                              <span className="text-[#FFB800] text-sm">★</span>
+                              <span className="font-semibold">
+                                {place.rating?.average || "4.5"}
+                              </span>
+                              <span className="text-gray-500">
+                                ({place.rating?.totalReviews || "120"}{" "}
+                                reviews)
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Location */}
+                          <div className="flex items-center gap-1 mt-3.5 text-xs text-gray-500">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            <span className="truncate">
+                              {place.location?.address ||
+                                "Old GRA, Port Harcourt"}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </main>
       </div>
-
 
       {/* ================= FOOTER ================= */}
-
-      <footer className="w-full min-h-[136px] mt-8 px-4 sm:px-6 md:px-8 lg:px-14 py-8 bg-white flex flex-col md:flex-row items-center justify-between gap-6">
-
-
-        {/* LOGO */}
-
+      <footer className="w-full bg-white border-t border-gray-100 px-6 py-8 md:px-12 lg:px-24 flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* Logo */}
         <div className="flex items-center gap-2">
-
-          <LocalSpotIcon className="w-8 h-8" />
-
-          <span className="font-geist text-[24px] sm:text-[28px] font-medium text-[#111111]">
-            LocalSpot
-          </span>
-
+          <LocalSpotIcon className="w-7 h-7 text-[#1655F2]" />
+          <span className="font-bold text-gray-900 text-lg">LocalSpot</span>
         </div>
 
-
-        {/* FOOTER NAVIGATION */}
-
-        <div className="flex items-center gap-6 sm:gap-8 lg:gap-10">
-
-          <a
-            href="/"
-            className="font-geist text-[16px] sm:text-[18px] lg:text-[20px] text-[#111111]"
+        {/* Footer Navigation */}
+        <div className="flex items-center gap-8 text-sm md:text-base font-medium">
+          <Link
+            to="/"
+            className="text-gray-600 hover:text-gray-900 transition-colors"
           >
             Home
-          </a>
-
-          <a
-            href="/categories"
-            className="font-geist text-[16px] sm:text-[18px] lg:text-[20px] text-[#111111]"
+          </Link>
+          <Link
+            to="/?scroll=categories"
+            className="text-gray-600 hover:text-gray-900 transition-colors"
           >
             Categories
-          </a>
-
-          <a
-            href="/favorites"
-            className="font-geist text-[16px] sm:text-[18px] lg:text-[20px] text-[#111111]"
+          </Link>
+          <Link
+            to="/favorites"
+            className="text-gray-600 hover:text-gray-900 transition-colors"
           >
             Favorites
-          </a>
-
+          </Link>
         </div>
 
-
-        {/* SOCIAL ICONS */}
-
-        <div className="flex items-center gap-5 sm:gap-6">
-
-          <a href="#" aria-label="Facebook">
-            <FaFacebookF className="w-5 h-5 text-[#111111]" />
+        {/* Social Icons */}
+        <div className="flex items-center gap-5 text-gray-500">
+          <a
+            href="#"
+            aria-label="Facebook"
+            className="hover:text-gray-900 transition-colors"
+          >
+            <FaFacebookF className="w-4.5 h-4.5" />
           </a>
-
-          <a href="#" aria-label="Instagram">
-            <FaInstagram className="w-5 h-5 text-[#111111]" />
+          <a
+            href="#"
+            aria-label="Instagram"
+            className="hover:text-gray-900 transition-colors"
+          >
+            <FaInstagram className="w-4.5 h-4.5" />
           </a>
-
-          <a href="#" aria-label="TikTok">
-            <FaTiktok className="w-5 h-5 text-[#111111]" />
+          <a
+            href="#"
+            aria-label="TikTok"
+            className="hover:text-gray-900 transition-colors"
+          >
+            <FaTiktok className="w-4.5 h-4.5" />
           </a>
-
-          <a href="#" aria-label="X">
-            <FaXTwitter className="w-5 h-5 text-[#111111]" />
+          <a
+            href="#"
+            aria-label="X (Twitter)"
+            className="hover:text-gray-900 transition-colors"
+          >
+            <FaXTwitter className="w-4.5 h-4.5" />
           </a>
-
         </div>
-
       </footer>
-
     </div>
   );
 }
