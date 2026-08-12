@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Heart, MapPin, Menu, X } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
-import directoryData from "../data/places.json";
+import directoryData from "../../data/places.json";
 
 
 const LocalSpotIcon = ({ className = "" }) => (
@@ -27,7 +27,7 @@ const LocalSpotIcon = ({ className = "" }) => (
 );
 
 
-const getPlaceImage = (place) => {
+const getCategoryFallback = (place) => {
   const cat = (place.category || "").toLowerCase();
   if (cat.includes("hotel")) {
     return "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80";
@@ -42,6 +42,15 @@ const getPlaceImage = (place) => {
   } else {
     return "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80";
   }
+};
+
+const getPlaceImage = (place) => {
+  if (place.images && place.images.length > 0) {
+    const img = place.images[0];
+    if (img.startsWith("http")) return img;
+    return img;
+  }
+  return getCategoryFallback(place);
 };
 
 const getCategoryLabel = (category) => {
@@ -87,7 +96,7 @@ export default function Favorites() {
   };
 
 
-  const favoritePlaces = directoryData.filter((place) =>
+  const favoritePlaces = (directoryData.places || []).filter((place) =>
     favorites.includes(place.id)
   );
 

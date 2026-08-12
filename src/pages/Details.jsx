@@ -5,11 +5,11 @@ import {
   BedDouble, HelpCircle, Wifi, Waves, Utensils, Dumbbell, 
   Flower2, Plane, Car, User
 } from "lucide-react";
-import Datadirectory from "../data/places.json";
+import Datadirectory from "../../data/places.json";
 import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
-const getPlaceImage = (place) => {
+const getCategoryFallback = (place) => {
   const cat = (place.category || "").toLowerCase();
   if (cat.includes("hotel")) {
     return "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1600&q=80";
@@ -24,6 +24,15 @@ const getPlaceImage = (place) => {
   } else {
     return "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=1600&q=80";
   }
+};
+
+const getPlaceImage = (place) => {
+  if (place.images && place.images.length > 0) {
+    const img = place.images[0];
+    if (img.startsWith("http")) return img;
+    return img;
+  }
+  return getCategoryFallback(place);
 };
 
 const LocalSpotIcon = ({ className = "" }) => (
@@ -86,7 +95,7 @@ export default function Details() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const place = Datadirectory.find((p) => p.id === id) || Datadirectory[0];
+  const place = (Datadirectory.places || []).find((p) => p.id === parseInt(id)) || (Datadirectory.places || [])[0];
   const isHotel = (place.category || "").toLowerCase().includes("hotel");
 
   const [activeTab, setActiveTab] = useState("about");
@@ -188,7 +197,12 @@ export default function Details() {
   const totalMockReviews = reviewDistribution.reduce((sum, item) => sum + item.count, 0);
 
   const getDayHours = (day) => {
-    return place.openingHours?.[day] || "Closed";
+    const hours = place.openingHours?.[day];
+    if (!hours) return "Closed";
+    if (typeof hours === "object") {
+      return `${hours.open} - ${hours.close}`;
+    }
+    return hours;
   };
 
   const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
@@ -214,63 +228,94 @@ export default function Details() {
         </div>
 
         <div className="w-full max-w-6xl mx-auto px-4 md:px-8">
-          <div className="relative w-full h-[60vh] min-h-[400px] rounded-[32px] overflow-hidden shadow-sm bg-gray-100">
-            <img
-              src={getPlaceImage(place)}
-              alt={place.name}
-              className="w-full h-full object-cover"
-            />
-           
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
-
-       
-            <div className="absolute top-6 left-6 bg-white rounded-lg px-3 py-2 flex items-center gap-1.5 shadow-md">
-              <BedDouble className="w-4 h-4 text-gray-900" />
-              <span className="text-sm font-semibold text-gray-900">
-                {getCategoryLabel(place.category)}
-              </span>
+          <div className="flex gap-4 h-[60vh] min-h-[400px]">
+            {/* Main Left Image */}
+            <div className="relative w-full md:w-[75%] h-full rounded-[32px] overflow-hidden shadow-sm bg-gray-100">
+              <img
+                src={getPlaceImage(place)}
+                alt={place.name}
+                className="w-full h-full object-cover"
+              />
+             
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
+  
+              <div className="absolute top-6 left-6 bg-white rounded-lg px-3 py-2 flex items-center gap-1.5 shadow-md">
+                <BedDouble className="w-4 h-4 text-gray-900" />
+                <span className="text-sm font-semibold text-gray-900">
+                  {getCategoryLabel(place.category)}
+                </span>
+              </div>
+  
+              <button
+                onClick={toggleFavorite}
+                aria-pressed={isLiked}
+                aria-label="Save to favorites"
+                className="absolute top-6 right-6 bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md cursor-pointer hover:bg-gray-50 transition-colors"
+              >
+                <Heart
+                  className={`w-5 h-5 transition-colors ${
+                    isLiked ? "fill-red-500 text-red-500" : "text-gray-900"
+                  }`}
+                />
+              </button>
+  
+              <div className="absolute bottom-12 left-6 md:left-12 right-6 flex flex-col gap-3">
+                <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">
+                  {place.name}
+                </h1>
+                
+                <div className="flex flex-wrap items-center gap-3 text-sm md:text-base text-gray-200">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-[#FFB800] text-[#FFB800]" />
+                    <span className="font-semibold text-white">{place.rating?.average || "4.5"}</span>
+                    <span>({(place.rating?.totalReviews || 120).toLocaleString()} reviews)</span>
+                  </div>
+                  <span>·</span>
+                  {place.pricing && (
+                    <>
+                      <span className="font-medium text-white">
+                        {place.pricing.currency === "NGN" ? "₦" : "$"}{place.pricing.min?.toLocaleString()} - {place.pricing.currency === "NGN" ? "₦" : "$"}{place.pricing.max?.toLocaleString()}
+                      </span>
+                      <span>·</span>
+                    </>
+                  )}
+                  <span className="font-medium text-green-400">Open now</span>
+                </div>
+  
+                <div className="flex items-center gap-2 text-sm md:text-base text-gray-300">
+                  <MapPin className="w-4 h-4 shrink-0" />
+                  <span>{address}</span>
+                </div>
+              </div>
             </div>
 
-            <button
-              onClick={toggleFavorite}
-              aria-pressed={isLiked}
-              aria-label="Save to favorites"
-              className="absolute top-6 right-6 bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md cursor-pointer hover:bg-gray-50 transition-colors"
-            >
-              <Heart
-                className={`w-5 h-5 transition-colors ${
-                  isLiked ? "fill-red-500 text-red-500" : "text-gray-900"
-                }`}
-              />
-            </button>
-
-         
-            <div className="absolute bottom-12 left-6 md:left-12 right-6 flex flex-col gap-3">
-              <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">
-                {place.name}
-              </h1>
-              
-              <div className="flex flex-wrap items-center gap-3 text-sm md:text-base text-gray-200">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-[#FFB800] text-[#FFB800]" />
-                  <span className="font-semibold text-white">{place.rating?.average || "4.5"}</span>
-                  <span>({(place.rating?.totalReviews || 120).toLocaleString()} reviews)</span>
-                </div>
-                <span>·</span>
-                {place.pricing && (
-                  <>
-                    <span className="font-medium text-white">
-                      {place.pricing.currency === "NGN" ? "₦" : "$"}{place.pricing.min?.toLocaleString()} - {place.pricing.currency === "NGN" ? "₦" : "$"}{place.pricing.max?.toLocaleString()}
-                    </span>
-                    <span>·</span>
-                  </>
-                )}
-                <span className="font-medium text-green-400">Open now</span>
+            {/* Right Side Images */}
+            <div className="hidden md:flex md:w-[25%] flex-col gap-4 h-full">
+              <div className="relative w-full h-[33.33%] rounded-[24px] overflow-hidden bg-gray-100">
+                <img 
+                  src={place.images?.[1] || "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=400&q=80"} 
+                  alt={`${place.name} view 1`} 
+                  className="w-full h-full object-cover" 
+                />
               </div>
-
-              <div className="flex items-center gap-2 text-sm md:text-base text-gray-300">
-                <MapPin className="w-4 h-4 shrink-0" />
-                <span>{address}</span>
+              <div className="relative w-full h-[33.33%] rounded-[24px] overflow-hidden bg-gray-100">
+                <img 
+                  src={place.images?.[2] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=400&q=80"} 
+                  alt={`${place.name} view 2`} 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+              <div className="relative w-full h-[33.33%] rounded-[24px] overflow-hidden bg-gray-100 group cursor-pointer">
+                <img 
+                  src={place.images?.[3] || "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=400&q=80"} 
+                  alt={`${place.name} view 3`} 
+                  className="w-full h-full object-cover" 
+                />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
+                  <span className="text-white text-2xl font-medium tracking-wider">
+                    +{place.images?.length > 4 ? place.images.length - 4 : 21}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -425,27 +470,29 @@ export default function Details() {
                     { name: "Jane Cooper", rating: 4, comment: "The rooms were spotless and the staff were incredibly friendly. An amazing experience!" },
                     { name: "Jane Cooper", rating: 5, comment: "The rooms were spotless and the staff were incredibly friendly. An amazing experience!" },
                     { name: "Jane Cooper", rating: 5, comment: "The rooms were spotless and the staff were incredibly friendly. An amazing experience!" },
-                  ]).map((review, i) => (
+                  ]).map((review, i) => {
+                    const rev = typeof review === 'string' ? { name: "Guest", rating: 5, comment: review } : review;
+                    return (
                     <div key={i} className="bg-white border border-gray-100 p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 overflow-hidden">
-                           <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${review.name}`} alt={review.name} className="w-full h-full object-cover" />
+                           <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${rev.name}`} alt={rev.name} className="w-full h-full object-cover" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900 text-sm">{review.name}</h4>
+                          <h4 className="font-semibold text-gray-900 text-sm">{rev.name}</h4>
                           <div className="flex text-[#FFB800] mt-0.5">
                             {[...Array(5)].map((_, j) => (
-                              <Star key={j} className={`w-3 h-3 ${j < review.rating ? "fill-[#FFB800]" : "fill-gray-200 text-gray-200"}`} />
+                              <Star key={j} className={`w-3 h-3 ${j < rev.rating ? "fill-[#FFB800]" : "fill-gray-200 text-gray-200"}`} />
                             ))}
                             <span className="text-gray-400 text-xs ml-2 font-medium">1 day ago</span>
                           </div>
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm leading-relaxed mt-2">
-                        {review.comment}
+                        {rev.comment}
                       </p>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
             </section>

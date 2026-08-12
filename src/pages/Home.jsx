@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Search, Heart, MapPin, Menu, X } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
-import directoryData from "../data/places.json";
+import directoryData from "../../data/places.json";
 
 
 const LocalSpotIcon = ({ className = "" }) => (
@@ -27,7 +27,7 @@ const LocalSpotIcon = ({ className = "" }) => (
 );
 
 
-const getPlaceImage = (place) => {
+const getCategoryFallback = (place) => {
   const cat = (place.category || "").toLowerCase();
   if (cat.includes("hotel")) {
     return "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80";
@@ -42,6 +42,16 @@ const getPlaceImage = (place) => {
   } else {
     return "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80";
   }
+};
+
+const getPlaceImage = (place) => {
+  if (place.images && place.images.length > 0) {
+    const img = place.images[0];
+    // Use Google URLs directly
+    if (img.startsWith("http")) return img;
+    return img;
+  }
+  return getCategoryFallback(place);
 };
 
 const getCategoryLabel = (category) => {
@@ -132,7 +142,7 @@ export default function Home() {
   };
 
   const getPlacesForCategory = (categoryKey) => {
-    let filtered = directoryData.filter((place) => {
+    let filtered = (directoryData.places || []).filter((place) => {
       const cat = (place.category || "").toLowerCase();
       if (categoryKey === "hotel") return cat.includes("hotel");
       if (categoryKey === "restaurant") {
@@ -251,22 +261,22 @@ export default function Home() {
         <div className="relative w-full bg-gray-50 flex items-center min-h-[460px] md:min-h-[520px] lg:min-h-[580px]">
         
           <img
-            src="https://images.unsplash.com/photo-1431274172761-fca41d930114?auto=format&fit=crop&w=1600&q=80"
-            alt="Eiffel Tower Paris"
+            src="/project/hero-city.jpg"
+            alt="Port Harcourt city aerial view"
             className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
           />
         
-          <div className="absolute inset-0 bg-white/10 pointer-events-none" />
+          <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 
        
           <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-12 md:py-20 flex flex-col items-start text-left">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-[1.1]">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-[1.1]">
               Explore the best
               <br />
               places in your city
             </h1>
 
-            <p className="mt-4 text-gray-700 text-sm md:text-base lg:text-lg max-w-xl font-normal leading-relaxed">
+            <p className="mt-4 text-gray-200 text-sm md:text-base lg:text-lg max-w-xl font-normal leading-relaxed">
               Find and discover top hotels, restaurants, cafes and attractions
               around you.
             </p>
