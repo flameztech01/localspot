@@ -26,6 +26,35 @@ const getCategoryFallback = (place) => {
   }
 };
 
+const getCategorySideImages = (category) => {
+  const cat = (category || "").toLowerCase();
+  if (cat.includes("hotel")) {
+    return [
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=400&q=80"
+    ];
+  } else if (cat.includes("restaurant") || cat.includes("lounge") || cat.includes("dining")) {
+    return [
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=400&q=80"
+    ];
+  } else if (cat.includes("cafe")) {
+    return [
+      "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=400&q=80"
+    ];
+  } else {
+    return [
+      "https://images.unsplash.com/photo-1503614472-8c93d56e92ce?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=400&q=80"
+    ];
+  }
+};
+
 const getPlaceImage = (place) => {
   if (place.images && place.images.length > 0) {
     const img = place.images[0];
@@ -179,11 +208,11 @@ export default function Details() {
 
   const mockRooms = [
     { id: 1, title: "Deluxe Room", guests: 2, bed: "King Bed", size: "28m", features: ["Free Wifi", "Breakfast", "City View"], price: 98, image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=400&q=80" },
-    { id: 2, title: "Deluxe Room", guests: 2, bed: "King Bed", size: "28m", features: ["Free Wifi", "Breakfast", "City View"], price: 98, image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=400&q=80" },
-    { id: 3, title: "Deluxe Room", guests: 2, bed: "King Bed", size: "28m", features: ["Free Wifi", "Breakfast", "City View"], price: 98, image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=400&q=80" },
-    { id: 4, title: "Deluxe Room", guests: 3, bed: "King Bed", size: "32m", features: ["Free Wifi", "Breakfast", "City View"], price: 98, image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=400&q=80" },
-    { id: 5, title: "Deluxe Room", guests: 2, bed: "King Bed", size: "28m", features: ["Free Wifi", "Breakfast", "City View"], price: 98, image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=400&q=80" },
-    { id: 6, title: "Deluxe Room", guests: 2, bed: "King Bed", size: "28m", features: ["Free Wifi", "Breakfast", "City View"], price: 98, image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=400&q=80" },
+    { id: 2, title: "Executive Suite", guests: 2, bed: "King Bed", size: "35m", features: ["Free Wifi", "Breakfast", "City View"], price: 150, image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=400&q=80" },
+    { id: 3, title: "Family Room", guests: 4, bed: "2 Queen Beds", size: "40m", features: ["Free Wifi", "Breakfast", "Pool View"], price: 180, image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=400&q=80" },
+    { id: 4, title: "Presidential Suite", guests: 3, bed: "King Bed", size: "55m", features: ["Free Wifi", "Breakfast", "Ocean View"], price: 350, image: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=400&q=80" },
+    { id: 5, title: "Standard Room", guests: 2, bed: "Queen Bed", size: "24m", features: ["Free Wifi", "City View"], price: 80, image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=400&q=80" },
+    { id: 6, title: "Ocean View Room", guests: 2, bed: "King Bed", size: "30m", features: ["Free Wifi", "Breakfast", "Ocean View"], price: 120, image: "https://images.unsplash.com/photo-1568495248636-6432b97bd949?auto=format&fit=crop&w=400&q=80" },
   ];
 
  
@@ -206,6 +235,8 @@ export default function Details() {
   };
 
   const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+  const sideImages = getCategorySideImages(place.category);
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] font-sans text-gray-900 pb-0 flex flex-col justify-between">
@@ -293,21 +324,21 @@ export default function Details() {
             <div className="hidden md:flex md:w-[25%] flex-col gap-4 h-full">
               <div className="relative w-full h-[33.33%] rounded-[24px] overflow-hidden bg-gray-100">
                 <img 
-                  src={place.images?.[1] || "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=400&q=80"} 
+                  src={place.images?.[1] || sideImages[0]} 
                   alt={`${place.name} view 1`} 
                   className="w-full h-full object-cover" 
                 />
               </div>
               <div className="relative w-full h-[33.33%] rounded-[24px] overflow-hidden bg-gray-100">
                 <img 
-                  src={place.images?.[2] || "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=400&q=80"} 
+                  src={place.images?.[2] || sideImages[1]} 
                   alt={`${place.name} view 2`} 
                   className="w-full h-full object-cover" 
                 />
               </div>
               <div className="relative w-full h-[33.33%] rounded-[24px] overflow-hidden bg-gray-100 group cursor-pointer">
                 <img 
-                  src={place.images?.[3] || "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=400&q=80"} 
+                  src={place.images?.[3] || sideImages[2]} 
                   alt={`${place.name} view 3`} 
                   className="w-full h-full object-cover" 
                 />
