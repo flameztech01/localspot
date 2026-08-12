@@ -207,12 +207,12 @@ export default function Details() {
 
 
   const mockRooms = [
-    { id: 1, title: "Deluxe Room", guests: 2, bed: "King Bed", size: "28m", features: ["Free Wifi", "Breakfast", "City View"], price: 98, image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=400&q=80" },
-    { id: 2, title: "Executive Suite", guests: 2, bed: "King Bed", size: "35m", features: ["Free Wifi", "Breakfast", "City View"], price: 150, image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=400&q=80" },
-    { id: 3, title: "Family Room", guests: 4, bed: "2 Queen Beds", size: "40m", features: ["Free Wifi", "Breakfast", "Pool View"], price: 180, image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=400&q=80" },
-    { id: 4, title: "Presidential Suite", guests: 3, bed: "King Bed", size: "55m", features: ["Free Wifi", "Breakfast", "Ocean View"], price: 350, image: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=400&q=80" },
-    { id: 5, title: "Standard Room", guests: 2, bed: "Queen Bed", size: "24m", features: ["Free Wifi", "City View"], price: 80, image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=400&q=80" },
-    { id: 6, title: "Ocean View Room", guests: 2, bed: "King Bed", size: "30m", features: ["Free Wifi", "Breakfast", "Ocean View"], price: 120, image: "https://images.unsplash.com/photo-1568495248636-6432b97bd949?auto=format&fit=crop&w=400&q=80" },
+    { id: 1, title: "Deluxe Room", guests: 2, bed: "King Bed", size: "28m", features: ["Free Wifi", "Breakfast", "City View"], price: 50000, image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=400&q=80" },
+    { id: 2, title: "Executive Suite", guests: 2, bed: "King Bed", size: "35m", features: ["Free Wifi", "Breakfast", "City View"], price: 80000, image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=400&q=80" },
+    { id: 3, title: "Family Room", guests: 4, bed: "2 Queen Beds", size: "40m", features: ["Free Wifi", "Breakfast", "Pool View"], price: 100000, image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=400&q=80" },
+    { id: 4, title: "Presidential Suite", guests: 3, bed: "King Bed", size: "55m", features: ["Free Wifi", "Breakfast", "Ocean View"], price: 120000, image: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=400&q=80" },
+    { id: 5, title: "Standard Room", guests: 2, bed: "Queen Bed", size: "24m", features: ["Free Wifi", "City View"], price: 30000, image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=400&q=80" },
+    { id: 6, title: "Ocean View Room", guests: 2, bed: "King Bed", size: "30m", features: ["Free Wifi", "Breakfast", "Ocean View"], price: 60000, image: "https://images.unsplash.com/photo-1568495248636-6432b97bd949?auto=format&fit=crop&w=400&q=80" },
   ];
 
  
@@ -305,7 +305,7 @@ export default function Details() {
                   {place.pricing && (
                     <>
                       <span className="font-medium text-white">
-                        {place.pricing.currency === "NGN" ? "₦" : "$"}{place.pricing.min?.toLocaleString()} - {place.pricing.currency === "NGN" ? "₦" : "$"}{place.pricing.max?.toLocaleString()}
+                        {place.pricing.currency === "NGN" ? "₦" : "₦"}{place.pricing.min?.toLocaleString()} - {place.pricing.currency === "NGN" ? "₦" : "₦"}{place.pricing.max?.toLocaleString()}
                       </span>
                       <span>·</span>
                     </>
@@ -438,7 +438,7 @@ export default function Details() {
                           ))}
                         </div>
                         <div className="mt-5 pt-4 border-t border-gray-100 flex items-end">
-                          <span className="text-xl font-bold text-gray-900">${room.price}</span>
+                          <span className="text-xl font-bold text-gray-900">₦{room.price.toLocaleString()}</span>
                           <span className="text-sm text-gray-500 ml-1 mb-0.5 font-medium">/ night</span>
                         </div>
                       </div>

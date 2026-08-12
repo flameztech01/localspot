@@ -145,7 +145,7 @@ export default function HotelDetailPage() {
                     4.8 (2,408 reviews)
                   </span>
                   <span>·</span>
-                  <span>$55 - $300</span>
+                  <span>₦55 - ₦300</span>
                   <span>·</span>
                   <span className="text-green-400">Open 24 hours</span>
                 </div>
@@ -244,7 +244,7 @@ export default function HotelDetailPage() {
                     <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded">City View</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-900 font-bold text-sm">#98 <span className="text-gray-400 font-normal text-xs">/ night</span></span>
+                    <span className="text-gray-900 font-bold text-sm">₦50,000 <span className="text-gray-400 font-normal text-xs">/ night</span></span>
                   </div>
                 </div>
               </div>

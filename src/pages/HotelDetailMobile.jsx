@@ -90,7 +90,7 @@ export default function HotelDetailMobile({
             <span className="font-semibold">4.8</span>
             <span className="text-gray-500">(2,400 reviews)</span>
             <span className="text-gray-400">.</span>
-            <span className="font-medium">$55 - $300</span>
+            <span className="font-medium">₦55 - ₦300</span>
             <span className="text-gray-400">.</span>
             <span className="text-green-600 font-medium">Open 24 hours</span>
           </div>
