@@ -68,7 +68,7 @@ const Hero = ({ onSearch }) => {
       </div>
 
       {/* Left: copy + search */}
-      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-between px-4 pb-12 pt-6 sm:px-6 lg:flex lg:flex-row lg:items-center lg:justify-start lg:px-10 lg:py-0">
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-between px-4 pb-12 pt-6 sm:px-6 lg:ml-13 lg:flex lg:flex-row lg:items-center lg:justify-start lg:py-0 lg:pr-6">
         
         {/* Top Minimal Element (Mobile Only) */}
         <div className="flex justify-center lg:hidden">
@@ -78,7 +78,7 @@ const Hero = ({ onSearch }) => {
         </div>
 
         {/* Main Content */}
-        <div className="w-full lg:max-w-[52%]">
+        <div className="w-full lg:max-w-[62%]">
           <p className="text-xs font-bold tracking-wide text-white sm:text-sm lg:text-gray-900">
             LOCAL WONDERS AWAIT ...
           </p>
@@ -96,7 +96,7 @@ const Hero = ({ onSearch }) => {
           {/* Glassmorphic Form (Mobile) / Solid White Form (Desktop) */}
           <form
             onSubmit={handleSubmit}
-            className="mt-8 flex w-full max-w-xl flex-col gap-2 rounded-2xl border border-white/20 bg-white/10 p-2 shadow-2xl backdrop-blur-md sm:flex-row sm:items-center sm:gap-0 sm:rounded-xl lg:border-gray-200 lg:bg-white lg:shadow-sm lg:backdrop-blur-none"
+            className="mt-8 flex w-full max-w-xl flex-col gap-2 rounded-2xl border border-white/20 bg-white/10 p-2 shadow-2xl backdrop-blur-md sm:flex-row sm:items-center sm:gap-0 sm:rounded-xl lg:max-w-none lg:border-gray-200 lg:bg-white lg:shadow-sm lg:backdrop-blur-none"
           >
             {/* Search input */}
             <label className="flex flex-1 items-center gap-2 px-3 py-2">
