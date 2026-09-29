@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FiSearch, FiMapPin, FiChevronDown } from 'react-icons/fi'
 
 // Column next to the edge: 3 images (fully visible, top/bottom bleed a little)
@@ -38,13 +39,21 @@ const columnB = [
 const cities = ['Port Harcourt', 'Lagos', 'Abuja', 'Ibadan', 'Enugu', 'Kano']
 
 const Hero = ({ onSearch }) => {
+  const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [city, setCity] = useState(cities[0])
   const [isCityOpen, setIsCityOpen] = useState(false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (onSearch) onSearch({ query: query.trim(), city })
+    if (onSearch) {
+      onSearch({ query: query.trim(), city })
+    } else {
+      const params = new URLSearchParams()
+      if (query.trim()) params.set('q', query.trim())
+      if (city) params.set('city', city)
+      navigate(`/search?${params.toString()}`)
+    }
   }
 
   const handleCitySelect = (selectedCity) => {

@@ -3,10 +3,10 @@ import { NavLink, Link } from 'react-router-dom'
 import { FiUser, FiMenu, FiX } from 'react-icons/fi'
 
 const links = [
-  { label: 'Explore', to: '/' },
+  { label: 'Explore', to: '/search' },
   { label: 'About Us', to: '/about' },
   { label: 'Contact', to: '/contact' },
-  { label: 'Saved Places', to: '/saved' },
+  { label: 'Saved Places', to: '/favorites' },
 ]
 
 const Logo = () => (
@@ -37,17 +37,15 @@ const Navbar = () => {
   }, [])
 
   const desktopLink = ({ isActive }) =>
-    `rounded-md px-3 py-1.5 text-sm transition-colors ${
-      isActive
-        ? 'bg-gray-200 font-medium text-gray-900'
-        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+    `rounded-md px-3 py-1.5 text-sm transition-colors ${isActive
+      ? 'bg-gray-100 font-semibold text-gray-900'
+      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 font-medium'
     }`
 
   const mobileLink = ({ isActive }) =>
-    `block rounded-xl px-4 py-3 text-base transition-colors ${
-      isActive
-        ? 'bg-white/60 font-medium text-gray-900'
-        : 'text-gray-700 hover:bg-white/50'
+    `block rounded-xl px-4 py-3 text-base transition-colors ${isActive
+      ? 'bg-gray-100 font-medium text-gray-900'
+      : 'text-gray-700 hover:bg-gray-50'
     }`
 
   return (
@@ -100,15 +98,13 @@ const Navbar = () => {
             >
               <FiMenu
                 size={22}
-                className={`absolute transition-all duration-300 ${
-                  open ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
-                }`}
+                className={`absolute transition-all duration-300 ${open ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
+                  }`}
               />
               <FiX
                 size={22}
-                className={`absolute transition-all duration-300 ${
-                  open ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'
-                }`}
+                className={`absolute transition-all duration-300 ${open ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'
+                  }`}
               />
             </button>
           </div>
@@ -119,17 +115,15 @@ const Navbar = () => {
       <div
         aria-hidden="true"
         onClick={() => setOpen(false)}
-        className={`fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
-          open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-        }`}
+        className={`fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm transition-opacity duration-300 md:hidden ${open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          }`}
       />
 
       {/* Mobile side drawer */}
       <aside
         id="mobile-menu"
-        className={`fixed left-0 top-0 z-[70] flex h-[100svh] w-[78%] max-w-[320px] flex-col overflow-y-auto border-r border-white/40 bg-white/60 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out md:hidden ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed left-0 top-0 z-[70] flex h-[100svh] w-[78%] max-w-[320px] flex-col overflow-y-auto border-r border-white/40 bg-white/60 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out md:hidden ${open ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {/* Drawer header */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/40 px-4">
@@ -149,9 +143,8 @@ const Navbar = () => {
           {links.map(({ label, to }, i) => (
             <li
               key={label}
-              className={`transition-all duration-300 ease-out ${
-                open ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
-              }`}
+              className={`transition-all duration-300 ease-out ${open ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
+                }`}
               style={{ transitionDelay: open ? `${i * 60 + 100}ms` : '0ms' }}
             >
               <NavLink
@@ -168,9 +161,8 @@ const Navbar = () => {
 
         {/* Drawer footer CTA */}
         <div
-          className={`border-t border-white/40 p-4 transition-all duration-300 ease-out ${
-            open ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
-          }`}
+          className={`border-t border-white/40 p-4 transition-all duration-300 ease-out ${open ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
+            }`}
           style={{
             transitionDelay: open ? `${links.length * 60 + 100}ms` : '0ms',
           }}
