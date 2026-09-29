@@ -68,7 +68,7 @@ const Hero = ({ onSearch }) => {
       </div>
 
       {/* Left: copy + search */}
-      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-between px-4 pb-12 pt-6 sm:px-6 lg:flex lg:flex-row lg:items-center lg:justify-center lg:px-10 lg:py-0">
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-between px-4 pb-12 pt-6 sm:px-6 lg:flex lg:flex-row lg:items-center lg:justify-start lg:px-10 lg:py-0">
         
         {/* Top Minimal Element (Mobile Only) */}
         <div className="flex justify-center lg:hidden">
