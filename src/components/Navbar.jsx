@@ -3,10 +3,10 @@ import { NavLink, Link } from 'react-router-dom'
 import { FiUser, FiMenu, FiX } from 'react-icons/fi'
 
 const links = [
-  { label: 'Explore', to: '/' },
+  { label: 'Explore', to: '/search' },
   { label: 'About Us', to: '/about' },
   { label: 'Contact', to: '/contact' },
-  { label: 'Saved Places', to: '/saved' },
+  { label: 'Saved Places', to: '/favorites' },
 ]
 
 const Logo = () => (
@@ -39,14 +39,14 @@ const Navbar = () => {
   const desktopLink = ({ isActive }) =>
     `rounded-md px-3 py-1.5 text-sm transition-colors ${
       isActive
-        ? 'bg-gray-200 font-medium text-gray-900'
-        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+        ? 'bg-gray-100 font-semibold text-gray-900'
+        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 font-medium'
     }`
 
   const mobileLink = ({ isActive }) =>
     `block rounded-lg px-4 py-3 text-base transition-colors ${
       isActive
-        ? 'bg-gray-100 font-medium text-gray-900'
+        ? 'bg-gray-100 font-semibold text-gray-900'
         : 'text-gray-700 hover:bg-gray-50'
     }`
 
