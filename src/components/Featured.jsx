@@ -10,9 +10,6 @@ import {
 } from 'react-icons/fi'
 import { FaHeart, FaStar } from 'react-icons/fa'
 
-const IMG =
-  'https://i.pinimg.com/736x/22/c2/c5/22c2c520f3dfead37f645e9d9974fb3c.jpg'
-
 const GAP = 16 // px, matches gap-4
 
 const places = [
@@ -25,6 +22,7 @@ const places = [
     reviews: 256,
     open: true,
     hours: '07:00 AM - 11:00 PM',
+    img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800',
   },
   {
     id: 2,
@@ -35,6 +33,7 @@ const places = [
     reviews: 188,
     open: true,
     hours: '24/7',
+    img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800',
   },
   {
     id: 3,
@@ -45,6 +44,7 @@ const places = [
     reviews: 315,
     open: false,
     hours: 'OPENS BY 07:00 AM',
+    img: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=800',
   },
   {
     id: 4,
@@ -55,6 +55,7 @@ const places = [
     reviews: 388,
     open: true,
     hours: 'CLOSES BY 11:00 PM',
+    img: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800',
   },
   {
     id: 5,
@@ -65,6 +66,7 @@ const places = [
     reviews: 204,
     open: true,
     hours: '10:00 AM - 10:00 PM',
+    img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800',
   },
   {
     id: 6,
@@ -75,6 +77,7 @@ const places = [
     reviews: 142,
     open: true,
     hours: '24/7',
+    img: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=800',
   },
   {
     id: 7,
@@ -85,6 +88,7 @@ const places = [
     reviews: 267,
     open: false,
     hours: 'OPENS BY 08:00 AM',
+    img: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?auto=format&fit=crop&q=80&w=800',
   },
   {
     id: 8,
@@ -95,6 +99,7 @@ const places = [
     reviews: 173,
     open: true,
     hours: 'CLOSES BY 08:00 PM',
+    img: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=800',
   },
 ]
 
@@ -103,7 +108,7 @@ const PlaceCard = ({ place, saved, onToggleSave }) => (
     {/* Image — shorter aspect on mobile */}
     <div className="relative aspect-[3/2] w-full overflow-hidden sm:aspect-[4/3]">
       <img
-        src={IMG}
+        src={place.img}
         alt={place.name}
         loading="lazy"
         referrerPolicy="no-referrer"
