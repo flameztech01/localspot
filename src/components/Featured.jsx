@@ -99,9 +99,9 @@ const places = [
 ]
 
 const PlaceCard = ({ place, saved, onToggleSave }) => (
-  <article className="flex w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-    {/* Image */}
-    <div className="relative aspect-[4/3] w-full overflow-hidden">
+  <article className="flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:rounded-2xl">
+    {/* Image — shorter aspect on mobile */}
+    <div className="relative aspect-[3/2] w-full overflow-hidden sm:aspect-[4/3]">
       <img
         src={IMG}
         alt={place.name}
@@ -110,8 +110,9 @@ const PlaceCard = ({ place, saved, onToggleSave }) => (
         className="h-full w-full object-cover"
       />
 
-      <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-teal-700 px-2 py-0.5 text-[10px] font-medium text-white sm:text-xs">
-        <FiCheck size={11} />
+      <span className="absolute left-1.5 top-1.5 flex items-center gap-0.5 rounded bg-teal-700 px-1.5 py-0.5 text-[8px] font-medium text-white sm:left-2 sm:top-2 sm:gap-1 sm:rounded-md sm:px-2 sm:text-xs">
+        <FiCheck size={9} className="sm:hidden" />
+        <FiCheck size={11} className="hidden sm:block" />
         Verified
       </span>
 
@@ -120,39 +121,49 @@ const PlaceCard = ({ place, saved, onToggleSave }) => (
         onClick={() => onToggleSave(place.id)}
         aria-label={saved ? 'Remove from saved places' : 'Save place'}
         aria-pressed={saved}
-        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm transition-colors hover:bg-white sm:h-8 sm:w-8"
+        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm transition-colors hover:bg-white sm:right-2 sm:top-2 sm:h-8 sm:w-8"
       >
         {saved ? (
-          <FaHeart size={14} className="text-red-500" />
+          <FaHeart size={11} className="text-red-500 sm:hidden" />
         ) : (
-          <FiHeart size={14} />
+          <FiHeart size={11} className="sm:hidden" />
+        )}
+        {saved ? (
+          <FaHeart size={14} className="hidden text-red-500 sm:block" />
+        ) : (
+          <FiHeart size={14} className="hidden sm:block" />
         )}
       </button>
     </div>
 
-    {/* Content */}
-    <div className="flex flex-1 flex-col p-3 sm:p-4">
-      <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-tight text-gray-900 sm:min-h-0 sm:truncate sm:text-base">
+    {/* Content — compact on mobile, full on desktop */}
+    <div className="flex flex-1 flex-col p-2.5 sm:p-4">
+      {/* Name */}
+      <h3 className="line-clamp-1 text-xs font-bold leading-tight text-gray-900 sm:line-clamp-2 sm:min-h-[2.5rem] sm:truncate sm:text-base">
         {place.name}
       </h3>
 
-      <p className="mt-1 line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-gray-500 sm:min-h-0 sm:truncate sm:text-xs">
+      {/* Meta — desktop only */}
+      <p className="mt-1 hidden text-xs leading-snug text-gray-500 sm:line-clamp-2 sm:block sm:min-h-[2rem]">
         {place.meta}
       </p>
 
-      <p className="mt-2 flex items-start gap-1.5 text-[11px] text-gray-600 sm:items-center sm:text-xs">
-        <FiMapPin className="mt-0.5 shrink-0 sm:mt-0" size={12} />
-        <span className="line-clamp-2 sm:truncate">{place.location}</span>
+      {/* Location */}
+      <p className="mt-1 flex items-center gap-1 text-[10px] text-gray-600 sm:mt-2 sm:gap-1.5 sm:text-xs">
+        <FiMapPin className="shrink-0" size={10} />
+        <span className="truncate">{place.location}</span>
       </p>
 
-      <p className="mt-2 flex items-center gap-1.5 text-xs">
-        <FaStar className="shrink-0 text-orange-500" size={12} />
+      {/* Rating */}
+      <p className="mt-1 flex items-center gap-1 text-[10px] sm:mt-2 sm:gap-1.5 sm:text-xs">
+        <FaStar className="shrink-0 text-orange-500" size={10} />
         <span className="font-semibold text-gray-900">{place.rating}</span>
         <span className="text-gray-500">({place.reviews})</span>
       </p>
 
-      <p className="mt-2 flex items-start gap-1.5 text-[10px] font-semibold uppercase leading-snug text-gray-700 sm:items-center sm:text-[11px]">
-        <FiClock className="mt-0.5 shrink-0 sm:mt-0" size={12} />
+      {/* Hours — desktop only */}
+      <p className="mt-2 hidden items-center gap-1.5 text-[11px] font-semibold uppercase leading-snug text-gray-700 sm:flex">
+        <FiClock className="shrink-0" size={12} />
         <span>
           <span className={place.open ? 'text-green-600' : 'text-red-500'}>
             {place.open ? 'Open now' : 'Closed'}
@@ -162,9 +173,10 @@ const PlaceCard = ({ place, saved, onToggleSave }) => (
         </span>
       </p>
 
+      {/* CTA */}
       <Link
         to={`/places/${place.id}`}
-        className="mt-4 block w-full rounded-lg border border-gray-200 py-2 text-center text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50"
+        className="mt-2.5 block w-full rounded-md border border-gray-200 py-1.5 text-center text-[11px] font-medium text-gray-900 transition-colors hover:bg-gray-50 sm:mt-4 sm:rounded-lg sm:py-2 sm:text-sm"
       >
         Details
       </Link>
