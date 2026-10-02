@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { FiMapPin } from 'react-icons/fi'
 import { FaXTwitter, FaInstagram, FaYoutube, FaLinkedin } from 'react-icons/fa6'
 
@@ -9,14 +10,14 @@ const footerLinks = {
     { label: 'Saved Places (3)', href: '#' },
   ],
   business: [
-    { label: 'List Your Business', href: '#' },
-    { label: 'Claim Existing Place', href: '#' },
-    { label: 'Merchant Portal Login', href: '#' },
-    { label: 'Ad Pricing', href: '#' },
+    { label: 'List Your Business', href: '/business' },
+    { label: 'Merchant Dashboard', href: '/business' },
+    { label: 'Promote Deals', href: '/business' },
+    { label: 'Admin Control Hub', href: '/admin' },
   ],
   support: [
-    { label: 'Contact us', href: '#' },
-    { label: 'Blog', href: '#' },
+    { label: 'Contact us', href: '/contact' },
+    { label: 'Explore Spots', href: '/search' },
   ],
 }
 
@@ -82,12 +83,21 @@ const Footer = () => {
             <ul className="space-y-2.5">
               {footerLinks.business.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-xs text-gray-500 transition-colors hover:text-gray-900"
-                  >
-                    {link.label}
-                  </a>
+                  {link.href.startsWith('/') ? (
+                    <Link
+                      to={link.href}
+                      className="text-xs text-gray-500 transition-colors hover:text-gray-900"
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-xs text-gray-500 transition-colors hover:text-gray-900"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

@@ -8,6 +8,8 @@ import SearchResults from './pages/SearchResults'
 import PlacesDetails from './pages/PlacesDetails'
 import SavedPlaces from './pages/SavedPlaces'
 import Profile from './pages/Profile'
+import BusinessPage from './pages/business/BusinessPage'
+import AdminPage from './pages/admin/AdminPage'
 
 function App() {
   return (
@@ -24,6 +26,12 @@ function App() {
         {/* new screens */}
         <Route path="/places/:id" element={<PlacesDetails />} />
         <Route path="/profile" element={<Profile />} />
+
+        {/* Business & Admin screens */}
+        <Route path="/business" element={<BusinessPage />} />
+        <Route path="/list-business" element={<BusinessPage />} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/dashboard" element={<AdminPage />} />
       </Routes>
     </div>
   )
