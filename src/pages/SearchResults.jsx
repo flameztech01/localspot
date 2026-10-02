@@ -400,7 +400,13 @@ const SearchResults = () => {
           <div className="flex-1 w-full min-w-0">
             {paginatedPlaces.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {/* 
+                  CHANGED HERE: 
+                  Switched from standard grid to CSS columns for mobile masonry effect.
+                  - `columns-2` creates 2 masonry columns on mobile.
+                  - `sm:grid sm:grid-cols-2 xl:grid-cols-3` reverts to your standard grid on larger screens.
+                */}
+                <div className="columns-2 gap-4 sm:grid sm:grid-cols-2 xl:grid-cols-3 sm:gap-5">
                   {paginatedPlaces.map((place) => (
                     <PlaceCard
                       key={place.id}

@@ -8,7 +8,7 @@ const links = [
   { label: 'Explore', to: '/search' },
   { label: 'About Us', to: '/about' },
   { label: 'Contact', to: '/contact' },
-  { label: 'Saved Places', to: '/favorites' },
+  { label: 'Saved Places', to: '/saved' },
 ]
 
 const Logo = () => (
