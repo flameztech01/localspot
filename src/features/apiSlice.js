@@ -1,3 +1,4 @@
+// features/apiSlice.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 const baseQuery = fetchBaseQuery({
@@ -16,6 +17,57 @@ const baseQuery = fetchBaseQuery({
 
 export const apiSlice = createApi({
   baseQuery,
-  tagTypes: ['User', 'Admin'],
+  tagTypes: [
+    // ─── Core auth ────────────────────────────────────────────────
+    'User',
+    'Admin',
+    'AdminAuth',
+    'BusinessAuth',
+
+    // ─── Businesses (discovery + listings) ────────────────────────
+    'Business',
+    'BusinessList',
+    'BusinessProfile',
+
+    // ─── Categories ───────────────────────────────────────────────
+    'Category',
+    'CategoryList',
+
+    // ─── Discovery / Home feed ────────────────────────────────────
+    'DiscoveryHome',
+    'SearchResults',
+    'FeaturedBusinesses',
+    'PopularBusinesses',
+    'ActivePromotions',
+    'ActiveAdvertisements',
+
+    // ─── Advertisements ───────────────────────────────────────────
+    'Advertisement',
+    'AdvertisementList',
+    'AdvertisementType',
+    'AdvertisementSlot',
+    'AdvertisementStats',
+    'AdvertisementPerformance',
+
+    // ─── Promotions ───────────────────────────────────────────────
+    'Promotion',
+    'PromotionList',
+    'PromotionListMine',
+    'AdminPromotionList',
+
+    // ─── Analytics ────────────────────────────────────────────────
+    'AnalyticsBusiness',
+    'AnalyticsAdminOverview',
+    'AnalyticsAdminTraffic',
+    'AnalyticsAdminBusinesses',
+    'AnalyticsAdminCategories',
+    'AnalyticsAdminLocations',
+    'AnalyticsAdminAdvertising',
+    'AnalyticsAdminRevenue',
+
+    // ─── Location / Geocoding ─────────────────────────────────────
+    'LocationSearch',
+    'LocationReverse',
+  ],
   endpoints: (builder) => ({}),
 });

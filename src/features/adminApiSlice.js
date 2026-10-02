@@ -1,11 +1,12 @@
 // features/adminApiSlice.js
 import { apiSlice } from "./apiSlice.js";
 
-const ADMIN_URL = "/admin";
+// Matches the mount path: /api/v1/auth/admin
+const ADMIN_URL = "/v1/auth/admin";
 
 export const adminApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // POST /admin/login
+    // POST /api/v1/auth/admin/login
     login: builder.mutation({
       query: ({ email, password }) => ({
         url: `${ADMIN_URL}/login`,
@@ -15,7 +16,7 @@ export const adminApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ["AdminAuth"],
     }),
 
-    // POST /admin/logout
+    // POST /api/v1/auth/admin/logout  (requires auth)
     logout: builder.mutation({
       query: () => ({
         url: `${ADMIN_URL}/logout`,
@@ -24,7 +25,7 @@ export const adminApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ["AdminAuth"],
     }),
 
-    // GET /admin/me
+    // GET /api/v1/auth/admin/me  (requires auth)
     getCurrentAdmin: builder.query({
       query: () => ({
         url: `${ADMIN_URL}/me`,
@@ -33,7 +34,7 @@ export const adminApiSlice = apiSlice.injectEndpoints({
       providesTags: ["AdminAuth"],
     }),
 
-    // POST /admin/forgot-password
+    // POST /api/v1/auth/admin/forgot-password
     forgotPassword: builder.mutation({
       query: ({ email }) => ({
         url: `${ADMIN_URL}/forgot-password`,
@@ -42,7 +43,7 @@ export const adminApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    // POST /admin/reset-password
+    // POST /api/v1/auth/admin/reset-password
     resetPassword: builder.mutation({
       query: ({ token, password }) => ({
         url: `${ADMIN_URL}/reset-password`,
