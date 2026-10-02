@@ -1,59 +1,121 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   FiX,
-  FiUploadCloud,
-  FiMapPin,
-  FiPhone,
-  FiGlobe,
-  FiClock,
-  FiDollarSign,
+  FiPlus,
   FiCheck,
-  FiInfo,
   FiImage,
+  FiMapPin,
+  FiChevronDown,
+  FiUploadCloud,
 } from 'react-icons/fi'
 
-const categories = [
+const CATEGORIES = [
   'Restaurants',
-  'Cafes',
-  'Local Food',
   'Hotels',
   'Bars & Lounges',
-  'Entertainment',
-  'Shopping',
+  'Cafes',
   'Beauty & Wellness',
+  'Shopping',
+  'Entertainment',
   'Services',
+  'Local Food',
   'Parks & Recs',
 ]
 
-const availableAmenities = [
+const AMENITIES = [
   'Free Wi-Fi',
   'Parking Space',
   'Outdoor Seating',
   'Air Conditioning',
   'Accepts Cards / POS',
-  'Wheelchair Accessible',
-  'Takeaway / Delivery',
-  'Pet Friendly',
   'Live Music / Events',
-  'Private Dining / Rooms',
+  'Wheelchair Accessible',
+  'Pet Friendly',
+  'Delivery',
+  'Takeout',
+  'Reservations',
+  '24/7 Service',
 ]
 
-const BusinessListingForm = ({ isOpen, onClose, onSave, initialData = null }) => {
+const PRICE_LEVELS = ['$', '$$', '$$$', '$$$$']
+
+const BusinessListingForm = ({ isOpen, onClose, onSave, initialData }) => {
   const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    category: initialData?.category || 'Restaurants',
-    address: initialData?.address || '',
-    city: initialData?.city || 'Port Harcourt',
-    phone: initialData?.phone || '',
-    website: initialData?.website || '',
-    priceLevel: initialData?.priceLevel || '$$',
-    openingHours: initialData?.openingHoursText || 'Mon - Sun: 8:00 AM - 10:00 PM',
-    description: initialData?.description || '',
-    imageUrl: initialData?.images?.[0] || '',
-    amenities: initialData?.amenities || ['Free Wi-Fi', 'Air Conditioning', 'Accepts Cards / POS'],
+    name: '',
+    category: '',
+    address: '',
+    city: '',
+    phone: '',
+    website: '',
+    priceLevel: '$$',
+    openingHoursText: '',
+    description: '',
+    amenities: [],
+    images: [],
   })
 
   const [errors, setErrors] = useState({})
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+  const [isPriceOpen, setIsPriceOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const categoryRef = useRef(null)
+  const priceRef = useRef(null)
+
+  // Prefill form when editing
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        category: initialData.category || '',
+        address: initialData.address || '',
+        city: initialData.city || '',
+        phone: initialData.phone || '',
+        website: initialData.website || '',
+        priceLevel: initialData.priceLevel || '$$',
+        openingHoursText: initialData.openingHoursText || '',
+        description: initialData.description || '',
+        amenities: initialData.amenities || [],
+        images: initialData.images || [],
+      })
+    } else {
+      setFormData({
+        name: '',
+        category: '',
+        address: '',
+        city: '',
+        phone: '',
+        website: '',
+        priceLevel: '$$',
+        openingHoursText: '',
+        description: '',
+        amenities: [],
+        images: [],
+      })
+    }
+    setErrors({})
+  }, [initialData, isOpen])
+
+  // Lock body scroll
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : 'unset'
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (categoryRef.current && !categoryRef.current.contains(e.target)) {
+        setIsCategoryOpen(false)
+      }
+      if (priceRef.current && !priceRef.current.contains(e.target)) {
+        setIsPriceOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   if (!isOpen) return null
 
@@ -66,294 +128,336 @@ const BusinessListingForm = ({ isOpen, onClose, onSave, initialData = null }) =>
   }
 
   const toggleAmenity = (amenity) => {
-    setFormData((prev) => {
-      const exists = prev.amenities.includes(amenity)
-      return {
-        ...prev,
-        amenities: exists
-          ? prev.amenities.filter((a) => a !== amenity)
-          : [...prev.amenities, amenity],
+    setFormData((prev) => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter((a) => a !== amenity)
+        : [...prev.amenities, amenity],
+    }))
+  }
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files || [])
+    files.forEach((file) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setFormData((prev) => ({
+          ...prev,
+          images: [...prev.images, reader.result],
+        }))
       }
+      reader.readAsDataURL(file)
     })
+  }
+
+  const removeImage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }))
   }
 
   const validate = () => {
     const newErrors = {}
     if (!formData.name.trim()) newErrors.name = 'Business name is required'
-    if (!formData.address.trim()) newErrors.address = 'Street address is required'
-    if (!formData.phone.trim()) newErrors.phone = 'Contact phone is required'
-    if (!formData.description.trim()) newErrors.description = 'Please add a brief description'
+    if (!formData.category) newErrors.category = 'Please select a category'
+    if (!formData.address.trim()) newErrors.address = 'Address is required'
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
 
-    const newListing = {
-      id: initialData?.id || Date.now().toString(),
-      name: formData.name,
-      category: formData.category,
-      address: `${formData.address}, ${formData.city}`,
-      city: formData.city,
-      phone: formData.phone,
-      website: formData.website,
-      priceLevel: formData.priceLevel,
-      openingHoursText: formData.openingHours,
-      description: formData.description,
-      amenities: formData.amenities,
-      images: [
-        formData.imageUrl ||
-          'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-      ],
-      rating: initialData?.rating || 5.0,
+    setIsSubmitting(true)
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 600))
+
+    const payload = {
+      ...formData,
+      id: initialData?.id || `biz-${Date.now()}`,
+      rating: initialData?.rating || 0,
       reviewsCount: initialData?.reviewsCount || 0,
+      verified: initialData?.verified || false,
       status: initialData?.status || 'Pending Verification',
-      verified: initialData?.verified ?? false,
-      createdAt: initialData?.createdAt || new Date().toISOString(),
     }
 
-    onSave(newListing)
+    onSave(payload)
+    setIsSubmitting(false)
     onClose()
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-gray-100 my-8 overflow-hidden">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {initialData ? 'Edit Business Listing' : 'List a New Business on LocalSpot'}
+            <h2 className="text-lg font-bold text-gray-900">
+              {initialData ? 'Edit Business Listing' : 'Add New Business'}
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Fill in the verified details to appear on search and discovery maps
+              {initialData
+                ? 'Update your business details below.'
+                : 'Fill in the details to list your business on LocalSpot.'}
             </p>
           </div>
           <button
-            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
           >
             <FiX size={20} />
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-6">
+          
           {/* Basic Info */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-              <FiInfo className="text-blue-500" /> General Business Details
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              Basic Information
             </h3>
 
+            {/* Business Name */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                Business / Place Name *
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Business Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g. Royal Crown Bistro & Lounge"
-                className={`w-full rounded-xl border ${
-                  errors.name ? 'border-rose-400 bg-rose-50/30' : 'border-gray-200'
-                } px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all`}
+                placeholder="e.g. The Copper Chimney Bistro"
+                className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 ${
+                  errors.name ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                }`}
               />
-              {errors.name && <p className="text-xs text-rose-500 mt-1">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-xs text-red-500 mt-1">{errors.name}</p>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  Category *
+            {/* Category + Price Level Row */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Category Dropdown */}
+              <div className="relative" ref={categoryRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category <span className="text-red-500">*</span>
                 </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 border rounded-lg text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.category ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
+                  }`}
                 >
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                  <span className={formData.category ? 'text-gray-900' : 'text-gray-400'}>
+                    {formData.category || 'Select category'}
+                  </span>
+                  <FiChevronDown
+                    size={14}
+                    className={`text-gray-400 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                {isCategoryOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-30 max-h-52 overflow-y-auto">
+                    {CATEGORIES.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, category: cat }))
+                          setIsCategoryOpen(false)
+                          if (errors.category) setErrors((prev) => ({ ...prev, category: null }))
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                          formData.category === cat
+                            ? 'bg-blue-50 text-blue-600 font-semibold'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  Price Tier
+              {/* Price Level Dropdown */}
+              <div className="relative" ref={priceRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Price Level
                 </label>
-                <div className="flex gap-2">
-                  {['$', '$$', '$$$', '$$$$'].map((tier) => (
-                    <button
-                      key={tier}
-                      type="button"
-                      onClick={() => setFormData((p) => ({ ...p, priceLevel: tier }))}
-                      className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all ${
-                        formData.priceLevel === tier
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                      }`}
-                    >
-                      {tier}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPriceOpen(!isPriceOpen)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                >
+                  <span className="text-gray-900">{formData.priceLevel}</span>
+                  <FiChevronDown
+                    size={14}
+                    className={`text-gray-400 transition-transform ${isPriceOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                {isPriceOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-30">
+                    {PRICE_LEVELS.map((level) => (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, priceLevel: level }))
+                          setIsPriceOpen(false)
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                          formData.priceLevel === level
+                            ? 'bg-blue-50 text-blue-600 font-semibold'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Tell customers what makes your business special..."
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 resize-none"
+              />
             </div>
           </div>
 
-          {/* Location & Contact */}
-          <div className="space-y-4 pt-3 border-t border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-              <FiMapPin className="text-blue-500" /> Location & Contact
+          {/* Contact Info */}
+          <div className="space-y-4 pt-4 border-t border-gray-100">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              Contact & Location
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  Street Address *
-                </label>
+            {/* Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Street Address <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <FiMapPin
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
                 <input
                   type="text"
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  placeholder="e.g. 18 Tombia Street, GRA Phase 2"
-                  className={`w-full rounded-xl border ${
-                    errors.address ? 'border-rose-400 bg-rose-50/30' : 'border-gray-200'
-                  } px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all`}
+                  placeholder="e.g. Issac John St, GRA Phase 2"
+                  className={`w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 ${
+                    errors.address ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                  }`}
                 />
-                {errors.address && <p className="text-xs text-rose-500 mt-1">{errors.address}</p>}
               </div>
+              {errors.address && (
+                <p className="text-xs text-red-500 mt-1">{errors.address}</p>
+              )}
+            </div>
 
+            {/* City + Phone Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">City</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                 <input
                   type="text"
                   name="city"
                   value={formData.city}
                   onChange={handleChange}
-                  placeholder="Port Harcourt"
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                  placeholder="e.g. Port Harcourt"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                  <FiPhone size={13} /> Official Phone Number *
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="+234 803 123 4567"
-                  className={`w-full rounded-xl border ${
-                    errors.phone ? 'border-rose-400 bg-rose-50/30' : 'border-gray-200'
-                  } px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all`}
+                  placeholder="+234 803 000 0000"
+                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 ${
+                    errors.phone ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                  }`}
                 />
-                {errors.phone && <p className="text-xs text-rose-500 mt-1">{errors.phone}</p>}
+                {errors.phone && (
+                  <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
+                )}
               </div>
+            </div>
 
+            {/* Website + Hours Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                  <FiGlobe size={13} /> Website / Social URL
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                 <input
-                  type="text"
+                  type="url"
                   name="website"
                   value={formData.website}
                   onChange={handleChange}
-                  placeholder="https://mybusiness.com or instagram.com/..."
-                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                  placeholder="https://yourbusiness.com"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
+                <input
+                  type="text"
+                  name="openingHoursText"
+                  value={formData.openingHoursText}
+                  onChange={handleChange}
+                  placeholder="e.g. 07:00 AM - 11:00 PM"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
                 />
               </div>
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <FiClock size={13} /> Operating Hours
-              </label>
-              <input
-                type="text"
-                name="openingHours"
-                value={formData.openingHours}
-                onChange={handleChange}
-                placeholder="e.g. Mon - Sat: 8:00 AM - 10:00 PM (Closed Sun)"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Media & Image URL */}
-          <div className="space-y-4 pt-3 border-t border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-              <FiImage className="text-blue-500" /> Cover Photo & Visuals
-            </h3>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                Photo URL (Unsplash or direct image link)
-              </label>
-              <input
-                type="url"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleChange}
-                placeholder="https://images.unsplash.com/photo-..."
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
-              />
-              <p className="text-[11px] text-gray-400 mt-1">
-                Leave empty to automatically assign a high-definition category image.
-              </p>
-            </div>
-
-            {formData.imageUrl && (
-              <div className="relative h-32 w-full rounded-2xl overflow-hidden border border-gray-200">
-                <img
-                  src={formData.imageUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src =
-                      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80'
-                  }}
-                />
-                <span className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-md font-medium">
-                  Cover Preview
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Amenities */}
-          <div className="space-y-3 pt-3 border-t border-gray-100">
-            <label className="block text-xs font-semibold text-gray-700">
-              Amenities & Key Features
-            </label>
+          <div className="pt-4 border-t border-gray-100">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+              Amenities & Features
+            </h3>
             <div className="flex flex-wrap gap-2">
-              {availableAmenities.map((amenity) => {
+              {AMENITIES.map((amenity) => {
                 const isSelected = formData.amenities.includes(amenity)
                 return (
                   <button
                     key={amenity}
                     type="button"
                     onClick={() => toggleAmenity(amenity)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                       isSelected
-                        ? 'bg-blue-50 border-blue-500 text-blue-700 font-semibold shadow-xs'
-                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    {isSelected && <FiCheck size={12} className="text-blue-600" />}
+                    {isSelected && <FiCheck size={12} className="stroke-[3]" />}
                     {amenity}
                   </button>
                 )
@@ -361,43 +465,88 @@ const BusinessListingForm = ({ isOpen, onClose, onSave, initialData = null }) =>
             </div>
           </div>
 
-          {/* Description */}
-          <div className="space-y-2 pt-3 border-t border-gray-100">
-            <label className="block text-xs font-semibold text-gray-700">
-              About the Business *
-            </label>
-            <textarea
-              name="description"
-              rows={3}
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Tell customers what makes your spot unique, popular dishes, specialties, or services..."
-              className={`w-full rounded-xl border ${
-                errors.description ? 'border-rose-400 bg-rose-50/30' : 'border-gray-200'
-              } px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all resize-none`}
-            />
-            {errors.description && (
-              <p className="text-xs text-rose-500">{errors.description}</p>
+          {/* Photo Upload */}
+          <div className="pt-4 border-t border-gray-100">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+              Photos
+            </h3>
+            
+            {/* Image Preview Grid */}
+            {formData.images.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+                {formData.images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="relative aspect-square rounded-lg overflow-hidden group border border-gray-200"
+                  >
+                    <img
+                      src={img}
+                      alt={`Upload ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <FiX size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
-          </div>
 
-          {/* Footer buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-sm font-semibold shadow-lg shadow-blue-500/20 transition-all"
-            >
-              {initialData ? 'Update Listing' : 'Submit for Verification'}
-            </button>
+            {/* Upload Button */}
+            <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                <FiUploadCloud size={20} />
+              </div>
+              <div className="text-center">
+                <p className="text-xs font-bold text-gray-900">
+                  Click to upload photos
+                </p>
+                <p className="text-[10px] text-gray-500 mt-0.5">
+                  PNG, JPG up to 5MB each
+                </p>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </label>
           </div>
         </form>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-end gap-2 p-4 border-t border-gray-100 shrink-0 bg-gray-50">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="px-5 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Saving...
+              </>
+            ) : initialData ? (
+              'Save Changes'
+            ) : (
+              'Submit for Verification'
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )

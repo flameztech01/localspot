@@ -1,93 +1,121 @@
-import React from 'react'
-import { FiTrendingUp, FiCheckCircle, FiEye, FiUsers, FiPlus, FiArrowRight } from 'react-icons/fi'
+import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { FiArrowRight, FiStar, FiCheckCircle } from 'react-icons/fi'
 
-const BusinessHero = ({ onAddListingClick, activeTab, setActiveTab }) => {
+// --- High-Quality Images of Areas, Hotels, Lounges, and Buildings ---
+const sliderImages = [
+  'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1600', // Luxury Hotel
+  'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1600', // Upscale Lounge
+  'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&q=80&w=1600', // City Area
+  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1600', // Fine Dining
+  'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1600', // Resort
+]
+
+const BusinessHero = ({ onAddListingClick }) => {
+  const [activeSlide, setActiveSlide] = useState(0)
+
+  // Auto-play Slider Effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % sliderImages.length)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-blue-950 to-indigo-950 text-white p-6 sm:p-10 shadow-xl border border-blue-900/40">
-      {/* Background glow effects */}
-      <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/3 -mb-16 w-80 h-80 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+    <section className="relative w-full min-h-screen bg-white flex flex-col justify-end lg:justify-center overflow-hidden">
+      
+      {/* ================= BACKGROUND IMAGE SLIDER ================= */}
+      <div className="absolute inset-0 z-0">
+        {sliderImages.map((img, index) => (
+          <img
+            key={index}
+            src={img}
+            alt={`Background slide ${index + 1}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+              index === activeSlide ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        ))}
+        
+        {/* Gradient overlay: darker at the bottom for mobile text readability, fades out to the right on desktop */}
+        <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent lg:bg-gradient-to-r lg:from-white lg:via-white/80 lg:to-transparent" />
+      </div>
 
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        <div className="lg:col-span-7 space-y-5">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold tracking-wide uppercase">
-            <FiTrendingUp className="text-blue-400" />
-            LocalSpot Business Hub
+      {/* ================= TOP RIGHT CONTROLS (Functional 3 Dots) ================= */}
+      <div className="absolute top-8 right-8 lg:right-12 z-30 flex items-center gap-2 bg-white/30 backdrop-blur-md px-3 py-2 rounded-full border border-white/40 shadow-sm">
+        {sliderImages.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setActiveSlide(index)}
+            aria-label={`Go to slide ${index + 1}`}
+            className={`transition-all duration-300 rounded-full ${
+              index === activeSlide
+                ? 'w-6 h-2 bg-gray-900'
+                : 'w-2 h-2 bg-gray-400 hover:bg-gray-600'
+            }`}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 w-full pb-16 lg:pb-0">
+        {/* Changed to items-end on mobile to push content to the bottom */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-end lg:items-center">
+          
+          {/* ================= LEFT SIDE: TEXT & CTAs ================= */}
+          <div className="space-y-6 text-left w-full">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tighter text-gray-900 leading-[1.05]">
+              Step Into <br />
+              <span className="text-gray-400">Greatness.</span>
+            </h1>
+            
+            <p className="text-sm sm:text-base text-gray-600 max-w-md lg:mx-0 leading-relaxed font-medium">
+              Discover a new way to manage your business presence. Connect with locals, showcase your services, and grow your reach effortlessly.
+            </p>
+
+            {/* Updated buttons to rounded-lg for small curved edges */}
+            <div className="flex flex-col sm:flex-row items-center justify-start gap-4 w-full sm:w-auto pt-2">
+              <button
+                onClick={onAddListingClick}
+                className="w-full sm:w-auto px-8 py-3.5 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-black transition-all shadow-lg shadow-gray-900/20"
+              >
+                List Your Business
+              </button>
+              <Link
+                to="/business/signin"
+                className="w-full sm:w-auto px-8 py-3.5 bg-white/50 backdrop-blur-sm border border-gray-300 text-gray-900 text-sm font-semibold rounded-lg hover:bg-white transition-all flex items-center justify-center gap-2"
+              >
+                View Dashboard
+                <FiArrowRight size={16} />
+              </Link>
+            </div>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-white">
-            Grow Your Local Footfall & Customer Reach
-          </h1>
-
-          <p className="text-gray-300 text-base sm:text-lg max-w-xl leading-relaxed">
-            Put your venue, cafe, hotel, or local service in front of thousands of neighborhood explorers and ready-to-spend customers.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <button
-              onClick={onAddListingClick}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-blue-500 hover:bg-blue-600 active:scale-[0.98] text-white font-semibold text-sm transition-all shadow-lg shadow-blue-500/30"
-            >
-              <FiPlus size={18} />
-              Add Your Business
-            </button>
-
-            <button
-              onClick={() => setActiveTab('listings')}
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-medium text-sm transition-all"
-            >
-              Manage Listings
-              <FiArrowRight size={16} />
-            </button>
-          </div>
-
-          {/* Value props bullets */}
-          <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-gray-300">
-            <div className="flex items-center gap-2">
-              <FiCheckCircle className="text-blue-400 shrink-0" />
-              <span>Verified Spot Badge</span>
+          {/* ================= RIGHT SIDE: FLOATING CARDS (Hidden on Mobile) ================= */}
+          <div className="hidden lg:flex relative h-[600px] w-full items-center justify-center">
+            
+            {/* Floating Card */}
+            <div className="absolute bottom-24 right-8 bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/40 z-20 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                <FiCheckCircle size={20} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Verified Partner</p>
+                <p className="text-xs font-bold text-gray-900">Skyline Terrace & Lounge</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <FiCheckCircle className="text-blue-400 shrink-0" />
-              <span>Direct Customer Calls</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FiCheckCircle className="text-blue-400 shrink-0" />
-              <span>Promote Deals & Offers</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Quick highlight cards */}
-        <div className="lg:col-span-5 grid grid-cols-2 gap-4">
-          <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-5 hover:bg-white/15 transition-all">
-            <div className="h-10 w-10 rounded-xl bg-blue-500/30 flex items-center justify-center text-blue-300 mb-3">
-              <FiEye size={20} />
+            {/* Tiny Rating Badge */}
+            <div className="absolute top-20 left-4 bg-white/80 backdrop-blur-md px-3 py-2 rounded-xl shadow-lg border border-white/40 z-20 flex items-center gap-1.5">
+              <FiStar size={12} className="text-amber-400 fill-amber-400" />
+              <span className="text-[11px] font-bold text-gray-900">4.9 / 5.0</span>
+              <span className="text-[10px] text-gray-500">(2k+ reviews)</span>
             </div>
-            <div className="text-2xl font-bold text-white">14.8k+</div>
-            <div className="text-xs text-gray-300 mt-1">Monthly Discovery Views</div>
-          </div>
 
-          <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-5 hover:bg-white/15 transition-all">
-            <div className="h-10 w-10 rounded-xl bg-emerald-500/30 flex items-center justify-center text-emerald-300 mb-3">
-              <FiUsers size={20} />
-            </div>
-            <div className="text-2xl font-bold text-white">82%</div>
-            <div className="text-xs text-gray-300 mt-1">Conversion to Visit</div>
-          </div>
-
-          <div className="col-span-2 bg-gradient-to-r from-blue-600/40 to-indigo-600/30 border border-blue-400/20 rounded-2xl p-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-blue-200 uppercase tracking-wider">Fast Verification</p>
-              <p className="text-sm font-bold text-white mt-0.5">Average approval in under 24 hours</p>
-            </div>
-            <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-full border border-emerald-500/30">
-              Active
-            </span>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 

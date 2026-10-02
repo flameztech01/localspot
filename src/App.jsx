@@ -9,6 +9,13 @@ import PlacesDetails from './pages/PlacesDetails'
 import SavedPlaces from './pages/SavedPlaces'
 import Profile from './pages/Profile'
 import BusinessPage from './pages/business/BusinessPage'
+
+//business
+import BusinessSignup from './pages/business/BusinessSignup'
+import BusinessLogin from './pages/business/BusinessLogin'
+import Reset from './pages/business/Reset'
+
+//admin screens
 import AdminPage from './pages/admin/AdminPage'
 
 function App() {
@@ -28,8 +35,15 @@ function App() {
         <Route path="/profile" element={<Profile />} />
 
         {/* Business & Admin screens */}
-        <Route path="/business" element={<BusinessPage />} />
+        <Route path="/business/signup" element={<BusinessSignup />} />
+        <Route path="/business/signin" element={<BusinessLogin />} />
+        <Route path="/business/reset" element={<Reset />} />
+        <Route path="/business/reset/:token" element={<Reset />} />
+         <Route path="/business" element={<BusinessPage />} />
         <Route path="/list-business" element={<BusinessPage />} />
+
+
+        {/* admin */}
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/dashboard" element={<AdminPage />} />
       </Routes>

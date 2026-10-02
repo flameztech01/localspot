@@ -1,105 +1,105 @@
 import React from 'react'
-import { FiEye, FiNavigation, FiPhone, FiBookmark, FiStar, FiTrendingUp } from 'react-icons/fi'
+import {
+  FiEye,
+  FiSearch,
+  FiMessageSquare,
+  FiCalendar,
+  FiTrendingUp,
+  FiTrendingDown,
+  FiArrowUpRight,
+} from 'react-icons/fi'
 
-const BusinessStats = ({ stats }) => {
-  const defaultStats = [
-    {
-      id: 'views',
-      label: 'Listing Impressions',
-      value: '4,820',
-      change: '+18.4%',
-      isPositive: true,
-      icon: FiEye,
-      color: 'blue',
-      sub: 'vs last 30 days',
-    },
-    {
-      id: 'directions',
-      label: 'Directions Requested',
-      value: '642',
-      change: '+24.1%',
-      isPositive: true,
-      icon: FiNavigation,
-      color: 'emerald',
-      sub: 'Mapped to your venue',
-    },
-    {
-      id: 'calls',
-      label: 'Phone Inquiries',
-      value: '198',
-      change: '+8.7%',
-      isPositive: true,
-      icon: FiPhone,
-      color: 'indigo',
-      sub: 'Direct call button clicks',
-    },
-    {
-      id: 'saves',
-      label: 'Saved to Wishlists',
-      value: '315',
-      change: '+32.0%',
-      isPositive: true,
-      icon: FiBookmark,
-      color: 'amber',
-      sub: 'High intent local visitors',
-    },
-    {
-      id: 'rating',
-      label: 'Average Customer Rating',
-      value: '4.85',
-      change: 'from 89 reviews',
-      isPositive: true,
-      icon: FiStar,
-      color: 'purple',
-      sub: '98% positive sentiment',
-    },
-  ]
+const statsData = [
+  { id: 1, label: 'Profile Views', value: '12,480', change: '+14.2%', trend: 'up', icon: FiEye },
+  { id: 2, label: 'Search Appearances', value: '8,215', change: '+8.5%', trend: 'up', icon: FiSearch },
+  { id: 3, label: 'New Reviews', value: '48', change: '+2.1%', trend: 'up', icon: FiMessageSquare },
+  { id: 4, label: 'Bookings / Leads', value: '324', change: '-1.4%', trend: 'down', icon: FiCalendar },
+]
 
-  const items = stats || defaultStats
-
-  const colorStyles = {
-    blue: 'bg-blue-50 text-blue-600 border-blue-100',
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-    amber: 'bg-amber-50 text-amber-600 border-amber-100',
-    purple: 'bg-purple-50 text-purple-600 border-purple-100',
-  }
-
+const BusinessStats = () => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-      {items.map((item) => {
-        const Icon = item.icon || FiTrendingUp
-        const style = colorStyles[item.color] || colorStyles.blue
+    <section className="w-full bg-[#FAFAFA] py-12">
+      {/* Section Header (Padded) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-semibold tracking-tight text-black">
+            Performance Snapshot
+          </h2>
+          <p className="text-sm text-neutral-500 mt-2 font-light">
+            Live metrics across all your listed venues over the last 30 days.
+          </p>
+        </div>
+        <button className="inline-flex items-center gap-2 px-6 py-3 text-xs font-semibold tracking-wider text-black bg-transparent border border-neutral-300 rounded-lg hover:bg-black hover:text-white transition-all duration-300 self-start sm:self-auto shrink-0 uppercase">
+          Download Report
+          <FiArrowUpRight size={14} />
+        </button>
+      </div>
 
-        return (
-          <div
-            key={item.id || item.label}
-            className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                {item.label}
-              </span>
-              <div className={`p-2.5 rounded-xl border ${style}`}>
-                <Icon size={18} />
-              </div>
-            </div>
-
-            <div>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-                {item.value}
-              </div>
-              <div className="flex items-center gap-1.5 mt-2">
-                <span className={`text-xs font-semibold ${item.isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
-                  {item.change}
-                </span>
-                <span className="text-xs text-gray-400">{item.sub}</span>
-              </div>
-            </div>
+      {/* ========== MOBILE: Single Summarized Card ========== */}
+      <div className="block md:hidden w-full">
+        <div className="bg-white border-y border-neutral-200 p-6">
+          <div className="grid grid-cols-2 gap-6">
+            {statsData.map((stat) => {
+              const Icon = stat.icon
+              const TrendIcon = stat.trend === 'up' ? FiTrendingUp : FiTrendingDown
+              return (
+                <div key={stat.id} className="flex flex-col">
+                  <div className="flex items-center justify-between mb-2">
+                    <Icon size={16} className="text-neutral-400" />
+                    <div className={`flex items-center gap-0.5 text-[10px] font-medium ${
+                      stat.trend === 'up' ? 'text-emerald-600' : 'text-red-600'
+                    }`}>
+                      <TrendIcon size={10} />
+                      {stat.change}
+                    </div>
+                  </div>
+                  <p className="text-2xl font-semibold tracking-tighter text-black">
+                    {stat.value}
+                  </p>
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-neutral-400 mt-0.5">
+                    {stat.label}
+                  </p>
+                </div>
+              )
+            })}
           </div>
-        )
-      })}
-    </div>
+        </div>
+      </div>
+
+      {/* ========== DESKTOP: 4‑Column Grid (unchanged) ========== */}
+      <div className="hidden md:grid w-full grid-cols-2 lg:grid-cols-4 border-t border-l border-neutral-200">
+        {statsData.map((stat) => {
+          const Icon = stat.icon
+          const TrendIcon = stat.trend === 'up' ? FiTrendingUp : FiTrendingDown
+
+          return (
+            <div
+              key={stat.id}
+              className="bg-white p-8 border-b border-r border-neutral-200 hover:bg-neutral-50 transition-colors duration-300 flex flex-col justify-between group"
+            >
+              <div className="flex items-center justify-between mb-16">
+                <Icon size={20} className="text-neutral-400 group-hover:text-black transition-colors duration-300" />
+                <div className={`flex items-center gap-1 text-xs font-medium ${
+                  stat.trend === 'up' ? 'text-emerald-600' : 'text-red-600'
+                }`}>
+                  <TrendIcon size={14} />
+                  {stat.change}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-4xl font-semibold tracking-tighter text-black mb-2">
+                  {stat.value}
+                </p>
+                <p className="text-[11px] font-medium uppercase tracking-widest text-neutral-400">
+                  {stat.label}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
