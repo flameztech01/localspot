@@ -31,7 +31,10 @@ function App() {
         <Route path="/business" element={<BusinessPage />} />
         <Route path="/list-business" element={<BusinessPage />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/admin/dashboard" element={<AdminPage />} />
+        <Route path="/admin/dashboard" element={<AdminPage initialTab="dashboard" />} />
+        <Route path="/admin/businesses" element={<AdminPage initialTab="businesses" />} />
+        <Route path="/admin/approval" element={<AdminPage initialTab="approval" />} />
+        <Route path="/admin/approval/:id" element={<AdminPage initialTab="approval" />} />
       </Routes>
     </div>
   )

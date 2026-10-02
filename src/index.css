@@ -1,6 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+@theme {
+  --color-blue-600: #5397F6;
+  --color-blue-700: #4288ec;
+}
 
 * {
   font-family: 'Raleway', sans-serif;
