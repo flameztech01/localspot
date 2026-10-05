@@ -13,6 +13,7 @@ import BusinessPage from './pages/business/BusinessPage'
 //business
 import BusinessSignup from './pages/business/BusinessSignup'
 import BusinessLogin from './pages/business/BusinessLogin'
+import BusinessProfile from './pages/business/BusinessProfile'
 import Reset from './pages/business/Reset'
 
 //admin screens
@@ -41,6 +42,7 @@ function App() {
         <Route path="/business/reset/:token" element={<Reset />} />
          <Route path="/business" element={<BusinessPage />} />
         <Route path="/list-business" element={<BusinessPage />} />
+        <Route path="/business/profile" element={<BusinessProfile />}/>
 
 
         {/* admin */}
