@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { FiMapPin, FiEye, FiEyeOff } from 'react-icons/fi'
 
-// ✅ Correct relative paths — 2 levels up from pages/business/
 import { useLoginBusinessAccountMutation } from '../../features/businessApiSlice'
 import { setCredentials } from '../../features/auth/authSlice'
 import { useToast } from '../../hooks/useToast'
@@ -56,31 +55,54 @@ const BusinessLogin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+    const email = formData.email.trim().toLowerCase()
+
     try {
       const payload = {
-        email: formData.email.trim().toLowerCase(),
+        email,
         password: formData.password,
       }
 
       const result = await loginBusiness(payload).unwrap()
 
-      // result = { message, account, token }
+      // Backend response shape:
+      // { success, message, data: { _id, businessName, email, ... }, token }
+      const account = result?.data || result?.account || null
+      const token = result?.token || null
+
+      if (!account || !token) {
+        showToast('Login response was malformed. Please try again.', 'error')
+        return
+      }
+
       dispatch(
         setCredentials({
-          ...result.account,
-          token: result.token,
+          ...account,
+          token,
         })
       )
 
-      showToast('Welcome back!', 'success')
+      showToast(result?.message || 'Welcome back!', 'success')
 
       // Give the toast a moment to be seen before redirecting
       setTimeout(() => navigate('/business'), 800)
     } catch (err) {
+      const status = err?.status
       const msg =
         err?.data?.message ||
         err?.data?.errors?.[0]?.message ||
         'Invalid email or password. Please try again.'
+
+      // Backend sends 403 for unverified accounts + fresh OTP.
+      // Route the user to the signup/verify step with their email prefilled.
+      if (status === 403 && /not verified/i.test(msg)) {
+        showToast(msg, 'error')
+        navigate('/business/signup', {
+          state: { verifyEmail: email, fromLogin: true },
+        })
+        return
+      }
+
       showToast(msg, 'error')
     }
   }
@@ -228,7 +250,7 @@ const BusinessLogin = () => {
                       Password <span className="text-red-500">*</span>
                     </label>
                     <Link
-                      to="/business/reset"
+                      to="/business/forgot-password"
                       className="text-[10px] text-blue-600 hover:underline font-medium"
                     >
                       Forgot password?

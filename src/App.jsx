@@ -14,6 +14,10 @@ import BusinessPage from './pages/business/BusinessPage'
 import BusinessSignup from './pages/business/BusinessSignup'
 import BusinessLogin from './pages/business/BusinessLogin'
 import BusinessProfile from './pages/business/BusinessProfile'
+import BusinessPromotion from './pages/business/BusinessPromotion'
+import BusinessAds from './pages/business/BusinessAds'
+import BusinessReviews from './pages/business/BusinessReviews'
+import BusinessSettings from './pages/business/BusinessSettings'
 import Reset from './pages/business/Reset'
 
 //admin screens
@@ -43,6 +47,10 @@ function App() {
          <Route path="/business" element={<BusinessPage />} />
         <Route path="/list-business" element={<BusinessPage />} />
         <Route path="/business/profile" element={<BusinessProfile />}/>
+        <Route path="/business/promotions" element={<BusinessPromotion />} />
+        <Route path="/business/ads" element={<BusinessAds />} />
+        <Route path="/business/reviews" element={<BusinessReviews />} />
+        <Route path="/business/settings" element={<BusinessSettings />} />
 
 
         {/* admin */}

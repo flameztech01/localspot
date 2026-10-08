@@ -7,7 +7,7 @@ import {
   FiHeart,
   FiMapPin,
   FiCheck,
-  FiWifiOff,
+  FiAlertCircle,
   FiRefreshCw,
 } from 'react-icons/fi'
 import { FaHeart, FaStar } from 'react-icons/fa'
@@ -17,144 +17,116 @@ import { useGetFeaturedBusinessesQuery } from '../features/discoveryApiSlice'
 
 const GAP = 16 // px, matches gap-4
 
-// ---------------------------------------------------------------------------
-// Demo data — only shown when the user explicitly clicks "Show Demo Data"
-// ---------------------------------------------------------------------------
-const mockPlaces = [
-  {
-    id: 1,
-    name: 'The Copper Chimney Bistro',
-    meta: 'Restaurant • Continental & Fusion',
-    location: 'Issac John St, GRA PH (1.2 km)',
-    rating: 4.9,
-    reviews: 256,
-    open: true,
-    hours: '07:00 AM - 11:00 PM',
-    img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800',
-    verified: true,
-  },
-  {
-    id: 2,
-    name: 'Grand Crestview Hotel & Suites',
-    meta: 'Hotel & Lodging • Luxury',
-    location: 'Mobolaji bank anthony (2.5 km)',
-    rating: 4.6,
-    reviews: 188,
-    open: true,
-    hours: '24/7',
-    img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800',
-    verified: true,
-  },
-  {
-    id: 3,
-    name: 'Skyline Lounge & Terrace',
-    meta: 'Bar & Lounge • Nightlife • $$$',
-    location: 'Allen Avenue, Rumuosi (1.8 km)',
-    rating: 4.7,
-    reviews: 315,
-    open: false,
-    hours: 'OPENS BY 07:00 AM',
-    img: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=800',
-    verified: true,
-  },
-  {
-    id: 4,
-    name: 'Serenity Botanical Spa',
-    meta: 'Beauty & Wellness • Day Spa • $$',
-    location: 'Aromire Avenue, Off Elekshia (3.1 km)',
-    rating: 4.8,
-    reviews: 388,
-    open: true,
-    hours: 'CLOSES BY 11:00 PM',
-    img: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800',
-    verified: true,
-  },
-  {
-    id: 5,
-    name: 'Harbour View Grill',
-    meta: 'Restaurant • Seafood & Grill',
-    location: 'Trans-Amadi Road (2.2 km)',
-    rating: 4.5,
-    reviews: 204,
-    open: true,
-    hours: '10:00 AM - 10:00 PM',
-    img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800',
-    verified: true,
-  },
-  {
-    id: 6,
-    name: 'Palmwood Suites',
-    meta: 'Hotel & Lodging • Boutique',
-    location: 'Peter Odili Road (3.4 km)',
-    rating: 4.4,
-    reviews: 142,
-    open: true,
-    hours: '24/7',
-    img: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=800',
-    verified: true,
-  },
-  {
-    id: 7,
-    name: 'Ember & Oak Kitchen',
-    meta: 'Restaurant • Local Delicacies',
-    location: 'Ada George Road (4.0 km)',
-    rating: 4.7,
-    reviews: 267,
-    open: false,
-    hours: 'OPENS BY 08:00 AM',
-    img: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?auto=format&fit=crop&q=80&w=800',
-    verified: true,
-  },
-  {
-    id: 8,
-    name: 'Glow Studio Salon',
-    meta: 'Beauty & Wellness • Salon • $$',
-    location: 'Old GRA, Port Harcourt (1.9 km)',
-    rating: 4.6,
-    reviews: 173,
-    open: true,
-    hours: 'CLOSES BY 08:00 PM',
-    img: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=800',
-    verified: true,
-  },
-]
-
-// ---------------------------------------------------------------------------
-// Normalizer — makes API payloads and mock data interchangeable
-// ---------------------------------------------------------------------------
 const FALLBACK_IMG =
   'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800'
 
+// ---------------------------------------------------------------------------
+// Opening hours → "open now" + display string
+// ---------------------------------------------------------------------------
+const toMinutes = (s) => {
+  if (!s || typeof s !== 'string') return null
+  const [h, m] = s.split(':').map(Number)
+  if (Number.isNaN(h) || Number.isNaN(m)) return null
+  return h * 60 + m
+}
+
+const getOpenState = (openingHours) => {
+  if (!Array.isArray(openingHours) || openingHours.length === 0) {
+    return { open: false, hours: 'See details' }
+  }
+
+  const now = new Date()
+  const day = now.getDay() // 0 = Sunday
+  const minutes = now.getHours() * 60 + now.getMinutes()
+  const today = openingHours.find((h) => h.day === day)
+
+  if (!today || today.closed) {
+    return { open: false, hours: 'Closed today' }
+  }
+
+  const open = toMinutes(today.open)
+  const close = toMinutes(today.close)
+  if (open === null || close === null) {
+    return { open: false, hours: 'See details' }
+  }
+
+  // Overnight support (e.g. 22:00 → 02:00)
+  let isOpen
+  if (close < open) {
+    isOpen = minutes >= open || minutes <= close
+  } else {
+    isOpen = minutes >= open && minutes <= close
+  }
+
+  return {
+    open: isOpen,
+    hours: `${today.open} - ${today.close}`,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Normalizer — maps backend business doc → card shape
+// ---------------------------------------------------------------------------
 const normalizePlace = (p) => {
   if (!p) return null
 
-  // Already in our mock shape
-  if (p.meta && typeof p.location === 'string') return p
+  const id = p._id || p.id
+  if (!id) return null
 
-  const categoryLine = [p.category, p.subCategory, p.priceLevel]
-    .filter(Boolean)
-    .join(' • ')
+  const name = p.businessName || p.name || 'Unnamed business'
 
-  const locationLine = (() => {
-    const addr = p.location?.address || p.location?.city || 'Port Harcourt'
-    return p.distance ? `${addr} (${p.distance})` : addr
-  })()
+  // meta line — categorySlug + priceRange symbol
+  const priceSymbol =
+    p.priceRange === 1
+      ? '$'
+      : p.priceRange === 2
+      ? '$$'
+      : p.priceRange === 3
+      ? '$$$'
+      : p.priceRange === 4
+      ? '$$$$'
+      : null
 
-  const hoursText = p.openingHoursText || p.hours || 'See details'
-  const isOpen =
-    p.open !== undefined ? p.open : /open|24\/7/i.test(hoursText)
+  const metaParts = []
+  if (p.categorySlug) {
+    metaParts.push(
+      p.categorySlug
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
+    )
+  }
+  if (priceSymbol) metaParts.push(priceSymbol)
+  const meta = metaParts.join(' • ') || 'Local spot'
+
+  // location line
+  const loc = p.location || {}
+  const locationLine =
+    [loc.city, loc.state].filter(Boolean).join(', ') ||
+    loc.address ||
+    p.address ||
+    'Location not set'
+
+  // opening state
+  const { open, hours } = getOpenState(p.openingHours)
+
+  // image — coverImage > images[0] > fallback
+  const img =
+    p.coverImage ||
+    (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null) ||
+    FALLBACK_IMG
 
   return {
-    id: p.id,
-    name: p.name,
-    meta: categoryLine || 'Local spot',
+    id,
+    name,
+    meta,
     location: locationLine,
-    rating: p.rating?.average ?? p.rating ?? 4.5,
-    reviews: p.rating?.totalReviews ?? p.reviews ?? 0,
-    open: isOpen,
-    hours: hoursText,
-    img: p.img || p.images?.[0] || FALLBACK_IMG,
-    verified: p.verified !== false,
+    rating: Number(p.rating || 0),
+    reviews: Number(p.numReviews || 0),
+    open,
+    hours,
+    img,
+    verified: true, // featured list is admin-approved only
   }
 }
 
@@ -271,9 +243,6 @@ const Featured = () => {
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(true)
 
-  // Whether the user has opted into demo data
-  const [showDemo, setShowDemo] = useState(false)
-
   // ---- Fetch real data from backend ----
   const {
     data: apiData,
@@ -283,25 +252,21 @@ const Featured = () => {
     refetch,
   } = useGetFeaturedBusinessesQuery({ page: 1, limit: 8 })
 
-  // Extract businesses from various response shapes
+  // Extract businesses from the response shape:
+  // { success, data: { businesses: [...], pagination: {...} } }
   const apiPlaces = (() => {
     if (!apiData) return []
     if (Array.isArray(apiData)) return apiData
+    if (Array.isArray(apiData.data?.businesses)) return apiData.data.businesses
     if (Array.isArray(apiData.businesses)) return apiData.businesses
     if (Array.isArray(apiData.data)) return apiData.data
     if (Array.isArray(apiData.items)) return apiData.items
     return []
   })()
 
-  // ---- Decide what to display ----
-  const displayPlaces = showDemo
-    ? mockPlaces
-    : apiPlaces.map(normalizePlace).filter(Boolean)
+  const displayPlaces = apiPlaces.map(normalizePlace).filter(Boolean)
 
-  // Show empty state when the API returns nothing OR errored, and the user
-  // hasn't opted into demo data.
-  const showEmptyState =
-    !showDemo && !isLoading && (isError || apiPlaces.length === 0)
+  const showEmptyState = !isLoading && (isError || displayPlaces.length === 0)
 
   // ---- Slider logic ----
   const toggleSave = (id) =>
@@ -347,24 +312,19 @@ const Featured = () => {
   const arrowClass =
     'flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10'
 
-  const showSkeleton = isLoading && !showDemo
+  const showSkeleton = isLoading
 
+  // If we're empty and not loading, still show the section header so the
+  // user knows featured spots exist as a concept — but keep it small.
   return (
     <section className="w-full bg-white py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
         {/* ---------- Header ---------- */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-                Featured
-              </h2>
-              {showDemo && (
-                <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 border border-amber-100">
-                  Demo Data
-                </span>
-              )}
-            </div>
+            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              Featured
+            </h2>
             <p className="mt-1 text-xs text-gray-500 sm:text-sm">
               Handpicked &amp; verified local spots in Port Harcourt &amp;
               surroundings
@@ -397,7 +357,7 @@ const Featured = () => {
         {showEmptyState && (
           <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 px-6 py-12 text-center">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400">
-              <FiWifiOff size={20} />
+              <FiAlertCircle size={20} />
             </div>
             <h3 className="text-sm font-semibold text-gray-900">
               {isError
@@ -410,27 +370,18 @@ const Featured = () => {
                 : 'Featured spots will appear here once they are published.'}
             </p>
 
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => refetch()}
-                disabled={isFetching}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-              >
-                <FiRefreshCw
-                  size={13}
-                  className={isFetching ? 'animate-spin' : ''}
-                />
-                Try again
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDemo(true)}
-                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-black"
-              >
-                Show Demo Data
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="mt-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+            >
+              <FiRefreshCw
+                size={13}
+                className={isFetching ? 'animate-spin' : ''}
+              />
+              Try again
+            </button>
           </div>
         )}
 
@@ -487,19 +438,6 @@ const Featured = () => {
                     }`}
                   />
                 ))}
-              </div>
-            )}
-
-            {/* Exit Demo Mode */}
-            {showDemo && (
-              <div className="mt-6 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setShowDemo(false)}
-                  className="text-[11px] font-medium text-gray-500 hover:text-gray-900 underline underline-offset-2"
-                >
-                  Hide demo data
-                </button>
               </div>
             )}
           </>
