@@ -7,15 +7,15 @@ import {
   FiMapPin,
   FiWifiOff,
   FiRefreshCw,
+  FiArrowRight,
 } from "react-icons/fi";
 import { FaHeart, FaStar } from "react-icons/fa";
 
 import { useListPublicBusinessesQuery } from "../features/businessApiSlice";
 
 const PAGE_SIZE = 8;
-const FETCH_LIMIT = 40; // pull a bigger batch, filter client-side per tab
+const FETCH_LIMIT = 40;
 
-// Filter tabs — `value` maps to the businessKind enum on the model
 const FILTERS = [
   { label: "All", value: "" },
   { label: "Hotels", value: "hotels" },
@@ -35,10 +35,8 @@ const OBJECT_POSITIONS = [
   "object-bottom",
 ];
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 // ──────────────────────────────────────────────────────────
-// Opening hours → { open: bool, hours: string }
+// Opening hours
 // ──────────────────────────────────────────────────────────
 const toMinutes = (s) => {
   if (!s || typeof s !== "string") return null;
@@ -74,7 +72,7 @@ const getOpenState = (openingHours) => {
 };
 
 // ──────────────────────────────────────────────────────────
-// Business kind → display tag
+// Kind tag
 // ──────────────────────────────────────────────────────────
 const KIND_TAG = {
   hotels: "HOTEL",
@@ -92,7 +90,7 @@ const formatTag = (biz) => {
 };
 
 // ──────────────────────────────────────────────────────────
-// Meta line — "Restaurants • $$"
+// Meta line — "Restaurants • ₦₦"
 // ──────────────────────────────────────────────────────────
 const formatMeta = (biz) => {
   const parts = [];
@@ -105,7 +103,8 @@ const formatMeta = (biz) => {
     );
   }
   if (biz.priceRange) {
-    parts.push("$".repeat(biz.priceRange));
+    // ₦ symbols repeated — Nigerian naira instead of USD
+    parts.push("₦".repeat(biz.priceRange));
   }
   return parts.join(" • ");
 };
@@ -161,7 +160,12 @@ const SkeletonSpot = () => (
 // Card
 // ──────────────────────────────────────────────────────────
 const SpotCard = ({ spot, saved, onToggleSave }) => (
-  <article className="relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white sm:aspect-auto">
+  <Link
+    to={`/places/${spot.id}`}
+    className="group relative flex aspect-[3/4] w-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-200 hover:border-gray-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/40 sm:aspect-auto"
+    aria-label={`View ${spot.name}`}
+  >
+    {/* Image */}
     <div className="absolute inset-0 overflow-hidden sm:relative sm:inset-auto sm:aspect-[4/3] sm:w-full">
       <img
         src={spot.img}
@@ -171,21 +175,28 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
         onError={(e) => {
           e.currentTarget.src = FALLBACK_IMG;
         }}
-        className={`h-full w-full object-cover ${spot.pos || "object-center"}`}
+        className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${spot.pos || "object-center"}`}
       />
 
+      {/* Mobile gradient */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/5 sm:hidden" />
 
+      {/* Tag */}
       <span className="absolute left-2 top-2 rounded bg-white px-1.5 py-0.5 text-[8px] font-bold tracking-wide text-gray-900 sm:text-[9px]">
         {spot.tag}
       </span>
 
+      {/* Save button — stopPropagation so it doesn't navigate */}
       <button
         type="button"
-        onClick={() => onToggleSave(spot.id)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggleSave(spot.id);
+        }}
         aria-label={saved ? "Remove from saved places" : "Save place"}
         aria-pressed={saved}
-        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm transition-colors hover:bg-white"
+        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm transition-all hover:scale-110 hover:bg-white"
       >
         {saved ? (
           <FaHeart size={13} className="text-red-500" />
@@ -193,15 +204,20 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
           <FiHeart size={13} />
         )}
       </button>
+
+      {/* Desktop hover CTA — fades in on top of image */}
+      <div className="pointer-events-none absolute inset-0 hidden items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/30 sm:flex">
+        <span className="translate-y-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-gray-900 opacity-0 shadow-lg transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+          View details
+        </span>
+      </div>
     </div>
 
+    {/* Body */}
     <div className="relative z-10 mt-auto flex flex-col p-2.5 sm:mt-0 sm:flex-1 sm:p-4">
-      <Link
-        to={`/places/${spot.id}`}
-        className="line-clamp-2 text-xs font-bold leading-tight text-white hover:text-[#60A5FA] sm:min-h-0 sm:truncate sm:text-gray-900 sm:hover:text-[#3B82F6]"
-      >
+      <h3 className="line-clamp-2 text-xs font-bold leading-tight text-white sm:min-h-0 sm:truncate sm:text-gray-900 sm:transition-colors sm:group-hover:text-[#3B82F6] sm:text-sm">
         {spot.name}
-      </Link>
+      </h3>
 
       <p className="mt-2 hidden text-xs leading-snug text-gray-600 sm:block sm:truncate">
         {spot.meta || "Local spot"}
@@ -218,11 +234,14 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
           size={10}
         />
         <span className="font-semibold text-white sm:text-gray-900">
-          {spot.rating}
+          {spot.rating.toFixed(1)}
         </span>
-        <span className="text-white/70 sm:text-gray-500">({spot.reviews})</span>
+        <span className="text-white/70 sm:text-gray-500">
+          ({spot.reviews})
+        </span>
       </p>
 
+      {/* Desktop-only hours row */}
       <p className="mt-1.5 hidden items-center gap-1.5 text-[10px] font-semibold uppercase leading-snug text-gray-700 sm:flex">
         <FiClock className="shrink-0" size={11} />
         <span>
@@ -233,20 +252,27 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
           {spot.hours || (spot.open ? "Open" : "Closed")}
         </span>
       </p>
+
+      {/* Desktop-only "View details" arrow row */}
+      <div className="mt-3 hidden items-center justify-between border-t border-gray-100 pt-2.5 text-[11px] font-semibold text-gray-500 sm:flex sm:group-hover:text-[#3B82F6] sm:transition-colors">
+        <span>View details</span>
+        <FiArrowRight
+          size={13}
+          className="transition-transform duration-200 group-hover:translate-x-0.5"
+        />
+      </div>
     </div>
-  </article>
+  </Link>
 );
 
 // ──────────────────────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────────────────────
 const PopularSpots = () => {
-  const [active, setActive] = useState(""); // "" = All
+  const [active, setActive] = useState("");
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [saved, setSaved] = useState([]);
 
-  // Pull a big batch of businesses; filter per-tab client-side.
-  // When kind="" the backend returns everything; when set, it filters.
   const {
     data: apiData,
     isLoading,
