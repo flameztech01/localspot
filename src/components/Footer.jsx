@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FaInstagram, FaLinkedin, FaFacebook } from "react-icons/fa6";
+import { FaInstagram, FaLinkedin, FaFacebook, FaTiktok } from "react-icons/fa6";
 import { FiMail } from "react-icons/fi";
 
 const footerLinks = {
@@ -75,6 +75,11 @@ const Footer = () => {
                 label="LinkedIn"
                 icon={FaLinkedin}
               />
+               <SocialIcon
+                href="https://www.linkedin.com/pulse/localspot-localspot-nigeria-8lbwe"
+                label="LinkedIn"
+                icon={FaTiktok}
+              />
               <a
                 href="mailto:Local.spot.co@gmail.com"
                 target="_blank"
@@ -85,6 +90,7 @@ const Footer = () => {
               >
                 <FiMail size={18} />
               </a>
+              <a />
             </div>
           </div>
 
