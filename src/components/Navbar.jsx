@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -11,6 +12,7 @@ import {
   FiMessageSquare,
   FiLogOut,
   FiChevronDown,
+  FiHeart,
 } from "react-icons/fi";
 import { logout } from "../features/auth/authSlice";
 
@@ -126,8 +128,9 @@ const Navbar = () => {
 
           {/* ============= DESKTOP LINKS ============= */}
           <ul className="hidden items-center gap-2 md:flex lg:gap-4">
-            {userInfo
-              ? businessLinks.map(({ label, targetId, icon: Icon }) => (
+            {userInfo ? (
+              <>
+                {businessLinks.map(({ label, targetId, icon: Icon }) => (
                   <li key={label}>
                     <button
                       onClick={() => handleScrollTo(targetId)}
@@ -137,14 +140,33 @@ const Navbar = () => {
                       {label}
                     </button>
                   </li>
-                ))
-              : publicLinks.map(({ label, to }) => (
-                  <li key={label}>
-                    <NavLink to={to} end={to === "/"} className={desktopLink}>
-                      {label}
-                    </NavLink>
-                  </li>
                 ))}
+                {/* Saved Places — route link for signed-in users */}
+                <li>
+                  <NavLink
+                    to="/saved"
+                    className={({ isActive }) =>
+                      `inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${
+                        isActive
+                          ? "bg-gray-100 font-semibold text-gray-900"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium"
+                      }`
+                    }
+                  >
+                    <FiHeart size={14} />
+                    Saved Places
+                  </NavLink>
+                </li>
+              </>
+            ) : (
+              publicLinks.map(({ label, to }) => (
+                <li key={label}>
+                  <NavLink to={to} end={to === "/"} className={desktopLink}>
+                    {label}
+                  </NavLink>
+                </li>
+              ))
+            )}
           </ul>
 
           {/* ============= DESKTOP ACTIONS ============= */}
@@ -195,6 +217,13 @@ const Navbar = () => {
                       className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       <FiGrid size={15} /> Business Dashboard
+                    </Link>
+                    <Link
+                      to="/saved"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <FiHeart size={15} /> Saved Places
                     </Link>
                     <Link
                       to="/profile"
@@ -343,8 +372,9 @@ const Navbar = () => {
 
         {/* Drawer links */}
         <ul className="flex-1 space-y-1 px-4 py-4">
-          {userInfo
-            ? businessLinks.map(({ label, targetId, icon: Icon }, i) => (
+          {userInfo ? (
+            <>
+              {businessLinks.map(({ label, targetId, icon: Icon }, i) => (
                 <li
                   key={label}
                   className={`transition-all duration-300 ease-out ${
@@ -364,49 +394,81 @@ const Navbar = () => {
                     {label}
                   </button>
                 </li>
-              ))
-            : publicLinks.map(({ label, to }, i) => (
-                <li
-                  key={label}
-                  className={`transition-all duration-300 ease-out ${
-                    open
-                      ? "translate-x-0 opacity-100"
-                      : "-translate-x-4 opacity-0"
-                  }`}
-                  style={{
-                    transitionDelay: open ? `${i * 60 + 100}ms` : "0ms",
-                  }}
-                >
-                  <NavLink
-                    to={to}
-                    end={to === "/"}
-                    onClick={() => setOpen(false)}
-                    className={mobileLink}
-                  >
-                    {label}
-                  </NavLink>
-                </li>
               ))}
 
-          {/* Logout button when signed in */}
-          {userInfo && (
-            <li
-              className={`transition-all duration-300 ease-out ${
-                open ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
-              }`}
-              style={{
-                transitionDelay: open
-                  ? `${businessLinks.length * 60 + 100}ms`
-                  : "0ms",
-              }}
-            >
-              <button
-                onClick={handleLogout}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-base text-red-600 transition-colors hover:bg-red-50"
+              {/* Saved Places for signed-in users */}
+              <li
+                className={`transition-all duration-300 ease-out ${
+                  open
+                    ? "translate-x-0 opacity-100"
+                    : "-translate-x-4 opacity-0"
+                }`}
+                style={{
+                  transitionDelay: open
+                    ? `${businessLinks.length * 60 + 100}ms`
+                    : "0ms",
+                }}
               >
-                <FiLogOut size={18} /> Log out
-              </button>
-            </li>
+                <NavLink
+                  to="/saved"
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-xl px-4 py-3 text-base transition-colors ${
+                      isActive
+                        ? "bg-gray-100 font-medium text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`
+                  }
+                >
+                  <FiHeart size={18} />
+                  Saved Places
+                </NavLink>
+              </li>
+
+              {/* Logout button */}
+              <li
+                className={`transition-all duration-300 ease-out ${
+                  open
+                    ? "translate-x-0 opacity-100"
+                    : "-translate-x-4 opacity-0"
+                }`}
+                style={{
+                  transitionDelay: open
+                    ? `${(businessLinks.length + 1) * 60 + 100}ms`
+                    : "0ms",
+                }}
+              >
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-base text-red-600 transition-colors hover:bg-red-50"
+                >
+                  <FiLogOut size={18} /> Log out
+                </button>
+              </li>
+            </>
+          ) : (
+            publicLinks.map(({ label, to }, i) => (
+              <li
+                key={label}
+                className={`transition-all duration-300 ease-out ${
+                  open
+                    ? "translate-x-0 opacity-100"
+                    : "-translate-x-4 opacity-0"
+                }`}
+                style={{
+                  transitionDelay: open ? `${i * 60 + 100}ms` : "0ms",
+                }}
+              >
+                <NavLink
+                  to={to}
+                  end={to === "/"}
+                  onClick={() => setOpen(false)}
+                  className={mobileLink}
+                >
+                  {label}
+                </NavLink>
+              </li>
+            ))
           )}
         </ul>
 

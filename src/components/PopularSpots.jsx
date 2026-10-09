@@ -1,6 +1,6 @@
 // src/components/PopularSpots.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FiClock,
   FiHeart,
@@ -103,7 +103,6 @@ const formatMeta = (biz) => {
     );
   }
   if (biz.priceRange) {
-    // ₦ symbols repeated — Nigerian naira instead of USD
     parts.push("₦".repeat(biz.priceRange));
   }
   return parts.join(" • ");
@@ -178,15 +177,12 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
         className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${spot.pos || "object-center"}`}
       />
 
-      {/* Mobile gradient */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/5 sm:hidden" />
 
-      {/* Tag */}
       <span className="absolute left-2 top-2 rounded bg-white px-1.5 py-0.5 text-[8px] font-bold tracking-wide text-gray-900 sm:text-[9px]">
         {spot.tag}
       </span>
 
-      {/* Save button — stopPropagation so it doesn't navigate */}
       <button
         type="button"
         onClick={(e) => {
@@ -205,7 +201,6 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
         )}
       </button>
 
-      {/* Desktop hover CTA — fades in on top of image */}
       <div className="pointer-events-none absolute inset-0 hidden items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/30 sm:flex">
         <span className="translate-y-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-gray-900 opacity-0 shadow-lg transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
           View details
@@ -241,7 +236,6 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
         </span>
       </p>
 
-      {/* Desktop-only hours row */}
       <p className="mt-1.5 hidden items-center gap-1.5 text-[10px] font-semibold uppercase leading-snug text-gray-700 sm:flex">
         <FiClock className="shrink-0" size={11} />
         <span>
@@ -253,7 +247,6 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
         </span>
       </p>
 
-      {/* Desktop-only "View details" arrow row */}
       <div className="mt-3 hidden items-center justify-between border-t border-gray-100 pt-2.5 text-[11px] font-semibold text-gray-500 sm:flex sm:group-hover:text-[#3B82F6] sm:transition-colors">
         <span>View details</span>
         <FiArrowRight
@@ -269,8 +262,8 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
 // Main
 // ──────────────────────────────────────────────────────────
 const PopularSpots = () => {
+  const navigate = useNavigate();
   const [active, setActive] = useState("");
-  const [visible, setVisible] = useState(PAGE_SIZE);
   const [saved, setSaved] = useState([]);
 
   const {
@@ -296,17 +289,20 @@ const PopularSpots = () => {
   const showEmptyState = !isLoading && (isError || spots.length === 0);
   const showSkeleton = isLoading;
 
-  useEffect(() => {
-    setVisible(PAGE_SIZE);
-  }, [active]);
-
   const toggleSave = (id) =>
     setSaved((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
 
-  const shown = spots.slice(0, visible);
-  const hasMore = visible < spots.length;
+  const shown = spots.slice(0, PAGE_SIZE);
+
+  // Navigate to /search with the current filter applied
+  const handleSeeAll = () => {
+    const params = new URLSearchParams();
+    if (active) params.set("category", active);
+    const qs = params.toString();
+    navigate(qs ? `/search?${qs}` : "/search");
+  };
 
   return (
     <section className="w-full bg-white py-8 sm:py-12">
@@ -398,11 +394,12 @@ const PopularSpots = () => {
               </p>
             )}
 
-            {hasMore && (
+            {/* Load more → routes to /search with current filter */}
+            {spots.length > PAGE_SIZE && (
               <div className="mt-8 flex justify-center sm:justify-end">
                 <button
                   type="button"
-                  onClick={() => setVisible((v) => v + PAGE_SIZE)}
+                  onClick={handleSeeAll}
                   className="w-full rounded-lg border border-[#60A5FA] bg-white px-6 py-2.5 text-sm font-medium text-[#3B82F6] transition-colors hover:bg-blue-50 sm:w-auto"
                 >
                   Load more popular places
