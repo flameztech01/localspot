@@ -1,11 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  FaXTwitter,
-  FaInstagram,
-  FaYoutube,
-  FaLinkedin,
-} from "react-icons/fa6";
+import { FaInstagram, FaLinkedin, FaFacebook } from "react-icons/fa6";
+import { FiMail } from "react-icons/fi";
 
 const footerLinks = {
   explore: [
@@ -20,6 +16,7 @@ const footerLinks = {
     { label: "Ad Pricing", href: "/business" },
   ],
   support: [
+    { label: "About Us", href: "/about" },
     { label: "Contact us", href: "/contact" },
     { label: "City guides", href: "/search" },
     { label: "Privacy & terms", href: "/about" },
@@ -29,8 +26,10 @@ const footerLinks = {
 const SocialIcon = ({ href, label, icon: Icon }) => (
   <a
     href={href}
+    target="_blank"
+    rel="noopener noreferrer"
     aria-label={label}
-    className="text-gray-700 transition-colors hover:text-gray-950"
+    className="text-gray-700 transition-colors hover:text-blue-600"
   >
     <Icon size={18} />
   </a>
@@ -61,10 +60,31 @@ const Footer = () => {
             </p>
 
             <div className="flex items-center gap-4">
-              <SocialIcon href="#" label="X (Twitter)" icon={FaXTwitter} />
-              <SocialIcon href="#" label="Instagram" icon={FaInstagram} />
-              <SocialIcon href="#" label="YouTube" icon={FaYoutube} />
-              <SocialIcon href="#" label="LinkedIn" icon={FaLinkedin} />
+              <SocialIcon
+                href="https://www.facebook.com/share/19cKqfiyHS/"
+                label="Facebook"
+                icon={FaFacebook}
+              />
+              <SocialIcon
+                href="https://www.instagram.com/localspot_nigeria?stkn=d3U1YXU4bjY3aDZp"
+                label="Instagram"
+                icon={FaInstagram}
+              />
+              <SocialIcon
+                href="https://www.linkedin.com/pulse/localspot-localspot-nigeria-8lbwe"
+                label="LinkedIn"
+                icon={FaLinkedin}
+              />
+              <a
+                href="mailto:Local.spot.co@gmail.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Email LocalSpot"
+                title="Email LocalSpot"
+                className="text-gray-700 transition-colors hover:text-blue-600"
+              >
+                <FiMail size={18} />
+              </a>
             </div>
           </div>
 
