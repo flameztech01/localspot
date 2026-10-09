@@ -49,8 +49,8 @@ const AdminTopNav = ({
     userInfo?.role === "admin"
       ? "Admin"
       : userInfo?.role === "business"
-      ? "Business"
-      : "Moderator";
+        ? "Business"
+        : "Moderator";
 
   const initials = displayName
     .split(" ")
@@ -112,9 +112,7 @@ const AdminTopNav = ({
 
     return (
       <div className="flex items-center gap-2 text-xs sm:text-sm">
-        <span className="text-gray-900 font-bold capitalize">
-          {activeTab}
-        </span>
+        <span className="text-gray-900 font-bold capitalize">{activeTab}</span>
         <span className="text-gray-400">/</span>
         <span className="text-gray-500 font-medium">Management</span>
       </div>

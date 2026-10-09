@@ -1,6 +1,6 @@
 // src/pages/business/BusinessPromotion.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   Megaphone,
@@ -37,9 +37,7 @@ import {
   useDeletePromotionMutation,
   useSubmitPromotionForReviewMutation,
 } from "../../features/promotionApiSlice";
-import {
-  useLogoutBusinessAccountMutation,
-} from "../../features/businessApiSlice";
+import { useLogoutBusinessAccountMutation } from "../../features/businessApiSlice";
 import { logout } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import BusinessSidebar from "../../components/BusinessSidebar";
@@ -83,14 +81,12 @@ const statusStyle = (status) => {
       };
     case "rejected":
       return {
-        color:
-          "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400",
+        color: "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400",
         Icon: XCircle,
       };
     case "disabled":
       return {
-        color:
-          "text-gray-500 bg-gray-100 dark:bg-gray-800 dark:text-gray-400",
+        color: "text-gray-500 bg-gray-100 dark:bg-gray-800 dark:text-gray-400",
         Icon: AlertCircle,
       };
     case "draft":
@@ -163,9 +159,12 @@ const BusinessPromotion = () => {
 
   const promotions = promotionsResp?.data || [];
 
-  const [createPromotion, { isLoading: isCreating }] = useCreatePromotionMutation();
-  const [updatePromotion, { isLoading: isUpdating }] = useUpdatePromotionMutation();
-  const [deletePromotion, { isLoading: isDeleting }] = useDeletePromotionMutation();
+  const [createPromotion, { isLoading: isCreating }] =
+    useCreatePromotionMutation();
+  const [updatePromotion, { isLoading: isUpdating }] =
+    useUpdatePromotionMutation();
+  const [deletePromotion, { isLoading: isDeleting }] =
+    useDeletePromotionMutation();
   const [submitForReview, { isLoading: isSubmitting }] =
     useSubmitPromotionForReviewMutation();
   const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
@@ -179,7 +178,9 @@ const BusinessPromotion = () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutBusinessAccount()
+        .unwrap()
+        .catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -219,7 +220,7 @@ const BusinessPromotion = () => {
         (p) =>
           p.title?.toLowerCase().includes(q) ||
           p.promoCode?.toLowerCase().includes(q) ||
-          p.description?.toLowerCase().includes(q)
+          p.description?.toLowerCase().includes(q),
       );
     }
     return list;
@@ -254,10 +255,7 @@ const BusinessPromotion = () => {
       showToast("Promotion deleted", "success");
       setDeleteTarget(null);
     } catch (err) {
-      showToast(
-        err?.data?.message || "Failed to delete promotion",
-        "error"
-      );
+      showToast(err?.data?.message || "Failed to delete promotion", "error");
     }
   };
 
@@ -268,10 +266,7 @@ const BusinessPromotion = () => {
       showToast(result?.message || "Submitted for review", "success");
       setSubmitTarget(null);
     } catch (err) {
-      showToast(
-        err?.data?.message || "Failed to submit for review",
-        "error"
-      );
+      showToast(err?.data?.message || "Failed to submit for review", "error");
     }
   };
 
@@ -339,7 +334,9 @@ const BusinessPromotion = () => {
               aria-label="Refresh"
               className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-60"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
+              />
             </button>
             <button
               type="button"
@@ -387,9 +384,24 @@ const BusinessPromotion = () => {
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
             <StatCard label="Total" value={counts.all} icon={Megaphone} />
-            <StatCard label="Drafts" value={counts.draft} icon={Edit3} tone="blue" />
-            <StatCard label="Pending" value={counts.pending} icon={Clock} tone="yellow" />
-            <StatCard label="Approved" value={counts.approved} icon={CheckCircle2} tone="green" />
+            <StatCard
+              label="Drafts"
+              value={counts.draft}
+              icon={Edit3}
+              tone="blue"
+            />
+            <StatCard
+              label="Pending"
+              value={counts.pending}
+              icon={Clock}
+              tone="yellow"
+            />
+            <StatCard
+              label="Approved"
+              value={counts.approved}
+              icon={CheckCircle2}
+              tone="green"
+            />
           </div>
 
           {/* Filters + search */}
@@ -501,7 +513,8 @@ const BusinessPromotion = () => {
           {/* Footer */}
           <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800 text-center">
             <p className="text-[11px] text-gray-400 dark:text-gray-500">
-              © {new Date().getFullYear()} LocalSpot Systems Ltd. — Business Account Center
+              © {new Date().getFullYear()} LocalSpot Systems Ltd. — Business
+              Account Center
             </p>
           </footer>
         </div>
@@ -520,14 +533,14 @@ const BusinessPromotion = () => {
               showToast(
                 result?.message ||
                   (id ? "Promotion updated" : "Promotion created"),
-                "success"
+                "success",
               );
               closeModal();
             } catch (err) {
               showToast(
                 err?.data?.message ||
                   (id ? "Failed to update" : "Failed to create"),
-                "error"
+                "error",
               );
               throw err;
             }
@@ -598,7 +611,13 @@ const StatCard = ({ label, value, icon: Icon, tone = "default" }) => {
 };
 
 // ─── Promotion card ────────────────────────────────────────
-const PromotionCard = ({ promotion, onEdit, onDelete, onSubmit, isMutating }) => {
+const PromotionCard = ({
+  promotion,
+  onEdit,
+  onDelete,
+  onSubmit,
+  isMutating,
+}) => {
   const { color, Icon } = statusStyle(promotion.status);
   const canEdit = ["draft", "rejected"].includes(promotion.status);
   const canSubmit = ["draft", "rejected"].includes(promotion.status);
@@ -609,8 +628,8 @@ const PromotionCard = ({ promotion, onEdit, onDelete, onSubmit, isMutating }) =>
       ? promotion.discountType === "percent"
         ? `${promotion.discountValue}% off`
         : promotion.discountType === "fixed"
-        ? `₦${promotion.discountValue} off`
-        : promotion.discountValue
+          ? `₦${promotion.discountValue} off`
+          : promotion.discountValue
       : null;
 
   return (
@@ -751,7 +770,9 @@ const PromotionFormModal = ({ promotion, onClose, onSave, isSaving }) => {
           description: promotion.description || "",
           discountType: promotion.discountType || "percent",
           discountValue:
-            promotion.discountValue != null ? String(promotion.discountValue) : "",
+            promotion.discountValue != null
+              ? String(promotion.discountValue)
+              : "",
           promoCode: promotion.promoCode || "",
           startDate: toInputDate(promotion.startDate),
           endDate: toInputDate(promotion.endDate),

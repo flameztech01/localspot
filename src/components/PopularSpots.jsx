@@ -101,7 +101,7 @@ const formatMeta = (biz) => {
       biz.categorySlug
         .split("-")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ")
+        .join(" "),
     );
   }
   if (biz.priceRange) {
@@ -220,9 +220,7 @@ const SpotCard = ({ spot, saved, onToggleSave }) => (
         <span className="font-semibold text-white sm:text-gray-900">
           {spot.rating}
         </span>
-        <span className="text-white/70 sm:text-gray-500">
-          ({spot.reviews})
-        </span>
+        <span className="text-white/70 sm:text-gray-500">({spot.reviews})</span>
       </p>
 
       <p className="mt-1.5 hidden items-center gap-1.5 text-[10px] font-semibold uppercase leading-snug text-gray-700 sm:flex">
@@ -266,7 +264,7 @@ const PopularSpots = () => {
 
   const spots = useMemo(
     () => apiPlaces.map((p, i) => normalizeSpot(p, i)).filter(Boolean),
-    [apiPlaces]
+    [apiPlaces],
   );
 
   const showEmptyState = !isLoading && (isError || spots.length === 0);
@@ -278,7 +276,7 @@ const PopularSpots = () => {
 
   const toggleSave = (id) =>
     setSaved((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
 
   const shown = spots.slice(0, visible);
@@ -322,9 +320,7 @@ const PopularSpots = () => {
               <FiWifiOff size={20} />
             </div>
             <h3 className="text-sm font-semibold text-gray-900">
-              {isError
-                ? "Couldn't load popular spots"
-                : "No spots here yet"}
+              {isError ? "Couldn't load popular spots" : "No spots here yet"}
             </h3>
             <p className="mt-1 max-w-md text-xs text-gray-500 leading-relaxed">
               {isError

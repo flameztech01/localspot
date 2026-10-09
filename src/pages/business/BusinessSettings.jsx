@@ -1,6 +1,6 @@
 // src/pages/business/BusinessSettings.jsx
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   Settings,
@@ -128,7 +128,9 @@ const BusinessSettings = () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutBusinessAccount()
+        .unwrap()
+        .catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -164,7 +166,11 @@ const BusinessSettings = () => {
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
-    if (!pwForm.currentPassword || !pwForm.newPassword || !pwForm.confirmPassword) {
+    if (
+      !pwForm.currentPassword ||
+      !pwForm.newPassword ||
+      !pwForm.confirmPassword
+    ) {
       showToast("All password fields are required", "error");
       return;
     }
@@ -190,10 +196,7 @@ const BusinessSettings = () => {
     // } catch (err) {
     //   showToast(err?.data?.message || "Failed to update password", "error");
     // }
-    showToast(
-      "Password change endpoint isn't live yet — coming soon",
-      "info"
-    );
+    showToast("Password change endpoint isn't live yet — coming soon", "info");
   };
 
   // ─── Notifications ────────────────────────────────────────
@@ -208,10 +211,7 @@ const BusinessSettings = () => {
   // ─── Delete account ───────────────────────────────────────
   const handleDeleteAccount = () => {
     // ⚠️ Backend not implemented — no soft-delete / deactivate endpoint yet.
-    showToast(
-      "Account deletion requires contacting support for now",
-      "info"
-    );
+    showToast("Account deletion requires contacting support for now", "info");
     setShowDeleteConfirm(false);
   };
 
@@ -526,9 +526,7 @@ const BusinessSettings = () => {
                       setPwForm((p) => ({ ...p, newPassword: v }))
                     }
                     visible={showPw.next}
-                    onToggle={() =>
-                      setShowPw((s) => ({ ...s, next: !s.next }))
-                    }
+                    onToggle={() => setShowPw((s) => ({ ...s, next: !s.next }))}
                     autoComplete="new-password"
                   />
                   <PasswordField
@@ -575,7 +573,7 @@ const BusinessSettings = () => {
                   onChange={() =>
                     showToast(
                       "2FA endpoint isn't live yet — coming soon",
-                      "info"
+                      "info",
                     )
                   }
                 />
@@ -601,7 +599,7 @@ const BusinessSettings = () => {
                     onClick={() =>
                       showToast(
                         "Session management endpoint isn't live yet",
-                        "info"
+                        "info",
                       )
                     }
                     className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline"

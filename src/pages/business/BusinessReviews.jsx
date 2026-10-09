@@ -1,6 +1,6 @@
 // src/pages/business/BusinessReviews.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   Star,
@@ -169,10 +169,8 @@ const BusinessReviews = () => {
     refetch,
   } = useListMyBusinessReviewsQuery(queryParams);
 
-  const {
-    data: statsResp,
-    isLoading: statsLoading,
-  } = useGetMyBusinessReviewStatsQuery();
+  const { data: statsResp, isLoading: statsLoading } =
+    useGetMyBusinessReviewStatsQuery();
 
   const reviews = reviewsResp?.data || [];
   const stats = statsResp?.data || {
@@ -199,7 +197,9 @@ const BusinessReviews = () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutBusinessAccount()
+        .unwrap()
+        .catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -555,9 +555,7 @@ const BusinessReviews = () => {
                   : "No reviews yet"}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-                {searchQuery ||
-                ratingFilter !== "all" ||
-                replyFilter !== "all"
+                {searchQuery || ratingFilter !== "all" || replyFilter !== "all"
                   ? "Try adjusting the filters above."
                   : "When customers leave feedback, you'll see it here and can reply."}
               </p>

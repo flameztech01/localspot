@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
   FiSearch,
   FiFilter,
@@ -11,18 +11,18 @@ import {
   FiMapPin,
   FiCheck,
   FiX,
-} from 'react-icons/fi'
+} from "react-icons/fi";
 
 const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
-  const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('All')
-  const [statusFilter, setStatusFilter] = useState('All')
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
 
   // Categories list
   const categories = useMemo(() => {
-    const set = new Set(places.map((p) => p.category).filter(Boolean))
-    return ['All', ...Array.from(set)]
-  }, [places])
+    const set = new Set(places.map((p) => p.category).filter(Boolean));
+    return ["All", ...Array.from(set)];
+  }, [places]);
 
   // Filtered places
   const filteredPlaces = useMemo(() => {
@@ -30,20 +30,21 @@ const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
       const matchSearch =
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.address.toLowerCase().includes(search.toLowerCase()) ||
-        p.category.toLowerCase().includes(search.toLowerCase())
+        p.category.toLowerCase().includes(search.toLowerCase());
 
       const matchCategory =
-        selectedCategory === 'All' || p.category === selectedCategory
+        selectedCategory === "All" || p.category === selectedCategory;
 
-      const isVerified = p.verified !== false && p.status !== 'Pending Verification'
+      const isVerified =
+        p.verified !== false && p.status !== "Pending Verification";
       const matchStatus =
-        statusFilter === 'All' ||
-        (statusFilter === 'Verified' && isVerified) ||
-        (statusFilter === 'Pending' && !isVerified)
+        statusFilter === "All" ||
+        (statusFilter === "Verified" && isVerified) ||
+        (statusFilter === "Pending" && !isVerified);
 
-      return matchSearch && matchCategory && matchStatus
-    })
-  }, [places, search, selectedCategory, statusFilter])
+      return matchSearch && matchCategory && matchStatus;
+    });
+  }, [places, search, selectedCategory, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -52,7 +53,8 @@ const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
         <div>
           <h2 className="text-xl font-bold text-gray-900">All Local Spots</h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-            Full directory of {places.length} listed places across all categories.
+            Full directory of {places.length} listed places across all
+            categories.
           </p>
         </div>
 
@@ -122,7 +124,8 @@ const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
               ) : (
                 filteredPlaces.map((place) => {
                   const isVerified =
-                    place.verified !== false && place.status !== 'Pending Verification'
+                    place.verified !== false &&
+                    place.status !== "Pending Verification";
 
                   return (
                     <tr
@@ -135,7 +138,7 @@ const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
                           <img
                             src={
                               place.images?.[0] ||
-                              'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=120&q=80'
+                              "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=120&q=80"
                             }
                             alt={place.name}
                             className="w-10 h-10 rounded-xl object-cover border border-gray-100 shrink-0"
@@ -154,7 +157,10 @@ const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
                       {/* Address */}
                       <td className="px-5 py-3.5 text-gray-600 max-w-xs">
                         <div className="flex items-center gap-1.5 line-clamp-1">
-                          <FiMapPin className="text-gray-400 shrink-0" size={12} />
+                          <FiMapPin
+                            className="text-gray-400 shrink-0"
+                            size={12}
+                          />
                           <span className="truncate">{place.address}</span>
                         </div>
                         {place.phone && (
@@ -167,8 +173,11 @@ const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
                       {/* Rating */}
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-1 font-semibold text-gray-700">
-                          <FiStar className="fill-amber-400 text-amber-400" size={13} />
-                          {place.rating || '5.0'}
+                          <FiStar
+                            className="fill-amber-400 text-amber-400"
+                            size={13}
+                          />
+                          {place.rating || "5.0"}
                         </div>
                       </td>
 
@@ -179,8 +188,8 @@ const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
                           title="Click to toggle status"
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${
                             isVerified
-                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                              : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+                              ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                              : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
                           }`}
                         >
                           {isVerified ? (
@@ -215,7 +224,7 @@ const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
                         </div>
                       </td>
                     </tr>
-                  )
+                  );
                 })
               )}
             </tbody>
@@ -223,7 +232,7 @@ const AdminListingsTable = ({ places = [], onToggleVerify, onDeletePlace }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AdminListingsTable
+export default AdminListingsTable;

@@ -10,28 +10,13 @@ import {
   FiCheck,
   FiAlertCircle,
   FiRefreshCw,
+  FiImage,
 } from "react-icons/fi";
 import { FaHeart, FaStar } from "react-icons/fa";
 
 import { useGetFeaturedBusinessesQuery } from "../features/discoveryApiSlice";
 
 const GAP = 16;
-
-const FALLBACK_IMG =
-  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800";
-
-// ──────────────────────────────────────────────────────────
-// Debug logger — shows exactly what's happening
-// ──────────────────────────────────────────────────────────
-const logFeatured = (label, payload) => {
-  const style = "background:#3B82F6;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold";
-  // eslint-disable-next-line no-console
-  console.groupCollapsed(`%c[Featured] ${label}`, style);
-  // eslint-disable-next-line no-console
-  Object.entries(payload).forEach(([k, v]) => console.log(k, v));
-  // eslint-disable-next-line no-console
-  console.groupEnd();
-};
 
 // ──────────────────────────────────────────────────────────
 // Helpers
@@ -66,6 +51,32 @@ const getOpenState = (openingHours) => {
   return { open: isOpen, hours: `${today.open} - ${today.close}` };
 };
 
+// ──────────────────────────────────────────────────────────
+// Image resolver — real images only, no stock fallback
+// ──────────────────────────────────────────────────────────
+const resolveBusinessImage = (biz) => {
+  if (!biz) return null;
+
+  // 1. Explicit cover image (Cloudinary URL)
+  if (typeof biz.coverImage === "string" && biz.coverImage.trim().length > 0) {
+    return biz.coverImage.trim();
+  }
+
+  // 2. First image in the images array
+  if (Array.isArray(biz.images) && biz.images.length > 0) {
+    const first = biz.images.find(
+      (u) => typeof u === "string" && u.trim().length > 0,
+    );
+    if (first) return first.trim();
+  }
+
+  // 3. Nothing — return null so the card shows a branded placeholder
+  return null;
+};
+
+// ──────────────────────────────────────────────────────────
+// Normalizer
+// ──────────────────────────────────────────────────────────
 const normalizePlace = (p) => {
   if (!p) return null;
   const id = p._id || p.id;
@@ -75,12 +86,12 @@ const normalizePlace = (p) => {
     p.priceRange === 1
       ? "$"
       : p.priceRange === 2
-      ? "$$"
-      : p.priceRange === 3
-      ? "$$$"
-      : p.priceRange === 4
-      ? "$$$$"
-      : null;
+        ? "$$"
+        : p.priceRange === 3
+          ? "$$$"
+          : p.priceRange === 4
+            ? "$$$$"
+            : null;
 
   const metaParts = [];
   if (p.categorySlug) {
@@ -88,7 +99,7 @@ const normalizePlace = (p) => {
       p.categorySlug
         .split("-")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ")
+        .join(" "),
     );
   }
   if (priceSymbol) metaParts.push(priceSymbol);
@@ -103,11 +114,6 @@ const normalizePlace = (p) => {
 
   const { open, hours } = getOpenState(p.openingHours);
 
-  const img =
-    p.coverImage ||
-    (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null) ||
-    FALLBACK_IMG;
-
   return {
     id,
     name: p.businessName || "Unnamed business",
@@ -117,9 +123,27 @@ const normalizePlace = (p) => {
     reviews: Number(p.numReviews || 0),
     open,
     hours,
-    img,
+    img: resolveBusinessImage(p), // ← real URL or null, no stock photo
     verified: true,
   };
+};
+
+// ──────────────────────────────────────────────────────────
+// Image placeholder (no photos, no stock, just initials)
+// ──────────────────────────────────────────────────────────
+const ImagePlaceholder = ({ name }) => {
+  const initial = (name || "?").trim().charAt(0).toUpperCase() || "?";
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700">
+      <div className="flex flex-col items-center gap-1 text-white/90">
+        <FiImage className="h-6 w-6 opacity-70" size={24} />
+        <span className="text-2xl font-black tracking-tight">{initial}</span>
+        <span className="text-[9px] font-medium uppercase tracking-widest opacity-80">
+          No image yet
+        </span>
+      </div>
+    </div>
+  );
 };
 
 // ──────────────────────────────────────────────────────────
@@ -141,114 +165,93 @@ const SkeletonCard = () => (
 // ──────────────────────────────────────────────────────────
 // Place Card
 // ──────────────────────────────────────────────────────────
-const PlaceCard = ({ place, saved, onToggleSave }) => (
-  <article className="flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:rounded-2xl">
-    <div className="relative aspect-[3/2] w-full overflow-hidden sm:aspect-[4/3]">
-      <img
-        src={place.img}
-        alt={place.name}
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={(e) => {
-          e.currentTarget.src = FALLBACK_IMG;
-        }}
-        className="h-full w-full object-cover"
-      />
+const PlaceCard = ({ place, saved, onToggleSave }) => {
+  const [imgBroken, setImgBroken] = useState(false);
+  const showReal = place.img && !imgBroken;
 
-      {place.verified && (
-        <span className="absolute left-1.5 top-1.5 flex items-center gap-0.5 rounded bg-teal-700 px-1.5 py-0.5 text-[8px] font-medium text-white sm:left-2 sm:top-2 sm:gap-1 sm:rounded-md sm:px-2 sm:text-xs">
-          <FiCheck size={9} className="sm:hidden" />
-          <FiCheck size={11} className="hidden sm:block" />
-          Verified
-        </span>
-      )}
-
-      <button
-        type="button"
-        onClick={() => onToggleSave(place.id)}
-        aria-label={saved ? "Remove from saved places" : "Save place"}
-        aria-pressed={saved}
-        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm transition-colors hover:bg-white sm:right-2 sm:top-2 sm:h-8 sm:w-8"
-      >
-        {saved ? (
-          <FaHeart size={11} className="text-red-500 sm:hidden" />
-        ) : (
-          <FiHeart size={11} className="sm:hidden" />
-        )}
-        {saved ? (
-          <FaHeart size={14} className="hidden text-red-500 sm:block" />
-        ) : (
-          <FiHeart size={14} className="hidden sm:block" />
-        )}
-      </button>
-    </div>
-
-    <div className="flex flex-1 flex-col p-2.5 sm:p-4">
-      <h3 className="line-clamp-1 text-xs font-bold leading-tight text-gray-900 sm:line-clamp-2 sm:min-h-[2.5rem] sm:truncate sm:text-base">
-        {place.name}
-      </h3>
-
-      <p className="mt-1 hidden text-xs leading-snug text-gray-500 sm:line-clamp-2 sm:block sm:min-h-[2rem]">
-        {place.meta}
-      </p>
-
-      <p className="mt-1 flex items-center gap-1 text-[10px] text-gray-600 sm:mt-2 sm:gap-1.5 sm:text-xs">
-        <FiMapPin className="shrink-0" size={10} />
-        <span className="truncate">{place.location}</span>
-      </p>
-
-      <p className="mt-1 flex items-center gap-1 text-[10px] sm:mt-2 sm:gap-1.5 sm:text-xs">
-        <FaStar className="shrink-0 text-orange-500" size={10} />
-        <span className="font-semibold text-gray-900">{place.rating}</span>
-        <span className="text-gray-500">({place.reviews})</span>
-      </p>
-
-      <p className="mt-2 hidden items-center gap-1.5 text-[11px] font-semibold uppercase leading-snug text-gray-700 sm:flex">
-        <FiClock className="shrink-0" size={12} />
-        <span>
-          <span className={place.open ? "text-green-600" : "text-red-500"}>
-            {place.open ? "Open now" : "Closed"}
-          </span>
-          {" • "}
-          {place.hours}
-        </span>
-      </p>
-
-      <Link
-        to={`/places/${place.id}`}
-        className="mt-2.5 block w-full rounded-md border border-gray-200 py-1.5 text-center text-[11px] font-medium text-gray-900 transition-colors hover:bg-gray-50 sm:mt-4 sm:rounded-lg sm:py-2 sm:text-sm"
-      >
-        Details
-      </Link>
-    </div>
-  </article>
-);
-
-// ──────────────────────────────────────────────────────────
-// Debug panel (only visible in dev / when ?debug=1)
-// ──────────────────────────────────────────────────────────
-const DebugPanel = ({ info }) => {
-  const [open, setOpen] = useState(true);
   return (
-    <div className="mt-4 rounded-xl border-2 border-dashed border-rose-300 bg-rose-50/50 p-3 text-xs font-mono">
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-bold text-rose-700">
-          🐛 Featured Debug Panel
-        </span>
+    <article className="flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:rounded-2xl">
+      <div className="relative aspect-[3/2] w-full overflow-hidden sm:aspect-[4/3]">
+        {showReal ? (
+          <img
+            src={place.img}
+            alt={place.name}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setImgBroken(true)}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <ImagePlaceholder name={place.name} />
+        )}
+
+        {place.verified && (
+          <span className="absolute left-1.5 top-1.5 flex items-center gap-0.5 rounded bg-teal-700 px-1.5 py-0.5 text-[8px] font-medium text-white sm:left-2 sm:top-2 sm:gap-1 sm:rounded-md sm:px-2 sm:text-xs">
+            <FiCheck size={9} className="sm:hidden" />
+            <FiCheck size={11} className="hidden sm:block" />
+            Verified
+          </span>
+        )}
+
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="text-[10px] text-rose-600 underline"
+          onClick={() => onToggleSave(place.id)}
+          aria-label={saved ? "Remove from saved places" : "Save place"}
+          aria-pressed={saved}
+          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm transition-colors hover:bg-white sm:right-2 sm:top-2 sm:h-8 sm:w-8"
         >
-          {open ? "hide" : "show"}
+          {saved ? (
+            <FaHeart size={11} className="text-red-500 sm:hidden" />
+          ) : (
+            <FiHeart size={11} className="sm:hidden" />
+          )}
+          {saved ? (
+            <FaHeart size={14} className="hidden text-red-500 sm:block" />
+          ) : (
+            <FiHeart size={14} className="hidden sm:block" />
+          )}
         </button>
       </div>
-      {open && (
-        <pre className="overflow-x-auto whitespace-pre-wrap break-all text-[11px] leading-relaxed text-gray-800 max-h-64">
-          {JSON.stringify(info, null, 2)}
-        </pre>
-      )}
-    </div>
+
+      <div className="flex flex-1 flex-col p-2.5 sm:p-4">
+        <h3 className="line-clamp-1 text-xs font-bold leading-tight text-gray-900 sm:line-clamp-2 sm:min-h-[2.5rem] sm:truncate sm:text-base">
+          {place.name}
+        </h3>
+
+        <p className="mt-1 hidden text-xs leading-snug text-gray-500 sm:line-clamp-2 sm:block sm:min-h-[2rem]">
+          {place.meta}
+        </p>
+
+        <p className="mt-1 flex items-center gap-1 text-[10px] text-gray-600 sm:mt-2 sm:gap-1.5 sm:text-xs">
+          <FiMapPin className="shrink-0" size={10} />
+          <span className="truncate">{place.location}</span>
+        </p>
+
+        <p className="mt-1 flex items-center gap-1 text-[10px] sm:mt-2 sm:gap-1.5 sm:text-xs">
+          <FaStar className="shrink-0 text-orange-500" size={10} />
+          <span className="font-semibold text-gray-900">{place.rating}</span>
+          <span className="text-gray-500">({place.reviews})</span>
+        </p>
+
+        <p className="mt-2 hidden items-center gap-1.5 text-[11px] font-semibold uppercase leading-snug text-gray-700 sm:flex">
+          <FiClock className="shrink-0" size={12} />
+          <span>
+            <span className={place.open ? "text-green-600" : "text-red-500"}>
+              {place.open ? "Open now" : "Closed"}
+            </span>
+            {" • "}
+            {place.hours}
+          </span>
+        </p>
+
+        <Link
+          to={`/places/${place.id}`}
+          className="mt-2.5 block w-full rounded-md border border-gray-200 py-1.5 text-center text-[11px] font-medium text-gray-900 transition-colors hover:bg-gray-50 sm:mt-4 sm:rounded-lg sm:py-2 sm:text-sm"
+        >
+          Details
+        </Link>
+      </div>
+    </article>
   );
 };
 
@@ -270,86 +273,8 @@ const Featured = () => {
     isError,
     error,
     refetch,
-    fulfilledTimeStamp,
-    startedTimeStamp,
-    requestId,
-    status,
   } = useGetFeaturedBusinessesQuery({ page: 1, limit: 8 });
 
-  // ─── DEBUG: log every render's query state ──────────────
-  useEffect(() => {
-    logFeatured("Query State", {
-      status,
-      isLoading,
-      isFetching,
-      isError,
-      error,
-      apiData,
-      requestId,
-      startedTimeStamp,
-      fulfilledTimeStamp,
-      apiURL: import.meta.env.VITE_API_URL || "(not set — falling back to /api)",
-    });
-  }, [
-    status,
-    isLoading,
-    isFetching,
-    isError,
-    error,
-    apiData,
-    requestId,
-    startedTimeStamp,
-    fulfilledTimeStamp,
-  ]);
-
-  // ─── DEBUG: log the actual URL being hit ────────────────
-  useEffect(() => {
-    const base =
-      import.meta.env.VITE_API_URL || "(not set — falling back to /api)";
-    const fullUrl = `${base}/v1/discovery/featured?page=1&limit=8`;
-    // eslint-disable-next-line no-console
-    console.log(
-      "%c[Featured] Request URL",
-      "background:#059669;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold",
-      "\n  base:    ",
-      base,
-      "\n  full:    ",
-      fullUrl,
-      "\n  env:     ",
-      import.meta.env.MODE,
-      "\n  prod?:   ",
-      import.meta.env.PROD
-    );
-  }, []);
-
-  // ─── DEBUG: surface RTK error details in console ────────
-  useEffect(() => {
-    if (!isError || !error) return;
-    // eslint-disable-next-line no-console
-    console.group(
-      "%c[Featured] ❌ FETCH ERROR",
-      "background:#DC2626;color:#fff;padding:3px 8px;border-radius:3px;font-weight:bold"
-    );
-    // eslint-disable-next-line no-console
-    console.log("error.status:", error.status);
-    // eslint-disable-next-line no-console
-    console.log("error.data:", error.data);
-    // eslint-disable-next-line no-console
-    console.log("error.message:", error.message);
-    // eslint-disable-next-line no-console
-    console.log("full error object:", error);
-    // eslint-disable-next-line no-console
-    console.log(
-      "→ Check the Network tab for the request. Common causes:",
-      "\n  • 404 → VITE_API_URL wrong (missing /api or wrong domain)",
-      "\n  • (failed) / CORS → backend doesn't allow your Vercel origin",
-      "\n  • 500 → backend error (check server logs)"
-    );
-    // eslint-disable-next-line no-console
-    console.groupEnd();
-  }, [isError, error]);
-
-  // Extract businesses
   const apiPlaces = (() => {
     if (!apiData) return [];
     if (Array.isArray(apiData)) return apiData;
@@ -360,14 +285,38 @@ const Featured = () => {
     return [];
   })();
 
+  // Debug log to verify images are coming from the API
+  useEffect(() => {
+    if (!apiPlaces.length) return;
+    // eslint-disable-next-line no-console
+    console.groupCollapsed(
+      `%c[Featured] Image check — ${apiPlaces.length} businesses`,
+      "background:#059669;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold",
+    );
+    apiPlaces.forEach((b) => {
+      // eslint-disable-next-line no-console
+      console.log(
+        `${b.businessName || "(unnamed)"}`,
+        "\n  coverImage:",
+        b.coverImage || "(none)",
+        "\n  images:",
+        Array.isArray(b.images) ? `${b.images.length} entries` : "(none)",
+        "\n  first image:",
+        Array.isArray(b.images) && b.images.length > 0 ? b.images[0] : "(none)",
+      );
+    });
+    // eslint-disable-next-line no-console
+    console.groupEnd();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiPlaces.length]);
+
   const displayPlaces = apiPlaces.map(normalizePlace).filter(Boolean);
   const showEmptyState = !isLoading && (isError || displayPlaces.length === 0);
   const showSkeleton = isLoading;
 
-  // Slider logic
   const toggleSave = (id) =>
     setSaved((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
 
   const update = useCallback(() => {
@@ -406,42 +355,6 @@ const Featured = () => {
 
   const arrowClass =
     "flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10";
-
-  // Debug panel info — always log-friendly
-  const debugInfo = {
-    env: {
-      VITE_API_URL: import.meta.env.VITE_API_URL || "(not set)",
-      MODE: import.meta.env.MODE,
-      PROD: import.meta.env.PROD,
-      DEV: import.meta.env.DEV,
-    },
-    query: {
-      status,
-      isLoading,
-      isFetching,
-      isError,
-      requestId,
-      hasData: !!apiData,
-      rawShape:
-        apiData && typeof apiData === "object"
-          ? Object.keys(apiData)
-          : typeof apiData,
-      businessesExtracted: apiPlaces.length,
-      placesAfterNormalize: displayPlaces.length,
-    },
-    error: error
-      ? {
-          status: error.status,
-          message: error.message || "(no message)",
-          data: error.data || "(no data)",
-        }
-      : null,
-  };
-
-  // Show debug panel when explicitly asked via ?debug=1
-  const showDebugPanel =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("debug") === "1";
 
   return (
     <section className="w-full bg-white py-10 sm:py-14">
@@ -493,7 +406,8 @@ const Featured = () => {
             </h3>
             <p className="mt-1 max-w-md text-xs text-gray-500 leading-relaxed">
               {isError
-                ? "Check your connection or try again in a moment."
+                ? error?.data?.message ||
+                  "Check your connection or try again in a moment."
                 : "Featured spots will appear here once they are published."}
             </p>
 
@@ -509,42 +423,6 @@ const Featured = () => {
               />
               Try again
             </button>
-
-            {/* Show debug info inline in the empty state for quick triage */}
-            <div className="mt-6 w-full max-w-lg text-left">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                Quick diagnostics
-              </p>
-              <div className="rounded-lg bg-gray-900 text-[10px] text-gray-100 p-3 font-mono overflow-x-auto">
-                <div>
-                  <span className="text-emerald-400">VITE_API_URL: </span>
-                  {import.meta.env.VITE_API_URL || "(not set)"}
-                </div>
-                <div>
-                  <span className="text-emerald-400">status: </span>
-                  {String(status)}
-                </div>
-                <div>
-                  <span className="text-emerald-400">error.status: </span>
-                  {String(error?.status || "—")}
-                </div>
-                <div>
-                  <span className="text-emerald-400">error.message: </span>
-                  {String(error?.message || "—")}
-                </div>
-                <div>
-                  <span className="text-emerald-400">response keys: </span>
-                  {apiData && typeof apiData === "object"
-                    ? Object.keys(apiData).join(", ") || "(none)"
-                    : String(typeof apiData)}
-                </div>
-              </div>
-              <p className="text-[10px] text-gray-400 mt-2">
-                Open DevTools → Console for full logs. Add{" "}
-                <code className="bg-gray-100 px-1 rounded">?debug=1</code> to
-                the URL for a full panel.
-              </p>
-            </div>
           </div>
         )}
 
@@ -604,9 +482,6 @@ const Featured = () => {
             )}
           </>
         )}
-
-        {/* Debug panel — only when ?debug=1 */}
-        {showDebugPanel && <DebugPanel info={debugInfo} />}
       </div>
     </section>
   );

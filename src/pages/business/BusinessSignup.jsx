@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
+import React, { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import {
   FiMapPin,
   FiEye,
@@ -8,120 +8,121 @@ import {
   FiChevronDown,
   FiArrowLeft,
   FiMail,
-} from 'react-icons/fi'
+} from "react-icons/fi";
 
 import {
   useRegisterBusinessAccountMutation,
   useVerifyBusinessAccountMutation,
   useResendBusinessOTPMutation,
-} from '../../features/businessApiSlice'
-import { setCredentials } from '../../features/auth/authSlice'
-import { useToast } from '../../hooks/useToast'
+} from "../../features/businessApiSlice";
+import { setCredentials } from "../../features/auth/authSlice";
+import { useToast } from "../../hooks/useToast";
 
 // --- 10 High-Quality Images for the Slider ---
 const sliderImages = [
-  'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200',
-]
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200",
+];
 
 const countryCodes = [
-  { code: '+234', label: 'NG' },
-  { code: '+1', label: 'US' },
-  { code: '+44', label: 'UK' },
-  { code: '+27', label: 'ZA' },
-]
+  { code: "+234", label: "NG" },
+  { code: "+1", label: "US" },
+  { code: "+44", label: "UK" },
+  { code: "+27", label: "ZA" },
+];
 
-const OTP_LENGTH = 6
-const RESEND_COOLDOWN_SECONDS = 60
+const OTP_LENGTH = 6;
+const RESEND_COOLDOWN_SECONDS = 60;
 
 const BusinessSignup = () => {
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const { showToast } = useToast()
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { showToast } = useToast();
 
   // --- RTK Query mutations ---
   const [registerBusiness, { isLoading: isRegistering }] =
-    useRegisterBusinessAccountMutation()
+    useRegisterBusinessAccountMutation();
   const [verifyBusiness, { isLoading: isVerifying }] =
-    useVerifyBusinessAccountMutation()
-  const [resendOTP, { isLoading: isResending }] = useResendBusinessOTPMutation()
+    useVerifyBusinessAccountMutation();
+  const [resendOTP, { isLoading: isResending }] =
+    useResendBusinessOTPMutation();
 
   // --- Page step: "register" | "verify" ---
-  const [step, setStep] = useState('register')
+  const [step, setStep] = useState("register");
 
   // --- Register form state ---
-  const [showPassword, setShowPassword] = useState(false)
-  const [isCountryOpen, setIsCountryOpen] = useState(false)
-  const [countryCode, setCountryCode] = useState('+234')
-  const countryRef = useRef(null)
-  const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [isCountryOpen, setIsCountryOpen] = useState(false);
+  const [countryCode, setCountryCode] = useState("+234");
+  const countryRef = useRef(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [formData, setFormData] = useState({
-    businessName: '',
-    email: '',
-    phone: '',
-    password: '',
-  })
+    businessName: "",
+    email: "",
+    phone: "",
+    password: "",
+  });
 
   // --- Verify state ---
-  const [pendingEmail, setPendingEmail] = useState('')
-  const [otpValues, setOtpValues] = useState(Array(OTP_LENGTH).fill(''))
-  const otpRefs = useRef([])
-  const [resendIn, setResendIn] = useState(0)
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [otpValues, setOtpValues] = useState(Array(OTP_LENGTH).fill(""));
+  const otpRefs = useRef([]);
+  const [resendIn, setResendIn] = useState(0);
 
   // Slider
-  const [activeImage, setActiveImage] = useState(0)
+  const [activeImage, setActiveImage] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveImage((prev) => (prev + 1) % sliderImages.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
+      setActiveImage((prev) => (prev + 1) % sliderImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Close country dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (countryRef.current && !countryRef.current.contains(event.target)) {
-        setIsCountryOpen(false)
+        setIsCountryOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Resend countdown
   useEffect(() => {
-    if (resendIn <= 0) return
-    const t = setTimeout(() => setResendIn((s) => s - 1), 1000)
-    return () => clearTimeout(t)
-  }, [resendIn])
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
   // Autofocus first OTP box when we enter verify step
   useEffect(() => {
-    if (step === 'verify') {
-      const t = setTimeout(() => otpRefs.current[0]?.focus(), 100)
-      return () => clearTimeout(t)
+    if (step === "verify") {
+      const t = setTimeout(() => otpRefs.current[0]?.focus(), 100);
+      return () => clearTimeout(t);
     }
-  }, [step])
+  }, [step]);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  }
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   // ── Register submit ──────────────────────────────────────
   const handleRegister = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!agreedToTerms) {
-      showToast('Please accept the Terms & Privacy Policy', 'error')
-      return
+      showToast("Please accept the Terms & Privacy Policy", "error");
+      return;
     }
 
     const payload = {
@@ -129,117 +130,129 @@ const BusinessSignup = () => {
       email: formData.email.trim().toLowerCase(),
       password: formData.password,
       phone: formData.phone
-        ? `${countryCode}${formData.phone.replace(/\D/g, '')}`
+        ? `${countryCode}${formData.phone.replace(/\D/g, "")}`
         : undefined,
-    }
+    };
 
     try {
-      const result = await registerBusiness(payload).unwrap()
+      const result = await registerBusiness(payload).unwrap();
       // Expected: { success, message, data: { email } }
-      const email = result?.data?.email || payload.email
-      setPendingEmail(email)
-      setOtpValues(Array(OTP_LENGTH).fill(''))
-      setResendIn(RESEND_COOLDOWN_SECONDS)
-      setStep('verify')
-      showToast(result?.message || 'Verification code sent to your email', 'success')
+      const email = result?.data?.email || payload.email;
+      setPendingEmail(email);
+      setOtpValues(Array(OTP_LENGTH).fill(""));
+      setResendIn(RESEND_COOLDOWN_SECONDS);
+      setStep("verify");
+      showToast(
+        result?.message || "Verification code sent to your email",
+        "success",
+      );
     } catch (err) {
       const msg =
         err?.data?.message ||
         err?.data?.errors?.[0]?.message ||
-        'Registration failed. Please try again.'
-      showToast(msg, 'error')
+        "Registration failed. Please try again.";
+      showToast(msg, "error");
     }
-  }
+  };
 
   // ── OTP input handling ───────────────────────────────────
   const handleOtpChange = (index, value) => {
-    const digit = value.replace(/\D/g, '').slice(0, 1)
-    const next = [...otpValues]
-    next[index] = digit
-    setOtpValues(next)
+    const digit = value.replace(/\D/g, "").slice(0, 1);
+    const next = [...otpValues];
+    next[index] = digit;
+    setOtpValues(next);
     if (digit && index < OTP_LENGTH - 1) {
-      otpRefs.current[index + 1]?.focus()
+      otpRefs.current[index + 1]?.focus();
     }
-  }
+  };
 
   const handleOtpKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otpValues[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus()
+    if (e.key === "Backspace" && !otpValues[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
     }
-    if (e.key === 'ArrowLeft' && index > 0) {
-      otpRefs.current[index - 1]?.focus()
+    if (e.key === "ArrowLeft" && index > 0) {
+      otpRefs.current[index - 1]?.focus();
     }
-    if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
-      otpRefs.current[index + 1]?.focus()
+    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+      otpRefs.current[index + 1]?.focus();
     }
-  }
+  };
 
   const handleOtpPaste = (e) => {
-    e.preventDefault()
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH)
-    if (!pasted) return
-    const next = Array(OTP_LENGTH).fill('')
-    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i]
-    setOtpValues(next)
-    const lastFilled = Math.min(pasted.length, OTP_LENGTH - 1)
-    otpRefs.current[lastFilled]?.focus()
-  }
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
+    if (!pasted) return;
+    const next = Array(OTP_LENGTH).fill("");
+    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
+    setOtpValues(next);
+    const lastFilled = Math.min(pasted.length, OTP_LENGTH - 1);
+    otpRefs.current[lastFilled]?.focus();
+  };
 
   // ── Verify submit ────────────────────────────────────────
   const handleVerify = async (e) => {
-    e?.preventDefault()
-    const otp = otpValues.join('')
+    e?.preventDefault();
+    const otp = otpValues.join("");
     if (otp.length !== OTP_LENGTH) {
-      showToast('Please enter the full 6-digit code', 'error')
-      return
+      showToast("Please enter the full 6-digit code", "error");
+      return;
     }
 
     try {
-      const result = await verifyBusiness({ email: pendingEmail, otp }).unwrap()
+      const result = await verifyBusiness({
+        email: pendingEmail,
+        otp,
+      }).unwrap();
       // Expected: { success, message, data: user, token }
       dispatch(
         setCredentials({
           ...result.data,
           token: result.token,
-        })
-      )
+        }),
+      );
 
-      showToast(result?.message || 'Account verified successfully', 'success')
-      setTimeout(() => navigate('/business'), 700)
+      showToast(result?.message || "Account verified successfully", "success");
+      setTimeout(() => navigate("/business"), 700);
     } catch (err) {
       const msg =
         err?.data?.message ||
         err?.data?.errors?.[0]?.message ||
-        'Verification failed. Please try again.'
-      showToast(msg, 'error')
+        "Verification failed. Please try again.";
+      showToast(msg, "error");
       // Clear OTP so they can re-enter
-      setOtpValues(Array(OTP_LENGTH).fill(''))
-      otpRefs.current[0]?.focus()
+      setOtpValues(Array(OTP_LENGTH).fill(""));
+      otpRefs.current[0]?.focus();
     }
-  }
+  };
 
   // ── Resend OTP ───────────────────────────────────────────
   const handleResend = async () => {
-    if (resendIn > 0 || isResending) return
+    if (resendIn > 0 || isResending) return;
     try {
-      await resendOTP({ email: pendingEmail, purpose: 'verification' }).unwrap()
-      showToast('A new code has been sent to your email', 'success')
-      setResendIn(RESEND_COOLDOWN_SECONDS)
-      setOtpValues(Array(OTP_LENGTH).fill(''))
-      otpRefs.current[0]?.focus()
+      await resendOTP({
+        email: pendingEmail,
+        purpose: "verification",
+      }).unwrap();
+      showToast("A new code has been sent to your email", "success");
+      setResendIn(RESEND_COOLDOWN_SECONDS);
+      setOtpValues(Array(OTP_LENGTH).fill(""));
+      otpRefs.current[0]?.focus();
     } catch (err) {
       const msg =
-        err?.data?.message || 'Could not resend code. Please try again later.'
-      showToast(msg, 'error')
+        err?.data?.message || "Could not resend code. Please try again later.";
+      showToast(msg, "error");
     }
-  }
+  };
 
   const handleBackToRegister = () => {
-    setStep('register')
-    setOtpValues(Array(OTP_LENGTH).fill(''))
-    setPendingEmail('')
-    setResendIn(0)
-  }
+    setStep("register");
+    setOtpValues(Array(OTP_LENGTH).fill(""));
+    setPendingEmail("");
+    setResendIn(0);
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans text-gray-900">
@@ -251,7 +264,7 @@ const BusinessSignup = () => {
             src={img}
             alt={`Venue slide ${index + 1}`}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
-              index === activeImage ? 'opacity-100' : 'opacity-0'
+              index === activeImage ? "opacity-100" : "opacity-0"
             }`}
           />
         ))}
@@ -268,7 +281,9 @@ const BusinessSignup = () => {
               alt="LocalSpot"
               className="h-7 w-7 object-contain brightness-0 invert"
             />
-            <span className="font-bold tracking-wide text-white">LOCALSPOT</span>
+            <span className="font-bold tracking-wide text-white">
+              LOCALSPOT
+            </span>
           </Link>
           <div className="flex items-center gap-5">
             <Link to="/support" className="hover:text-white transition-colors">
@@ -276,7 +291,7 @@ const BusinessSignup = () => {
             </Link>
             <span className="text-white/40">|</span>
             <span className="text-white/80">
-              Already registered?{' '}
+              Already registered?{" "}
               <Link
                 to="/business/signin"
                 className="font-semibold text-white hover:underline"
@@ -333,12 +348,16 @@ const BusinessSignup = () => {
           <div className="w-full max-w-[480px]">
             <div className="flex justify-center mb-6 lg:hidden">
               <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500">
-                {step === 'verify' ? <FiMail size={22} /> : <FiMapPin size={22} />}
+                {step === "verify" ? (
+                  <FiMail size={22} />
+                ) : (
+                  <FiMapPin size={22} />
+                )}
               </div>
             </div>
 
             {/* ─────────── REGISTER STEP ─────────── */}
-            {step === 'register' && (
+            {step === "register" && (
               <>
                 <div className="text-center lg:text-left mb-8">
                   <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
@@ -408,7 +427,10 @@ const BusinessSignup = () => {
                         Phone Number
                       </label>
                       <div className="flex gap-2">
-                        <div className="relative w-24 shrink-0" ref={countryRef}>
+                        <div
+                          className="relative w-24 shrink-0"
+                          ref={countryRef}
+                        >
                           <button
                             type="button"
                             disabled={isRegistering}
@@ -418,7 +440,7 @@ const BusinessSignup = () => {
                             <span>{countryCode}</span>
                             <FiChevronDown
                               className={`text-gray-400 transition-transform ${
-                                isCountryOpen ? 'rotate-180' : ''
+                                isCountryOpen ? "rotate-180" : ""
                               }`}
                               size={14}
                             />
@@ -431,13 +453,13 @@ const BusinessSignup = () => {
                                   key={country.code}
                                   type="button"
                                   onClick={() => {
-                                    setCountryCode(country.code)
-                                    setIsCountryOpen(false)
+                                    setCountryCode(country.code);
+                                    setIsCountryOpen(false);
                                   }}
                                   className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
                                     countryCode === country.code
-                                      ? 'bg-blue-50 text-blue-600 font-semibold'
-                                      : 'text-gray-700 hover:bg-gray-50'
+                                      ? "bg-blue-50 text-blue-600 font-semibold"
+                                      : "text-gray-700 hover:bg-gray-50"
                                   }`}
                                 >
                                   <span>{country.code}</span>
@@ -478,7 +500,7 @@ const BusinessSignup = () => {
                       </div>
                       <div className="relative">
                         <input
-                          type={showPassword ? 'text' : 'password'}
+                          type={showPassword ? "text" : "password"}
                           id="password"
                           name="password"
                           required
@@ -518,7 +540,7 @@ const BusinessSignup = () => {
                           Sending code...
                         </>
                       ) : (
-                        'Create Business Account'
+                        "Create Business Account"
                       )}
                     </button>
                   </form>
@@ -537,12 +559,18 @@ const BusinessSignup = () => {
                       htmlFor="terms"
                       className="text-[11px] text-gray-500 leading-relaxed"
                     >
-                      By continuing, you agree to LocalSpot's{' '}
-                      <Link to="/terms" className="text-blue-600 hover:underline">
+                      By continuing, you agree to LocalSpot's{" "}
+                      <Link
+                        to="/terms"
+                        className="text-blue-600 hover:underline"
+                      >
                         Terms of Service
-                      </Link>{' '}
-                      and{' '}
-                      <Link to="/privacy" className="text-blue-600 hover:underline">
+                      </Link>{" "}
+                      and{" "}
+                      <Link
+                        to="/privacy"
+                        className="text-blue-600 hover:underline"
+                      >
                         Privacy Policy
                       </Link>
                       .
@@ -552,7 +580,7 @@ const BusinessSignup = () => {
                   {/* Bottom Link */}
                   <div className="mt-6 text-center lg:text-left">
                     <p className="text-xs text-gray-500">
-                      Already have an account?{' '}
+                      Already have an account?{" "}
                       <Link
                         to="/business/signin"
                         className="font-medium text-blue-600 hover:underline"
@@ -566,7 +594,7 @@ const BusinessSignup = () => {
             )}
 
             {/* ─────────── VERIFY STEP ─────────── */}
-            {step === 'verify' && (
+            {step === "verify" && (
               <>
                 <div className="text-center lg:text-left mb-8">
                   <button
@@ -582,7 +610,7 @@ const BusinessSignup = () => {
                     Verify your email
                   </h1>
                   <p className="text-sm text-gray-500 mt-2">
-                    We sent a 6-digit code to{' '}
+                    We sent a 6-digit code to{" "}
                     <span className="font-medium text-gray-700">
                       {pendingEmail}
                     </span>
@@ -610,7 +638,9 @@ const BusinessSignup = () => {
                             autoComplete="one-time-code"
                             maxLength={1}
                             value={value}
-                            onChange={(e) => handleOtpChange(index, e.target.value)}
+                            onChange={(e) =>
+                              handleOtpChange(index, e.target.value)
+                            }
                             onKeyDown={(e) => handleOtpKeyDown(index, e)}
                             disabled={isVerifying}
                             className="w-11 h-13 sm:w-12 sm:h-14 text-center text-lg font-semibold text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -635,7 +665,7 @@ const BusinessSignup = () => {
                           Verifying...
                         </>
                       ) : (
-                        'Verify & Continue'
+                        "Verify & Continue"
                       )}
                     </button>
                   </form>
@@ -643,7 +673,7 @@ const BusinessSignup = () => {
                   {/* Resend */}
                   <div className="mt-6 text-center">
                     <p className="text-xs text-gray-500">
-                      Didn't get the code?{' '}
+                      Didn't get the code?{" "}
                       {resendIn > 0 ? (
                         <span className="text-gray-400">
                           Resend in {resendIn}s
@@ -655,7 +685,7 @@ const BusinessSignup = () => {
                           disabled={isResending}
                           className="font-medium text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {isResending ? 'Sending...' : 'Resend code'}
+                          {isResending ? "Sending..." : "Resend code"}
                         </button>
                       )}
                     </p>
@@ -676,7 +706,7 @@ const BusinessSignup = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default BusinessSignup
+export default BusinessSignup;

@@ -124,9 +124,7 @@ const DealCard = ({ deal }) => (
         {deal.title}
       </h3>
 
-      <p className="mb-3 line-clamp-1 text-xs text-gray-500">
-        {deal.provider}
-      </p>
+      <p className="mb-3 line-clamp-1 text-xs text-gray-500">{deal.provider}</p>
 
       <div className="flex items-start gap-1.5 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[10px] font-semibold uppercase leading-tight text-amber-800">
         <FiClock className="mt-0.5 shrink-0" size={12} />
@@ -282,8 +280,7 @@ const ActiveDeals = () => {
 
   const displayDeals = apiDeals.map(normalizeDeal).filter(Boolean);
 
-  const showEmptyState =
-    !isLoading && (isError || displayDeals.length === 0);
+  const showEmptyState = !isLoading && (isError || displayDeals.length === 0);
   const showSkeleton = isLoading;
 
   return (

@@ -62,7 +62,9 @@ const AdminSidebar = ({
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutBusinessAccount()
+        .unwrap()
+        .catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -85,8 +87,8 @@ const AdminSidebar = ({
     userInfo?.role === "admin"
       ? "Account Admin"
       : userInfo?.role === "business"
-      ? "Business Owner"
-      : "Moderator";
+        ? "Business Owner"
+        : "Moderator";
 
   const initials = displayName
     .split(" ")
@@ -356,9 +358,7 @@ const AdminSidebar = ({
                   <FiStar
                     size={17}
                     className={
-                      activeTab === "featured"
-                        ? "text-white"
-                        : "text-gray-400"
+                      activeTab === "featured" ? "text-white" : "text-gray-400"
                     }
                   />
                   <span>Featured Listings</span>

@@ -1,25 +1,30 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { FaXTwitter, FaInstagram, FaYoutube, FaLinkedin } from 'react-icons/fa6'
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  FaXTwitter,
+  FaInstagram,
+  FaYoutube,
+  FaLinkedin,
+} from "react-icons/fa6";
 
 const footerLinks = {
   explore: [
-    { label: 'Explore Spots', href: '/search' },
-    { label: 'All Categories', href: '/category' },
-    { label: 'Saved Places (3)', href: '/saved' },
+    { label: "Explore Spots", href: "/search" },
+    { label: "All Categories", href: "/category" },
+    { label: "Saved Places (3)", href: "/saved" },
   ],
   business: [
-    { label: 'List Your Business', href: '/business' },
-    { label: 'Claim Existing Place', href: '/business' },
-    { label: 'Merchant Portal Login', href: '/business' },
-    { label: 'Ad Pricing', href: '/business' },
+    { label: "List Your Business", href: "/business" },
+    { label: "Claim Existing Place", href: "/business" },
+    { label: "Merchant Portal Login", href: "/business" },
+    { label: "Ad Pricing", href: "/business" },
   ],
   support: [
-    { label: 'Contact us', href: '/contact' },
-    { label: 'City guides', href: '/search' },
-    { label: 'Privacy & terms', href: '/about' },
+    { label: "Contact us", href: "/contact" },
+    { label: "City guides", href: "/search" },
+    { label: "Privacy & terms", href: "/about" },
   ],
-}
+};
 
 const SocialIcon = ({ href, label, icon: Icon }) => (
   <a
@@ -29,7 +34,7 @@ const SocialIcon = ({ href, label, icon: Icon }) => (
   >
     <Icon size={18} />
   </a>
-)
+);
 
 const Footer = () => {
   return (
@@ -51,7 +56,8 @@ const Footer = () => {
             </div>
 
             <p className="mb-5 max-w-sm text-xs leading-relaxed text-gray-500">
-              Hyperlocal neighborhood discovery, venues and merchant coordination.
+              Hyperlocal neighborhood discovery, venues and merchant
+              coordination.
             </p>
 
             <div className="flex items-center gap-4">
@@ -81,7 +87,9 @@ const Footer = () => {
 
           {/* For Businesses Column (3 cols) */}
           <div className="lg:col-span-3">
-            <h3 className="mb-3.5 text-xs font-bold text-gray-900">For Businesses</h3>
+            <h3 className="mb-3.5 text-xs font-bold text-gray-900">
+              For Businesses
+            </h3>
             <ul className="space-y-2.5">
               {footerLinks.business.map((link) => (
                 <li key={link.label}>
@@ -98,7 +106,9 @@ const Footer = () => {
 
           {/* Support & Resources Column (2 cols) */}
           <div className="lg:col-span-2">
-            <h3 className="mb-3.5 text-xs font-bold text-gray-900">Support &amp; Resources</h3>
+            <h3 className="mb-3.5 text-xs font-bold text-gray-900">
+              Support &amp; Resources
+            </h3>
             <ul className="space-y-2.5">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
@@ -122,7 +132,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;

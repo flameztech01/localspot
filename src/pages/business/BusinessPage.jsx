@@ -1,6 +1,6 @@
 // src/pages/business/BusinessPage.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Store,
@@ -46,6 +46,28 @@ import { logout } from "../../features/auth/authSlice";
 import BusinessSidebar from "../../components/BusinessSidebar";
 import BusinessBottombar from "../../components/BusinessBottombar";
 
+// ──────────────────────────────────────────────────────────
+// Debug logger
+// ──────────────────────────────────────────────────────────
+const log = (label, payload) => {
+  const styles = {
+    info: "background:#3B82F6;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold",
+    success:
+      "background:#059669;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold",
+    warn: "background:#F59E0B;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold",
+    error:
+      "background:#DC2626;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold",
+  };
+  const style = styles[payload?.level] || styles.info;
+  // eslint-disable-next-line no-console
+  console.log(`%c[BusinessPage] ${label}`, style, payload?.data ?? "");
+};
+
+console.log(
+  "%c[BusinessPage] ── MODULE LOADED ──",
+  "background:#7C3AED;color:#fff;padding:3px 8px;border-radius:3px;font-weight:bold",
+);
+
 // ─── Constants ─────────────────────────────────────────────
 const ACCENT = "#3B82F6";
 const RECENT_PROMOTIONS_LIMIT = 5;
@@ -60,45 +82,71 @@ const QUICK_FILTERS = [
 ];
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const formatFilterLabel = (filter) => {
   switch (filter.type) {
-    case "all": return "All Time";
-    case "week": return "This Week";
-    case "month": return "This Month";
-    case "last2Months": return "Last 2 Months";
-    case "year": return String(filter.year);
+    case "all":
+      return "All Time";
+    case "week":
+      return "This Week";
+    case "month":
+      return "This Month";
+    case "last2Months":
+      return "Last 2 Months";
+    case "year":
+      return String(filter.year);
     case "yearMonth": {
       const d = new Date(filter.year, filter.month, 1);
       return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
     }
-    default: return "This Week";
+    default:
+      return "This Week";
   }
 };
 
 const formatFilterSubtitle = (filter) => {
   switch (filter.type) {
-    case "all": return "All time";
-    case "week": return "Last 7 days";
-    case "month": return "This month · daily";
-    case "last2Months": return "Last 2 months · monthly";
-    case "year": return `${filter.year} · monthly`;
+    case "all":
+      return "All time";
+    case "week":
+      return "Last 7 days";
+    case "month":
+      return "This month · daily";
+    case "last2Months":
+      return "Last 2 months · monthly";
+    case "year":
+      return `${filter.year} · monthly`;
     case "yearMonth": {
       const d = new Date(filter.year, filter.month, 1);
       return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
     }
-    default: return "Last 7 days";
+    default:
+      return "Last 7 days";
   }
 };
 
 // ─── Component ─────────────────────────────────────────────
 const BusinessPage = () => {
+  log("🎬 Component render START");
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.auth);
+
+  log("Redux userInfo", { data: { hasUser: !!userInfo, userInfo } });
 
   const [chartFilter, setChartFilter] = useState({ type: "week" });
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -111,43 +159,44 @@ const BusinessPage = () => {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const openDropdown = () => {
+    log("📂 openDropdown()");
     setDropLevel("root");
     setDropYear(null);
     setDropdownOpen(true);
   };
-  const closeDropdown = () => setDropdownOpen(false);
+  const closeDropdown = () => {
+    log("📁 closeDropdown()");
+    setDropdownOpen(false);
+  };
 
-  // ─── Logout — clears everything ─────────────────────────────
+  // ─── Logout ─────────────────────────────────────────────
   const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+  log("useLogoutBusinessAccountMutation mounted", {
+    data: typeof logoutBusinessAccount,
+  });
 
   const handleLogout = async () => {
+    log("🚪 handleLogout() triggered");
     if (loggingOut) return;
     setLoggingOut(true);
 
     try {
-      // 1. Tell the backend to clear the auth cookie
-      await logoutBusinessAccount().unwrap().catch(() => {
-        // ignore — we're logging out anyway
-      });
-    } catch (_) {
-      // noop
-    }
+      await logoutBusinessAccount()
+        .unwrap()
+        .catch(() => {});
+      log("Backend logout called", { level: "success" });
+    } catch (_) {}
 
-    // 2. Clear Redux auth state
     dispatch(logout());
 
-    // 3. Clear any persisted auth (redux-persist, localStorage, sessionStorage)
     try {
       localStorage.removeItem("persist:root");
       localStorage.removeItem("userInfo");
       localStorage.removeItem("token");
       localStorage.removeItem("businessToken");
       sessionStorage.clear();
-    } catch (_) {
-      // noop
-    }
+    } catch (_) {}
 
-    // 4. Best-effort: expire any client-visible cookies
     try {
       document.cookie.split(";").forEach((c) => {
         const name = c.split("=")[0].trim();
@@ -155,27 +204,26 @@ const BusinessPage = () => {
           document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
         }
       });
-    } catch (_) {
-      // noop
-    }
+    } catch (_) {}
 
-    // 5. Redirect to signin
     navigate("/business/signin", { replace: true });
-    // force a full reload to reset all in-memory RTK Query caches
     setTimeout(() => window.location.reload(), 50);
   };
 
-  // Scroll to top on mount
   useEffect(() => {
+    log("🔵 Effect: scroll to top on mount");
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
   }, []);
 
-  // Outside click for chart dropdown
   useEffect(() => {
+    log("🔵 Effect: outside-click listener registered");
     const handler = (e) => {
-      if (chartFilterRef.current && !chartFilterRef.current.contains(e.target)) {
+      if (
+        chartFilterRef.current &&
+        !chartFilterRef.current.contains(e.target)
+      ) {
         setDropdownOpen(false);
       }
     };
@@ -188,6 +236,7 @@ const BusinessPage = () => {
   }, []);
 
   // ─── Queries ───────────────────────────────────────────────
+  log("📡 Calling useGetCurrentBusinessAccountQuery()");
   const {
     data: businessResp,
     isLoading: bizLoading,
@@ -195,8 +244,30 @@ const BusinessPage = () => {
     refetch: refetchBusiness,
   } = useGetCurrentBusinessAccountQuery();
 
+  log("📥 business query result", {
+    data: {
+      bizLoading,
+      hasError: !!bizError,
+      errorStatus: bizError?.status,
+      errorMessage: bizError?.data?.message || bizError?.message,
+      hasData: !!businessResp,
+      respKeys: businessResp ? Object.keys(businessResp) : null,
+    },
+  });
+
   const business = businessResp?.data || businessResp;
   const isUnauthorized = bizError?.status === 401;
+
+  log("Business object extracted", {
+    data: {
+      isUnauthorized,
+      hasBusiness: !!business,
+      businessName: business?.businessName,
+      isVerified: business?.isVerified,
+      businessVerified: business?.businessVerified,
+      rejectionReason: business?.businessRejectionReason,
+    },
+  });
 
   const analyticsParams = useMemo(() => {
     const now = new Date();
@@ -229,43 +300,70 @@ const BusinessPage = () => {
         break;
       }
       case "yearMonth": {
-        params.from = new Date(chartFilter.year, chartFilter.month, 1).toISOString();
-        params.to = new Date(chartFilter.year, chartFilter.month + 1, 0).toISOString();
+        params.from = new Date(
+          chartFilter.year,
+          chartFilter.month,
+          1,
+        ).toISOString();
+        params.to = new Date(
+          chartFilter.year,
+          chartFilter.month + 1,
+          0,
+        ).toISOString();
         break;
       }
       case "all":
       default:
         break;
     }
+    log("📊 analyticsParams computed", { data: params });
     return params;
   }, [chartFilter]);
 
-  const {
-    data: analyticsResp,
-    isLoading: analyticsLoading,
-  } = useGetBusinessAnalyticsQuery(analyticsParams, {
-    skip: isUnauthorized || !!bizError,
+  const skipAnalytics = isUnauthorized || !!bizError;
+  log("📡 Calling useGetBusinessAnalyticsQuery()", {
+    data: { skip: skipAnalytics },
   });
+
+  const { data: analyticsResp, isLoading: analyticsLoading } =
+    useGetBusinessAnalyticsQuery(analyticsParams, { skip: skipAnalytics });
 
   const analytics = analyticsResp?.data;
-
-  const {
-    data: promotionsResp,
-    isLoading: promosLoading,
-  } = useListMyPromotionsQuery({ limit: 20 }, {
-    skip: isUnauthorized || !!bizError,
+  log("📥 analytics result", {
+    data: {
+      analyticsLoading,
+      hasData: !!analyticsResp,
+      analyticsKeys: analytics ? Object.keys(analytics) : null,
+    },
   });
+
+  log("📡 Calling useListMyPromotionsQuery()");
+  const { data: promotionsResp, isLoading: promosLoading } =
+    useListMyPromotionsQuery({ limit: 20 }, { skip: skipAnalytics });
 
   const promotions = promotionsResp?.data || [];
-
-  const {
-    data: adsResp,
-    isLoading: adsLoading,
-  } = useListMyAdvertisementsQuery(undefined, {
-    skip: isUnauthorized || !!bizError,
+  log("📥 promotions result", {
+    data: {
+      promosLoading,
+      count: promotions.length,
+      statuses: promotions.map((p) => p.status),
+    },
   });
 
+  log("📡 Calling useListMyAdvertisementsQuery()");
+  const { data: adsResp, isLoading: adsLoading } = useListMyAdvertisementsQuery(
+    undefined,
+    { skip: skipAnalytics },
+  );
+
   const advertisements = adsResp?.data || [];
+  log("📥 ads result", {
+    data: {
+      adsLoading,
+      count: advertisements.length,
+      statuses: advertisements.map((a) => a.status),
+    },
+  });
 
   // ─── Derived ───────────────────────────────────────────────
   const isEmailVerified = business?.isVerified ?? false;
@@ -275,10 +373,12 @@ const BusinessPage = () => {
   const approvalStatus = !isEmailVerified
     ? "unverified"
     : isApproved
-    ? "approved"
-    : isRejected
-    ? "rejected"
-    : "pending";
+      ? "approved"
+      : isRejected
+        ? "rejected"
+        : "pending";
+
+  log("Approval status computed", { data: { approvalStatus } });
 
   const profileImages = business?.images || [];
   const imageCount = profileImages.length;
@@ -296,33 +396,52 @@ const BusinessPage = () => {
     !!business?.website,
   ];
   const completionPct = Math.round(
-    (completionItems.filter(Boolean).length / completionItems.length) * 100
+    (completionItems.filter(Boolean).length / completionItems.length) * 100,
   );
 
-  const totalViews = analytics?.overview?.profileViews ?? business?.viewCount ?? 0;
+  const totalViews =
+    analytics?.overview?.profileViews ?? business?.viewCount ?? 0;
   const rating = business?.rating ?? 0;
   const numReviews = business?.numReviews ?? 0;
-  const activePromotions = promotions.filter((p) => p.status === "approved").length;
-  const activeAds = advertisements.filter((a) => a.status === "approved").length;
+  const activePromotions = promotions.filter(
+    (p) => p.status === "approved",
+  ).length;
+  const activeAds = advertisements.filter(
+    (a) => a.status === "approved",
+  ).length;
+
+  log("Derived values", {
+    data: {
+      imageCount,
+      completionPct,
+      totalViews,
+      rating,
+      numReviews,
+      activePromotions,
+      activeAds,
+    },
+  });
 
   const recentPromotions = useMemo(() => {
-    return [...promotions]
+    const sorted = [...promotions]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, RECENT_PROMOTIONS_LIMIT);
+    log("recentPromotions computed", { data: { count: sorted.length } });
+    return sorted;
   }, [promotions]);
 
   const chartData = useMemo(() => {
     const series = analytics?.series?.views || [];
+    let result;
     if (series.length) {
-      return series.map((d) => ({
+      result = series.map((d) => ({
         label:
           chartFilter.type === "last2Months" || chartFilter.type === "year"
             ? d.date
             : d.date?.slice(-2) || "",
         amount: d.count || 0,
       }));
-    }
-    if (chartFilter.type === "week") {
+    } else if (chartFilter.type === "week") {
       const out = [];
       const now = new Date();
       for (let i = 6; i >= 0; i--) {
@@ -333,15 +452,24 @@ const BusinessPage = () => {
           amount: 0,
         });
       }
-      return out;
+      result = out;
+    } else {
+      result = [];
     }
-    return [];
+    log("chartData computed", {
+      data: { points: result.length, sample: result.slice(0, 3) },
+    });
+    return result;
   }, [analytics, chartFilter]);
 
   const isLoading = bizLoading;
 
-  // ─── Unauthorized state — show logout UI ──────────────────
+  // ─── Unauthorized state ──────────────────────────────────
+  log("Checking unauthorized state", {
+    data: { isUnauthorized, willRender: isUnauthorized },
+  });
   if (isUnauthorized) {
+    log("🛑 Rendering UNAUTHORIZED screen", { level: "warn" });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-8 max-w-md w-full text-center">
@@ -387,7 +515,18 @@ const BusinessPage = () => {
   }
 
   // ─── Other errors ─────────────────────────────────────────
+  log("Checking other error state", {
+    data: { hasError: !!bizError, willRender: !!bizError },
+  });
   if (bizError) {
+    log("🛑 Rendering ERROR screen", {
+      level: "error",
+      data: {
+        status: bizError?.status,
+        message: bizError?.data?.message,
+        fullError: bizError,
+      },
+    });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-8 max-w-md w-full text-center">
@@ -396,7 +535,8 @@ const BusinessPage = () => {
             Failed to load business profile
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            {bizError?.data?.message || "Something went wrong. Please try again."}
+            {bizError?.data?.message ||
+              "Something went wrong. Please try again."}
           </p>
 
           <div className="space-y-2">
@@ -422,15 +562,21 @@ const BusinessPage = () => {
   }
 
   // ─── Status helpers ────────────────────────────────────────
+  log("Building status meta & preparing to render MAIN layout", {
+    level: "success",
+  });
+
   const statusMeta = {
     approved: {
       label: "Verified Business",
-      color: "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400",
+      color:
+        "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400",
       Icon: BadgeCheck,
     },
     pending: {
       label: "Pending Approval",
-      color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400",
+      color:
+        "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400",
       Icon: Clock,
     },
     rejected: {
@@ -463,6 +609,7 @@ const BusinessPage = () => {
 
   // ─── Mobile Hero Card ──────────────────────────────────────
   const HeroCard = () => {
+    log("🎨 Rendering HeroCard (mobile)");
     const initials = (business?.businessName || "B").charAt(0).toUpperCase();
 
     return (
@@ -476,7 +623,9 @@ const BusinessPage = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-lg font-bold text-[#3B82F6]">{initials}</span>
+              <span className="text-lg font-bold text-[#3B82F6]">
+                {initials}
+              </span>
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -494,7 +643,7 @@ const BusinessPage = () => {
             </span>
           </div>
           <button
-            onClick={() => navigate("/business/profile/edit")}
+            onClick={() => navigate("/business/profile")}
             className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition flex-shrink-0"
           >
             <Edit3 className="h-4 w-4" />
@@ -526,13 +675,17 @@ const BusinessPage = () => {
         <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-700/30 rounded-xl px-3 py-2 border border-gray-200 dark:border-gray-700 gap-2">
           <div className="flex items-center gap-5 min-w-0">
             <div className="min-w-0">
-              <span className="text-[10px] text-gray-500 dark:text-gray-400">Promos</span>
+              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                Promos
+              </span>
               <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                 {activePromotions}
               </p>
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] text-gray-500 dark:text-gray-400">Ads</span>
+              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                Ads
+              </span>
               <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                 {activeAds}
               </p>
@@ -551,37 +704,48 @@ const BusinessPage = () => {
   };
 
   // ─── Desktop Stat Card ─────────────────────────────────────
-  const StatCard = ({ icon: Icon, label, value, sub }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm min-w-0">
-      <div className="flex items-center justify-between gap-2 min-w-0">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">
-            {label}
-          </p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1 truncate">
-            {value}
-          </p>
-          {sub && (
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
-              {sub}
+  const StatCard = ({ icon: Icon, label, value, sub }) => {
+    log(`🎨 Rendering StatCard: ${label}`, { data: { value, sub } });
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm min-w-0">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider truncate">
+              {label}
             </p>
-          )}
-        </div>
-        <div className="p-2 rounded-lg bg-blue-50 text-[#3B82F6] dark:bg-blue-900/20 dark:text-blue-400 flex-shrink-0">
-          <Icon className="h-5 w-5" />
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1 truncate">
+              {value}
+            </p>
+            {sub && (
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                {sub}
+              </p>
+            )}
+          </div>
+          <div className="p-2 rounded-lg bg-blue-50 text-[#3B82F6] dark:bg-blue-900/20 dark:text-blue-400 flex-shrink-0">
+            <Icon className="h-5 w-5" />
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ─── Chart Filter Dropdown ────────────────────────────────
   const ChartFilterDropdown = () => {
+    log("🎨 Rendering ChartFilterDropdown");
+
     const availableYears = useMemo(() => {
       const years = new Set();
       years.add(new Date().getFullYear());
-      const earliest = business?.createdAt ? new Date(business.createdAt) : null;
+      const earliest = business?.createdAt
+        ? new Date(business.createdAt)
+        : null;
       if (earliest) {
-        for (let y = earliest.getFullYear(); y <= new Date().getFullYear(); y++) {
+        for (
+          let y = earliest.getFullYear();
+          y <= new Date().getFullYear();
+          y++
+        ) {
           years.add(y);
         }
       }
@@ -666,6 +830,7 @@ const BusinessPage = () => {
                     key={f.type}
                     active={isActive(f.type)}
                     onClick={() => {
+                      log(`Filter selected: ${f.type}`);
                       setChartFilter({ type: f.type });
                       closeDropdown();
                     }}
@@ -682,6 +847,7 @@ const BusinessPage = () => {
                     key={y}
                     label={y}
                     onClick={() => {
+                      log(`Drilling into year: ${y}`);
                       setDropYear(y);
                       setDropLevel("months");
                     }}
@@ -742,15 +908,18 @@ const BusinessPage = () => {
 
   // ─── Approval Banner ───────────────────────────────────────
   const ApprovalBanner = () => {
-    if (approvalStatus === "approved") return null;
+    if (approvalStatus === "approved") {
+      log("ApprovalBanner: skipped (approved)");
+      return null;
+    }
+    log(`🎨 Rendering ApprovalBanner: ${approvalStatus}`);
 
     const meta = {
       pending: {
         bg: "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800",
         text: "text-yellow-800 dark:text-yellow-200",
         title: "Account pending approval",
-        body:
-          "Your business has been submitted for review. You'll be notified once our team approves it. In the meantime, feel free to complete your profile.",
+        body: "Your business has been submitted for review. You'll be notified once our team approves it. In the meantime, feel free to complete your profile.",
         Icon: Clock,
       },
       rejected: {
@@ -775,7 +944,9 @@ const BusinessPage = () => {
     const Icon = meta.Icon;
 
     return (
-      <div className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${meta.bg}`}>
+      <div
+        className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${meta.bg}`}
+      >
         <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${meta.text}`} />
         <div className="flex-1 min-w-0">
           <h3 className={`text-sm font-semibold ${meta.text}`}>{meta.title}</h3>
@@ -788,183 +959,207 @@ const BusinessPage = () => {
   };
 
   // ─── Images Modal ──────────────────────────────────────────
-  const ImagesModal = () => (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={() => setShowImagesModal(false)}
-    >
+  const ImagesModal = () => {
+    log("🎨 Rendering ImagesModal");
+    return (
       <div
-        className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl w-full max-w-lg p-6 mx-4 mb-4 sm:mb-0 shadow-2xl max-h-[80vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
+        onClick={() => setShowImagesModal(false)}
       >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              Business Images
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              {imageCount} of {MAX_BUSINESS_IMAGES} · minimum {MIN_BUSINESS_IMAGES}
-            </p>
+        <div
+          className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl w-full max-w-lg p-6 mx-4 mb-4 sm:mb-0 shadow-2xl max-h-[80vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Business Images
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {imageCount} of {MAX_BUSINESS_IMAGES} · minimum{" "}
+                {MIN_BUSINESS_IMAGES}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowImagesModal(false)}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+            </button>
           </div>
+
+          {imageCount === 0 ? (
+            <div className="text-center py-8">
+              <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600 dark:text-gray-300">
+                No images uploaded yet
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Upload at least {MIN_BUSINESS_IMAGES} photos of your business
+                from different angles.
+              </p>
+              <button
+                onClick={() => {
+                  setShowImagesModal(false);
+                  navigate("/business/profile");
+                }}
+                className="mt-4 px-6 py-2 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium inline-flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Upload Images
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {profileImages.map((url, idx) => (
+                  <div
+                    key={idx}
+                    className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800"
+                  >
+                    <img
+                      src={url}
+                      alt={`Business image ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {!imagesReady && (
+                <p className="text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-3 py-2 rounded-lg mb-3">
+                  Upload {MIN_BUSINESS_IMAGES - imageCount} more to reach the
+                  minimum.
+                </p>
+              )}
+
+              <button
+                onClick={() => {
+                  setShowImagesModal(false);
+                  navigate("/business/profile");
+                }}
+                className="w-full py-2.5 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium inline-flex items-center justify-center gap-2"
+              >
+                <Edit3 className="h-4 w-4" />
+                Manage Images
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Recent Promotions ─────────────────────────────────────
+  const RecentPromotions = () => {
+    log("🎨 Rendering RecentPromotions", {
+      data: { promosLoading, count: recentPromotions.length },
+    });
+    return (
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden rounded-2xl">
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">
+            Recent Promotions
+          </h2>
           <button
-            onClick={() => setShowImagesModal(false)}
-            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={() => navigate("/business/promotions")}
+            className="text-sm text-[#3B82F6] hover:underline flex-shrink-0"
           >
-            <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+            View all
           </button>
         </div>
 
-        {imageCount === 0 ? (
-          <div className="text-center py-8">
-            <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 dark:text-gray-300">No images uploaded yet</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Upload at least {MIN_BUSINESS_IMAGES} photos of your business from
-              different angles.
+        {promosLoading ? (
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between px-4 py-3"
+              >
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    <div className="h-4 w-14 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+                  </div>
+                  <div className="h-3 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                </div>
+                <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-2" />
+              </div>
+            ))}
+          </div>
+        ) : recentPromotions.length === 0 ? (
+          <div className="text-center py-10">
+            <Megaphone className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-500 dark:text-gray-400">
+              No promotions yet
             </p>
             <button
-              onClick={() => {
-                setShowImagesModal(false);
-                navigate("/business/profile/edit");
-              }}
-              className="mt-4 px-6 py-2 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium inline-flex items-center gap-2"
+              onClick={() => navigate("/business/promotions")}
+              className="mt-3 text-[#3B82F6] hover:underline text-sm font-medium"
             >
-              <Upload className="h-4 w-4" />
-              Upload Images
+              Create your first promotion
             </button>
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {profileImages.map((url, idx) => (
-                <div
-                  key={idx}
-                  className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800"
-                >
-                  <img
-                    src={url}
-                    alt={`Business image ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            {recentPromotions.map((promo) => (
+              <div
+                key={promo._id}
+                onClick={() => navigate("/business/promotions")}
+                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-600 cursor-pointer transition"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="font-medium text-gray-900 dark:text-white text-sm truncate"
+                      title={promo.title}
+                    >
+                      {promo.title}
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 ${promotionStatusColor(
+                        promo.status,
+                      )}`}
+                    >
+                      {promo.status || "draft"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {promo.discountValue != null && (
+                      <>
+                        <span className="flex-shrink-0">
+                          {promo.discountType === "percent"
+                            ? `${promo.discountValue}% off`
+                            : `₦${promo.discountValue} off`}
+                        </span>
+                        <span className="flex-shrink-0">·</span>
+                      </>
+                    )}
+                    <span className="truncate">
+                      {new Date(promo.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {!imagesReady && (
-              <p className="text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-3 py-2 rounded-lg mb-3">
-                Upload {MIN_BUSINESS_IMAGES - imageCount} more to reach the minimum.
-              </p>
-            )}
-
-            <button
-              onClick={() => {
-                setShowImagesModal(false);
-                navigate("/business/profile/edit");
-              }}
-              className="w-full py-2.5 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium inline-flex items-center justify-center gap-2"
-            >
-              <Edit3 className="h-4 w-4" />
-              Manage Images
-            </button>
-          </>
+                <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-2" />
+              </div>
+            ))}
+          </div>
         )}
       </div>
-    </div>
-  );
-
-  // ─── Recent Promotions ─────────────────────────────────────
-  const RecentPromotions = () => (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden rounded-2xl">
-      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">
-          Recent Promotions
-        </h2>
-        <button
-          onClick={() => navigate("/business/promotions")}
-          className="text-sm text-[#3B82F6] hover:underline flex-shrink-0"
-        >
-          View all
-        </button>
-      </div>
-
-      {promosLoading ? (
-        <div className="divide-y divide-gray-100 dark:divide-gray-700">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex items-center justify-between px-4 py-3">
-              <div className="flex-1 min-w-0 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                  <div className="h-4 w-14 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
-                </div>
-                <div className="h-3 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              </div>
-              <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-2" />
-            </div>
-          ))}
-        </div>
-      ) : recentPromotions.length === 0 ? (
-        <div className="text-center py-10">
-          <Megaphone className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">No promotions yet</p>
-          <button
-            onClick={() => navigate("/business/promotions/new")}
-            className="mt-3 text-[#3B82F6] hover:underline text-sm font-medium"
-          >
-            Create your first promotion
-          </button>
-        </div>
-      ) : (
-        <div className="divide-y divide-gray-100 dark:divide-gray-700">
-          {recentPromotions.map((promo) => (
-            <div
-              key={promo._id}
-              onClick={() => navigate(`/business/promotions/${promo._id}`)}
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-600 cursor-pointer transition"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="font-medium text-gray-900 dark:text-white text-sm truncate"
-                    title={promo.title}
-                  >
-                    {promo.title}
-                  </span>
-                  <span
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 ${promotionStatusColor(
-                      promo.status
-                    )}`}
-                  >
-                    {promo.status || "draft"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {promo.discountValue != null && (
-                    <>
-                      <span className="flex-shrink-0">
-                        {promo.discountType === "percent"
-                          ? `${promo.discountValue}% off`
-                          : `₦${promo.discountValue} off`}
-                      </span>
-                      <span className="flex-shrink-0">·</span>
-                    </>
-                  )}
-                  <span className="truncate">
-                    {new Date(promo.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-2" />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   // ─── Render ────────────────────────────────────────────────
+  log("🎨 About to render MAIN return — all guards passed", {
+    level: "success",
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <BusinessSidebar onLogout={handleLogout} />
+      {(() => {
+        log("🎨 Rendering BusinessSidebar");
+        return <BusinessSidebar onLogout={handleLogout} />;
+      })()}
 
       <div className="lg:ml-64 pb-20 lg:pb-8">
         <header className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-3 py-3 lg:py-4 lg:px-6 flex items-center justify-between gap-2">
@@ -996,7 +1191,6 @@ const BusinessPage = () => {
               </button>
             )}
 
-            {/* Logout button — always visible */}
             <button
               type="button"
               onClick={handleLogout}
@@ -1020,9 +1214,15 @@ const BusinessPage = () => {
         </header>
 
         <div className="w-full px-1 sm:px-4 lg:px-6 py-4">
-          <HeroCard />
+          {(() => {
+            log("🎨 Rendering HeroCard");
+            return <HeroCard />;
+          })()}
 
-          <ApprovalBanner />
+          {(() => {
+            log("🎨 Rendering ApprovalBanner");
+            return <ApprovalBanner />;
+          })()}
 
           {/* Desktop welcome + stat cards */}
           <div className="hidden lg:block">
@@ -1105,71 +1305,97 @@ const BusinessPage = () => {
                     {formatFilterSubtitle(chartFilter)}
                   </span>
                 </div>
-                <ChartFilterDropdown />
+                {(() => {
+                  log("🎨 Rendering ChartFilterDropdown");
+                  return <ChartFilterDropdown />;
+                })()}
               </div>
 
-              {analyticsLoading ? (
-                <div className="h-48 animate-pulse bg-gray-200 dark:bg-gray-700 rounded" />
-              ) : chartData.length === 0 ? (
-                <div className="h-48 flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">
-                  No data for this period
-                </div>
-              ) : (
-                <div className="h-48 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <defs>
-                        <linearGradient
-                          id="viewsGradient"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop offset="5%" stopColor={ACCENT} stopOpacity={0.3} />
-                          <stop offset="95%" stopColor={ACCENT} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fontSize: 12 }}
-                        stroke="#9ca3af"
-                        tickMargin={5}
-                        minTickGap={16}
-                        interval="preserveStartEnd"
-                      />
-                      <YAxis
-                        tick={{ fontSize: 12 }}
-                        stroke="#9ca3af"
-                        width={40}
-                        allowDecimals={false}
-                      />
-                      <Tooltip
-                        formatter={(value) => [value, "Views"]}
-                        contentStyle={{
-                          backgroundColor: "rgba(255,255,255,0.9)",
-                          border: "none",
-                          borderRadius: "8px",
-                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="amount"
-                        stroke={ACCENT}
-                        strokeWidth={2}
-                        fill="url(#viewsGradient)"
-                        dot={{ r: 2, fill: ACCENT }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+              {analyticsLoading
+                ? (() => {
+                    log("🎨 Chart: rendering loading skeleton");
+                    return (
+                      <div className="h-48 animate-pulse bg-gray-200 dark:bg-gray-700 rounded" />
+                    );
+                  })()
+                : chartData.length === 0
+                  ? (() => {
+                      log("🎨 Chart: rendering empty state");
+                      return (
+                        <div className="h-48 flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">
+                          No data for this period
+                        </div>
+                      );
+                    })()
+                  : (() => {
+                      log("🎨 Chart: rendering AreaChart", {
+                        data: { points: chartData.length },
+                      });
+                      return (
+                        <div className="h-48 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData}>
+                              <defs>
+                                <linearGradient
+                                  id="viewsGradient"
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="5%"
+                                    stopColor={ACCENT}
+                                    stopOpacity={0.3}
+                                  />
+                                  <stop
+                                    offset="95%"
+                                    stopColor={ACCENT}
+                                    stopOpacity={0}
+                                  />
+                                </linearGradient>
+                              </defs>
+                              <XAxis
+                                dataKey="label"
+                                tick={{ fontSize: 12 }}
+                                stroke="#9ca3af"
+                                tickMargin={5}
+                                minTickGap={16}
+                                interval="preserveStartEnd"
+                              />
+                              <YAxis
+                                tick={{ fontSize: 12 }}
+                                stroke="#9ca3af"
+                                width={40}
+                                allowDecimals={false}
+                              />
+                              <Tooltip
+                                formatter={(value) => [value, "Views"]}
+                                contentStyle={{
+                                  backgroundColor: "rgba(255,255,255,0.9)",
+                                  border: "none",
+                                  borderRadius: "8px",
+                                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                                }}
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="amount"
+                                stroke={ACCENT}
+                                strokeWidth={2}
+                                fill="url(#viewsGradient)"
+                                dot={{ r: 2, fill: ACCENT }}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })()}
             </div>
 
             <div className="grid grid-cols-2 gap-2 lg:gap-3">
               <button
-                onClick={() => navigate("/business/profile/edit")}
+                onClick={() => navigate("/business/profile")}
                 className="flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-0 px-2.5 py-2.5 lg:p-4 bg-[#3B82F6] hover:bg-blue-700 text-white rounded-xl lg:rounded-2xl transition shadow-sm hover:shadow-md min-w-0"
               >
                 <Edit3 className="h-4 w-4 lg:h-8 lg:w-8 lg:mb-1 flex-shrink-0" />
@@ -1187,29 +1413,29 @@ const BusinessPage = () => {
                 </span>
               </button>
               <button
-                onClick={() => navigate("/business/promotions/new")}
+                onClick={() => navigate("/business/promotions")}
                 className="flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-0 px-2.5 py-2.5 lg:p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl lg:rounded-2xl transition min-w-0"
               >
                 <Megaphone className="h-4 w-4 lg:h-8 lg:w-8 lg:mb-1 flex-shrink-0" />
                 <span className="text-xs lg:text-sm font-medium truncate">
-                  New Promo
+                  Promotions
                 </span>
               </button>
               <button
-                onClick={() => navigate("/business/ads/new")}
+                onClick={() => navigate("/business/ads")}
                 className="flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-0 px-2.5 py-2.5 lg:p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl lg:rounded-2xl transition min-w-0"
               >
                 <BarChart3 className="h-4 w-4 lg:h-8 lg:w-8 lg:mb-1 flex-shrink-0" />
                 <span className="text-xs lg:text-sm font-medium truncate">
-                  New Ad
+                  Ads
                 </span>
               </button>
               <button
-                onClick={() => navigate("/business/analytics")}
+                onClick={() => navigate("/business/reviews")}
                 className="col-span-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl lg:rounded-2xl px-3 py-2.5 lg:p-3 flex items-center justify-center transition"
               >
                 <span className="text-xs lg:text-sm font-medium">
-                  View Full Analytics
+                  View Reviews
                 </span>
                 <ChevronRight className="h-4 w-4 ml-1" />
               </button>
@@ -1279,7 +1505,7 @@ const BusinessPage = () => {
               </ul>
 
               <button
-                onClick={() => navigate("/business/profile/edit")}
+                onClick={() => navigate("/business/profile")}
                 className="mt-4 text-[#3B82F6] hover:underline text-sm font-medium"
               >
                 Complete your profile →
@@ -1329,7 +1555,10 @@ const BusinessPage = () => {
             </div>
           </div>
 
-          <RecentPromotions />
+          {(() => {
+            log("🎨 Rendering RecentPromotions");
+            return <RecentPromotions />;
+          })()}
         </div>
       </div>
 
@@ -1344,8 +1573,8 @@ const BusinessPage = () => {
               approvalStatus === "approved"
                 ? "bg-green-500/40"
                 : approvalStatus === "pending"
-                ? "bg-orange-500/40"
-                : "bg-red-500/40"
+                  ? "bg-orange-500/40"
+                  : "bg-red-500/40"
             }`}
             style={{ animationDuration: "1.5s" }}
           />
@@ -1354,8 +1583,8 @@ const BusinessPage = () => {
               approvalStatus === "approved"
                 ? "bg-green-500 border-green-400"
                 : approvalStatus === "pending"
-                ? "bg-orange-500 border-orange-400"
-                : "bg-red-500 border-red-400"
+                  ? "bg-orange-500 border-orange-400"
+                  : "bg-red-500 border-red-400"
             }`}
           >
             <statusMeta.Icon className="h-6 w-6 text-white" />
@@ -1441,7 +1670,7 @@ const BusinessPage = () => {
               <button
                 onClick={() => {
                   setShowStatusModal(false);
-                  navigate("/business/profile/edit");
+                  navigate("/business/profile");
                 }}
                 className="w-full mt-3 py-2.5 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium"
               >
@@ -1464,9 +1693,21 @@ const BusinessPage = () => {
         </div>
       )}
 
-      {showImagesModal && <ImagesModal />}
+      {showImagesModal &&
+        (() => {
+          log("🎨 Rendering ImagesModal (visible)");
+          return <ImagesModal />;
+        })()}
 
-      <BusinessBottombar />
+      {(() => {
+        log("🎨 Rendering BusinessBottombar");
+        return <BusinessBottombar />;
+      })()}
+
+      {(() => {
+        log("✅ MAIN render COMPLETE", { level: "success" });
+        return null;
+      })()}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 // src/pages/business/BusinessProfile.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   Store,
@@ -57,7 +57,15 @@ const PRICE_RANGES = [
   { value: 4, label: "$$$$", hint: "Luxury" },
 ];
 
-const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 const DEFAULT_HOURS = DAY_NAMES.map((_, day) => ({
   day,
@@ -244,7 +252,9 @@ const BusinessProfile = () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutBusinessAccount()
+        .unwrap()
+        .catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -271,7 +281,7 @@ const BusinessProfile = () => {
     setFormData((prev) => ({
       ...prev,
       openingHours: prev.openingHours.map((h) =>
-        h.day === day ? { ...h, [field]: value } : h
+        h.day === day ? { ...h, [field]: value } : h,
       ),
     }));
 
@@ -289,7 +299,10 @@ const BusinessProfile = () => {
   };
 
   const removeTag = (tag) =>
-    setFormData((prev) => ({ ...prev, tags: prev.tags.filter((t) => t !== tag) }));
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tag),
+    }));
 
   // ─── Image handlers ───────────────────────────────────────
   const totalImageCount = existingImages.length + newImageFiles.length;
@@ -312,7 +325,7 @@ const BusinessProfile = () => {
     if (files.length > remaining) {
       showToast(
         `Only ${remaining} more image${remaining === 1 ? "" : "s"} allowed`,
-        "error"
+        "error",
       );
     }
     e.target.value = "";
@@ -415,7 +428,8 @@ const BusinessProfile = () => {
           address: business.location?.address || "",
         },
         openingHours:
-          Array.isArray(business.openingHours) && business.openingHours.length > 0
+          Array.isArray(business.openingHours) &&
+          business.openingHours.length > 0
             ? business.openingHours
             : DEFAULT_HOURS,
       });
@@ -431,20 +445,22 @@ const BusinessProfile = () => {
   const approvalStatus = !isEmailVerified
     ? "unverified"
     : isApproved
-    ? "approved"
-    : isRejected
-    ? "rejected"
-    : "pending";
+      ? "approved"
+      : isRejected
+        ? "rejected"
+        : "pending";
 
   const statusMeta = {
     approved: {
       label: "Verified Business",
-      color: "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400",
+      color:
+        "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400",
       Icon: BadgeCheck,
     },
     pending: {
       label: "Pending Approval",
-      color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400",
+      color:
+        "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400",
       Icon: Clock,
     },
     rejected: {
@@ -469,17 +485,30 @@ const BusinessProfile = () => {
   const completionItems = [
     { label: "Business name", done: !!business?.businessName },
     { label: "Business description", done: !!business?.description },
-    { label: "Confirm your location", done: !!(business?.location?.city || business?.address) },
+    {
+      label: "Confirm your location",
+      done: !!(business?.location?.city || business?.address),
+    },
     { label: "Add phone number", done: !!business?.phone },
     { label: "Add website", done: !!business?.website },
-    { label: "Add business hours", done: (business?.openingHours?.length || 0) > 0 },
-    { label: "Choose a business type", done: business?.businessType && business.businessType !== "other" },
+    {
+      label: "Add business hours",
+      done: (business?.openingHours?.length || 0) > 0,
+    },
+    {
+      label: "Choose a business type",
+      done: business?.businessType && business.businessType !== "other",
+    },
     { label: "Add tags", done: (business?.tags?.length || 0) > 0 },
     { label: "Upload cover image", done: !!business?.coverImage },
-    { label: `Upload ${MIN_BUSINESS_IMAGES}+ business images`, done: (business?.images?.length || 0) >= MIN_BUSINESS_IMAGES },
+    {
+      label: `Upload ${MIN_BUSINESS_IMAGES}+ business images`,
+      done: (business?.images?.length || 0) >= MIN_BUSINESS_IMAGES,
+    },
   ];
   const completionPct = Math.round(
-    (completionItems.filter((i) => i.done).length / completionItems.length) * 100
+    (completionItems.filter((i) => i.done).length / completionItems.length) *
+      100,
   );
 
   // ─── Loading / error guards ───────────────────────────────
@@ -505,7 +534,9 @@ const BusinessProfile = () => {
           <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="h-7 w-7 text-red-500" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Session expired</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+            Session expired
+          </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
             Please log in again to continue.
           </p>
@@ -584,7 +615,9 @@ const BusinessProfile = () => {
     if (!meta) return null;
     const Icon = meta.Icon;
     return (
-      <div className={`border rounded-xl p-4 mb-6 flex items-start gap-3 ${meta.bg}`}>
+      <div
+        className={`border rounded-xl p-4 mb-6 flex items-start gap-3 ${meta.bg}`}
+      >
         <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${meta.text}`} />
         <div className="flex-1 min-w-0">
           <h3 className={`text-sm font-semibold ${meta.text}`}>{meta.title}</h3>
@@ -741,13 +774,17 @@ const BusinessProfile = () => {
                     Complete your profile
                   </h3>
                   <span className="text-xs font-medium text-gray-500 dark:text-gray-400 flex-shrink-0">
-                    {completionItems.filter((i) => i.done).length}/{completionItems.length}
+                    {completionItems.filter((i) => i.done).length}/
+                    {completionItems.length}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                   {completionItems.map((item) => (
-                    <div key={item.label} className="flex items-center gap-2 min-w-0">
+                    <div
+                      key={item.label}
+                      className="flex items-center gap-2 min-w-0"
+                    >
                       {item.done ? (
                         <CheckCircle2 className="h-4 w-4 text-[#3B82F6] flex-shrink-0" />
                       ) : (
@@ -812,7 +849,9 @@ const BusinessProfile = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-2xl font-bold text-[#3B82F6]">{initials}</span>
+                  <span className="text-2xl font-bold text-[#3B82F6]">
+                    {initials}
+                  </span>
                 )}
               </div>
               <div className="flex-1 min-w-0 sm:pt-12 lg:pt-14 w-full">
@@ -833,13 +872,16 @@ const BusinessProfile = () => {
                     <span className="text-gray-500 dark:text-gray-400 text-xs inline-flex items-center gap-1">
                       <MapPin className="h-3.5 w-3.5" />
                       {business.location.city}
-                      {business.location.state ? `, ${business.location.state}` : ""}
+                      {business.location.state
+                        ? `, ${business.location.state}`
+                        : ""}
                     </span>
                   )}
                   {business?.rating > 0 && (
                     <span className="text-gray-500 dark:text-gray-400 text-xs inline-flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
-                      {Number(business.rating).toFixed(1)} ({business.numReviews || 0})
+                      {Number(business.rating).toFixed(1)} (
+                      {business.numReviews || 0})
                     </span>
                   )}
                   {business?.viewCount > 0 && (
@@ -899,7 +941,9 @@ const BusinessProfile = () => {
                       <input
                         type="text"
                         value={formData.businessName}
-                        onChange={(e) => handleFieldChange("businessName", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("businessName", e.target.value)
+                        }
                         className={inputClass}
                       />
                     ) : (
@@ -912,7 +956,9 @@ const BusinessProfile = () => {
                       <textarea
                         rows={4}
                         value={formData.description}
-                        onChange={(e) => handleFieldChange("description", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("description", e.target.value)
+                        }
                         placeholder="Tell customers what makes your business unique..."
                         className={inputClass}
                       />
@@ -929,7 +975,9 @@ const BusinessProfile = () => {
                       {editMode ? (
                         <select
                           value={formData.businessType}
-                          onChange={(e) => handleFieldChange("businessType", e.target.value)}
+                          onChange={(e) =>
+                            handleFieldChange("businessType", e.target.value)
+                          }
                           className={inputClass}
                         >
                           {BUSINESS_TYPES.map((t) => (
@@ -941,8 +989,9 @@ const BusinessProfile = () => {
                       ) : (
                         <DisplayValue
                           value={
-                            BUSINESS_TYPES.find((t) => t.value === formData.businessType)
-                              ?.label || formData.businessType
+                            BUSINESS_TYPES.find(
+                              (t) => t.value === formData.businessType,
+                            )?.label || formData.businessType
                           }
                         />
                       )}
@@ -955,7 +1004,9 @@ const BusinessProfile = () => {
                             <button
                               key={p.value}
                               type="button"
-                              onClick={() => handleFieldChange("priceRange", p.value)}
+                              onClick={() =>
+                                handleFieldChange("priceRange", p.value)
+                              }
                               className={`py-2 rounded-lg text-sm font-semibold transition border ${
                                 formData.priceRange === p.value
                                   ? "bg-[#3B82F6] text-white border-[#3B82F6]"
@@ -970,8 +1021,9 @@ const BusinessProfile = () => {
                       ) : (
                         <DisplayValue
                           value={
-                            PRICE_RANGES.find((p) => p.value === formData.priceRange)
-                              ?.label || "$$"
+                            PRICE_RANGES.find(
+                              (p) => p.value === formData.priceRange,
+                            )?.label || "$$"
                           }
                         />
                       )}
@@ -982,7 +1034,9 @@ const BusinessProfile = () => {
                         <input
                           type="tel"
                           value={formData.phone}
-                          onChange={(e) => handleFieldChange("phone", e.target.value)}
+                          onChange={(e) =>
+                            handleFieldChange("phone", e.target.value)
+                          }
                           className={inputClass}
                         />
                       ) : (
@@ -995,12 +1049,17 @@ const BusinessProfile = () => {
                         <input
                           type="url"
                           value={formData.website}
-                          onChange={(e) => handleFieldChange("website", e.target.value)}
+                          onChange={(e) =>
+                            handleFieldChange("website", e.target.value)
+                          }
                           placeholder="https://..."
                           className={inputClass}
                         />
                       ) : (
-                        <DisplayValue value={formData.website} link={formData.website} />
+                        <DisplayValue
+                          value={formData.website}
+                          link={formData.website}
+                        />
                       )}
                     </Field>
                   </div>
@@ -1143,7 +1202,11 @@ const BusinessProfile = () => {
                           key={url}
                           className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 group"
                         >
-                          <img src={url} alt="Business" className="w-full h-full object-cover" />
+                          <img
+                            src={url}
+                            alt="Business"
+                            className="w-full h-full object-cover"
+                          />
                           {editMode && (
                             <button
                               type="button"
@@ -1185,7 +1248,9 @@ const BusinessProfile = () => {
 
                   {editMode && removedImages.length > 0 && (
                     <p className="text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-3 py-2 rounded-lg">
-                      {removedImages.length} image{removedImages.length === 1 ? "" : "s"} marked for removal — save to apply.
+                      {removedImages.length} image
+                      {removedImages.length === 1 ? "" : "s"} marked for removal
+                      — save to apply.
                     </p>
                   )}
                 </div>
@@ -1199,7 +1264,9 @@ const BusinessProfile = () => {
                       <input
                         type="text"
                         value={formData.location.address}
-                        onChange={(e) => handleLocationChange("address", e.target.value)}
+                        onChange={(e) =>
+                          handleLocationChange("address", e.target.value)
+                        }
                         placeholder="e.g. 12 Aba Road"
                         className={inputClass}
                       />
@@ -1214,7 +1281,9 @@ const BusinessProfile = () => {
                         <input
                           type="text"
                           value={formData.location.city}
-                          onChange={(e) => handleLocationChange("city", e.target.value)}
+                          onChange={(e) =>
+                            handleLocationChange("city", e.target.value)
+                          }
                           className={inputClass}
                         />
                       ) : (
@@ -1226,7 +1295,9 @@ const BusinessProfile = () => {
                         <input
                           type="text"
                           value={formData.location.state}
-                          onChange={(e) => handleLocationChange("state", e.target.value)}
+                          onChange={(e) =>
+                            handleLocationChange("state", e.target.value)
+                          }
                           className={inputClass}
                         />
                       ) : (
@@ -1238,7 +1309,9 @@ const BusinessProfile = () => {
                         <input
                           type="text"
                           value={formData.location.country}
-                          onChange={(e) => handleLocationChange("country", e.target.value)}
+                          onChange={(e) =>
+                            handleLocationChange("country", e.target.value)
+                          }
                           className={inputClass}
                         />
                       ) : (
@@ -1250,7 +1323,9 @@ const BusinessProfile = () => {
                         <input
                           type="text"
                           value={formData.address}
-                          onChange={(e) => handleFieldChange("address", e.target.value)}
+                          onChange={(e) =>
+                            handleFieldChange("address", e.target.value)
+                          }
                           placeholder="Shown on listings"
                           className={inputClass}
                         />
@@ -1266,17 +1341,19 @@ const BusinessProfile = () => {
               {activeTab === "hours" && (
                 <div className="space-y-3">
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                    Set your weekly opening hours. Toggle "Closed" for days you don't open.
+                    Set your weekly opening hours. Toggle "Closed" for days you
+                    don't open.
                   </p>
 
                   {DAY_NAMES.map((name, day) => {
-                    const hours =
-                      formData.openingHours.find((h) => h.day === day) || {
-                        day,
-                        open: "09:00",
-                        close: "17:00",
-                        closed: false,
-                      };
+                    const hours = formData.openingHours.find(
+                      (h) => h.day === day,
+                    ) || {
+                      day,
+                      open: "09:00",
+                      close: "17:00",
+                      closed: false,
+                    };
                     return (
                       <div
                         key={day}
@@ -1291,7 +1368,9 @@ const BusinessProfile = () => {
                             <input
                               type="time"
                               value={hours.open}
-                              onChange={(e) => handleHoursChange(day, "open", e.target.value)}
+                              onChange={(e) =>
+                                handleHoursChange(day, "open", e.target.value)
+                              }
                               disabled={hours.closed}
                               className="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] disabled:opacity-50"
                             />
@@ -1299,7 +1378,9 @@ const BusinessProfile = () => {
                             <input
                               type="time"
                               value={hours.close}
-                              onChange={(e) => handleHoursChange(day, "close", e.target.value)}
+                              onChange={(e) =>
+                                handleHoursChange(day, "close", e.target.value)
+                              }
                               disabled={hours.closed}
                               className="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] disabled:opacity-50"
                             />
@@ -1308,7 +1389,11 @@ const BusinessProfile = () => {
                                 type="checkbox"
                                 checked={hours.closed}
                                 onChange={(e) =>
-                                  handleHoursChange(day, "closed", e.target.checked)
+                                  handleHoursChange(
+                                    day,
+                                    "closed",
+                                    e.target.checked,
+                                  )
                                 }
                                 className="h-3.5 w-3.5 rounded border-gray-300 text-[#3B82F6] focus:ring-[#3B82F6]"
                               />
@@ -1316,7 +1401,9 @@ const BusinessProfile = () => {
                             </label>
                           </>
                         ) : hours.closed ? (
-                          <span className="text-sm text-red-500 font-medium">Closed</span>
+                          <span className="text-sm text-red-500 font-medium">
+                            Closed
+                          </span>
                         ) : (
                           <span className="text-sm text-gray-600 dark:text-gray-300">
                             {hours.open} — {hours.close}
@@ -1333,7 +1420,8 @@ const BusinessProfile = () => {
           {/* Small footer */}
           <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800 text-center">
             <p className="text-[11px] text-gray-400 dark:text-gray-500">
-              © {new Date().getFullYear()} LocalSpot Systems Ltd. — Business Account Center
+              © {new Date().getFullYear()} LocalSpot Systems Ltd. — Business
+              Account Center
             </p>
           </footer>
         </div>

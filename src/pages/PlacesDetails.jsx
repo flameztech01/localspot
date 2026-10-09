@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
+import React, { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import {
   FiChevronLeft,
   FiHeart,
@@ -13,126 +13,132 @@ import {
   FiX,
   FiCheck,
   FiChevronDown,
-} from 'react-icons/fi'
-import { FaHeart, FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa'
-import directoryData from '../../data/places.json'
+} from "react-icons/fi";
+import { FaHeart, FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import directoryData from "../../data/places.json";
 
 // --- Hardcoded Data (Reviews, Meals, Menu) ---
 const hardcodedReviews = [
   {
     id: 1,
-    name: 'John Doe',
-    avatar: 'https://i.pravatar.cc/150?img=11',
+    name: "John Doe",
+    avatar: "https://i.pravatar.cc/150?img=11",
     rating: 5,
-    date: '2 days ago',
-    text: 'Absolutely amazing experience! The seafood okra was out of this world. The staff were very attentive and the ambiance was perfect for a quiet dinner. Highly recommend!',
+    date: "2 days ago",
+    text: "Absolutely amazing experience! The seafood okra was out of this world. The staff were very attentive and the ambiance was perfect for a quiet dinner. Highly recommend!",
   },
   {
     id: 2,
-    name: 'Sarah Smith',
-    avatar: 'https://i.pravatar.cc/150?img=5',
+    name: "Sarah Smith",
+    avatar: "https://i.pravatar.cc/150?img=5",
     rating: 4,
-    date: '1 week ago',
-    text: 'Great food and lovely atmosphere. The only reason I am giving 4 stars is because we had to wait a bit for a table despite having a reservation. But the food made up for it.',
+    date: "1 week ago",
+    text: "Great food and lovely atmosphere. The only reason I am giving 4 stars is because we had to wait a bit for a table despite having a reservation. But the food made up for it.",
   },
   {
     id: 3,
-    name: 'Michael Johnson',
-    avatar: 'https://i.pravatar.cc/150?img=3',
+    name: "Michael Johnson",
+    avatar: "https://i.pravatar.cc/150?img=3",
     rating: 5,
-    date: '2 weeks ago',
-    text: 'One of the best restaurants in Port Harcourt. The catfish pepper soup is a must-try. Clean environment and excellent service.',
+    date: "2 weeks ago",
+    text: "One of the best restaurants in Port Harcourt. The catfish pepper soup is a must-try. Clean environment and excellent service.",
   },
   {
     id: 4,
-    name: 'Emily Davis',
-    avatar: 'https://i.pravatar.cc/150?img=9',
+    name: "Emily Davis",
+    avatar: "https://i.pravatar.cc/150?img=9",
     rating: 5,
-    date: '3 weeks ago',
-    text: 'Celebrated my birthday here and it was fantastic. The staff went above and beyond. The live band was a nice touch!',
+    date: "3 weeks ago",
+    text: "Celebrated my birthday here and it was fantastic. The staff went above and beyond. The live band was a nice touch!",
   },
   {
     id: 5,
-    name: 'David Wilson',
-    avatar: 'https://i.pravatar.cc/150?img=12',
+    name: "David Wilson",
+    avatar: "https://i.pravatar.cc/150?img=12",
     rating: 3,
-    date: '1 month ago',
-    text: 'Food was good, but the service was a bit slow. Maybe it was just a busy night. Will give it another try.',
+    date: "1 month ago",
+    text: "Food was good, but the service was a bit slow. Maybe it was just a busy night. Will give it another try.",
   },
-]
+];
 
 const hardcodedPopularMeals = [
   {
     id: 1,
-    name: 'Seafood Okra',
-    price: '₦5,500',
-    img: 'https://images.unsplash.com/photo-1548943487-a2e4e43b4853?auto=format&fit=crop&q=80&w=200',
+    name: "Seafood Okra",
+    price: "₦5,500",
+    img: "https://images.unsplash.com/photo-1548943487-a2e4e43b4853?auto=format&fit=crop&q=80&w=200",
   },
   {
     id: 2,
-    name: 'Fried Rice & Chicken',
-    price: '₦4,000',
-    img: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&q=80&w=200',
+    name: "Fried Rice & Chicken",
+    price: "₦4,000",
+    img: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&q=80&w=200",
   },
   {
     id: 3,
-    name: 'Catfish Pepper Soup',
-    price: '₦4,500',
-    img: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&q=80&w=200',
+    name: "Catfish Pepper Soup",
+    price: "₦4,500",
+    img: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&q=80&w=200",
   },
-]
+];
 
 const hardcodedFullMenu = [
   {
-    category: 'Starters',
+    category: "Starters",
     items: [
-      { name: 'Spring Rolls', price: '₦2,500' },
-      { name: 'Chicken Wings', price: '₦3,500' },
-      { name: 'Peppered Snail', price: '₦4,000' },
+      { name: "Spring Rolls", price: "₦2,500" },
+      { name: "Chicken Wings", price: "₦3,500" },
+      { name: "Peppered Snail", price: "₦4,000" },
     ],
   },
   {
-    category: 'Main Course',
+    category: "Main Course",
     items: [
-      { name: 'Seafood Okra', price: '₦5,500' },
-      { name: 'Fried Rice & Chicken', price: '₦4,000' },
-      { name: 'Catfish Pepper Soup', price: '₦4,500' },
-      { name: 'Goat Meat Pepper Soup', price: '₦4,200' },
-      { name: 'Jollof Rice & Beef', price: '₦3,800' },
+      { name: "Seafood Okra", price: "₦5,500" },
+      { name: "Fried Rice & Chicken", price: "₦4,000" },
+      { name: "Catfish Pepper Soup", price: "₦4,500" },
+      { name: "Goat Meat Pepper Soup", price: "₦4,200" },
+      { name: "Jollof Rice & Beef", price: "₦3,800" },
     ],
   },
   {
-    category: 'Drinks & Cocktails',
+    category: "Drinks & Cocktails",
     items: [
-      { name: 'Chapman', price: '₦1,500' },
-      { name: 'Pina Colada', price: '₦2,500' },
-      { name: 'Fresh Juice', price: '₦1,200' },
+      { name: "Chapman", price: "₦1,500" },
+      { name: "Pina Colada", price: "₦2,500" },
+      { name: "Fresh Juice", price: "₦1,200" },
     ],
   },
-]
+];
 
 const fallbackImages = [
-  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=400',
-  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=400',
-  'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=400',
-  'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=400',
-]
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=400",
+  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=400",
+  "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=400",
+  "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=400",
+];
 
 // --- Reusable Modal Component ---
-const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => {
+const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  maxWidth = "max-w-2xl",
+}) => {
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen])
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -151,53 +157,62 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => 
         <div className="p-4 sm:p-6 overflow-y-auto">{children}</div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // --- Main Component ---
 const PlacesDetails = () => {
-  const { id } = useParams()
+  const { id } = useParams();
 
   // Find the place from the JSON data based on ID
-  const rawPlace = directoryData.places?.find((p) => String(p.id) === String(id)) || directoryData.places?.[0] || {}
+  const rawPlace =
+    directoryData.places?.find((p) => String(p.id) === String(id)) ||
+    directoryData.places?.[0] ||
+    {};
 
   // Normalize the dynamic data to fit the UI
   const place = {
     id: rawPlace.id || 1,
-    name: rawPlace.name || 'Sharro Restaurant',
+    name: rawPlace.name || "Sharro Restaurant",
     rating: rawPlace.rating?.average || 4.8,
     reviewsCount: rawPlace.rating?.totalReviews || 120,
-    price: rawPlace.priceLevel || '$$$',
-    category: rawPlace.category || 'Restaurant',
-    isOpen: rawPlace.openingHoursText?.toLowerCase().includes('open') || true,
-    hours: rawPlace.openingHoursText || '07:00 AM - 11:00 PM',
+    price: rawPlace.priceLevel || "$$$",
+    category: rawPlace.category || "Restaurant",
+    isOpen: rawPlace.openingHoursText?.toLowerCase().includes("open") || true,
+    hours: rawPlace.openingHoursText || "07:00 AM - 11:00 PM",
     description:
       rawPlace.description ||
-      'A top-rated dining destination located in the heart of Port Harcourt. We offer a diverse menu featuring local and continental dishes, prepared with the freshest ingredients. Our cozy ambiance and exceptional service make it the perfect spot for family dinners, romantic dates, or business lunches.',
-    address: rawPlace.location?.address || rawPlace.location?.city || '123 Main Street, GRA Phase 2, Port Harcourt',
-    phone: rawPlace.phone || '+234 801 234 5678',
-    website: rawPlace.website || 'www.sharrorestaurant.com',
-    services: rawPlace.services || 'Dine-in, Takeout, Delivery, Reservations',
+      "A top-rated dining destination located in the heart of Port Harcourt. We offer a diverse menu featuring local and continental dishes, prepared with the freshest ingredients. Our cozy ambiance and exceptional service make it the perfect spot for family dinners, romantic dates, or business lunches.",
+    address:
+      rawPlace.location?.address ||
+      rawPlace.location?.city ||
+      "123 Main Street, GRA Phase 2, Port Harcourt",
+    phone: rawPlace.phone || "+234 801 234 5678",
+    website: rawPlace.website || "www.sharrorestaurant.com",
+    services: rawPlace.services || "Dine-in, Takeout, Delivery, Reservations",
     // Ensure we always have at least 5 images for the layout
-    images: rawPlace.images?.length >= 5 ? rawPlace.images : [...(rawPlace.images || []), ...fallbackImages].slice(0, 5),
+    images:
+      rawPlace.images?.length >= 5
+        ? rawPlace.images
+        : [...(rawPlace.images || []), ...fallbackImages].slice(0, 5),
     // Hardcoded sections as requested
     reviews: hardcodedReviews,
     popularMeals: hardcodedPopularMeals,
     fullMenu: hardcodedFullMenu,
-  }
+  };
 
-  const [saved, setSaved] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [selectedMeal, setSelectedMeal] = useState(null)
+  const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState(null);
 
   // Modal States
-  const [activeModal, setActiveModal] = useState(null) // 'photos', 'menu', 'review'
-  const [selectedImage, setSelectedImage] = useState(null)
+  const [activeModal, setActiveModal] = useState(null); // 'photos', 'menu', 'review'
+  const [selectedImage, setSelectedImage] = useState(null);
 
   // Review States
-  const [visibleReviews, setVisibleReviews] = useState(3)
-  const [newReview, setNewReview] = useState({ name: '', rating: 5, text: '' })
-  const [reviewSubmitted, setReviewSubmitted] = useState(false)
+  const [visibleReviews, setVisibleReviews] = useState(3);
+  const [newReview, setNewReview] = useState({ name: "", rating: 5, text: "" });
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   // Share functionality
   const handleShare = async () => {
@@ -207,36 +222,36 @@ const PlacesDetails = () => {
           title: place.name,
           text: `Check out ${place.name} on our platform!`,
           url: window.location.href,
-        })
+        });
       } catch (err) {
-        console.log('Error sharing:', err)
+        console.log("Error sharing:", err);
       }
     } else {
-      navigator.clipboard.writeText(window.location.href)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
-  }
+  };
 
   // Star renderer
   const renderStars = (rating) => {
-    const stars = []
+    const stars = [];
     for (let i = 1; i <= 5; i++) {
       if (i <= rating) {
-        stars.push(<FaStar key={i} className="text-orange-500" />)
+        stars.push(<FaStar key={i} className="text-orange-500" />);
       } else if (i - 0.5 <= rating) {
-        stars.push(<FaStarHalfAlt key={i} className="text-orange-500" />)
+        stars.push(<FaStarHalfAlt key={i} className="text-orange-500" />);
       } else {
-        stars.push(<FaRegStar key={i} className="text-orange-500" />)
+        stars.push(<FaRegStar key={i} className="text-orange-500" />);
       }
     }
-    return stars
-  }
+    return stars;
+  };
 
   // Handle Review Submit
   const handleReviewSubmit = (e) => {
-    e.preventDefault()
-    if (!newReview.name || !newReview.text) return
+    e.preventDefault();
+    if (!newReview.name || !newReview.text) return;
 
     // Add to top of reviews
     place.reviews.unshift({
@@ -244,22 +259,22 @@ const PlacesDetails = () => {
       name: newReview.name,
       avatar: `https://i.pravatar.cc/150?u=${Date.now()}`,
       rating: newReview.rating,
-      date: 'Just now',
+      date: "Just now",
       text: newReview.text,
-    })
+    });
 
-    setReviewSubmitted(true)
+    setReviewSubmitted(true);
     setTimeout(() => {
-      setActiveModal(null)
-      setReviewSubmitted(false)
-      setNewReview({ name: '', rating: 5, text: '' })
-    }, 2000)
-  }
+      setActiveModal(null);
+      setReviewSubmitted(false);
+      setNewReview({ name: "", rating: 5, text: "" });
+    }, 2000);
+  };
 
   // Directions URL
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-    place.address
-  )}`
+    place.address,
+  )}`;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -293,8 +308,10 @@ const PlacesDetails = () => {
               <span className="text-gray-400">•</span>
               <span>{place.category}</span>
               <span className="text-gray-400">•</span>
-              <span className={`font-medium ${place.isOpen ? 'text-green-600' : 'text-red-500'}`}>
-                {place.isOpen ? 'Open now' : 'Closed'}
+              <span
+                className={`font-medium ${place.isOpen ? "text-green-600" : "text-red-500"}`}
+              >
+                {place.isOpen ? "Open now" : "Closed"}
               </span>
             </div>
           </div>
@@ -304,18 +321,26 @@ const PlacesDetails = () => {
               onClick={handleShare}
               className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              {copied ? <FiCheck size={14} className="text-green-500" /> : <FiShare2 size={14} />}
-              {copied ? 'Copied!' : 'Share'}
+              {copied ? (
+                <FiCheck size={14} className="text-green-500" />
+              ) : (
+                <FiShare2 size={14} />
+              )}
+              {copied ? "Copied!" : "Share"}
             </button>
             <button
               onClick={() => setSaved(!saved)}
               className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              {saved ? <FaHeart size={14} className="text-red-500" /> : <FiHeart size={14} />}
-              {saved ? 'Saved' : 'Save'}
+              {saved ? (
+                <FaHeart size={14} className="text-red-500" />
+              ) : (
+                <FiHeart size={14} />
+              )}
+              {saved ? "Saved" : "Save"}
             </button>
             <button
-              onClick={() => setActiveModal('review')}
+              onClick={() => setActiveModal("review")}
               className="px-4 py-2 text-xs sm:text-sm font-medium text-white bg-teal-700 rounded-lg hover:bg-teal-800 transition-colors"
             >
               Write a Review
@@ -334,7 +359,10 @@ const PlacesDetails = () => {
           </div>
           <div className="hidden md:grid grid-cols-2 grid-rows-2 gap-2 h-full">
             {place.images.slice(1, 5).map((img, idx) => (
-              <div key={idx} className="relative rounded-xl overflow-hidden group">
+              <div
+                key={idx}
+                className="relative rounded-xl overflow-hidden group"
+              >
                 <img
                   src={img}
                   alt={`${place.name} ${idx + 1}`}
@@ -342,10 +370,12 @@ const PlacesDetails = () => {
                 />
                 {idx === 3 && (
                   <button
-                    onClick={() => setActiveModal('photos')}
+                    onClick={() => setActiveModal("photos")}
                     className="absolute inset-0 bg-black/50 flex items-center justify-center cursor-pointer hover:bg-black/60 transition-colors"
                   >
-                    <span className="text-white text-sm font-medium">+12 Photos</span>
+                    <span className="text-white text-sm font-medium">
+                      +12 Photos
+                    </span>
                   </button>
                 )}
               </div>
@@ -359,30 +389,46 @@ const PlacesDetails = () => {
           <div className="lg:col-span-2 space-y-8">
             {/* Overall Info */}
             <section className="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Overall info</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">
+                Overall info
+              </h2>
               <p className="text-sm text-gray-600 leading-relaxed mb-6">
                 {place.description}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
                 <div className="flex items-start gap-3">
-                  <FiMapPin className="text-gray-400 mt-0.5 shrink-0" size={18} />
+                  <FiMapPin
+                    className="text-gray-400 mt-0.5 shrink-0"
+                    size={18}
+                  />
                   <div>
                     <p className="text-xs text-gray-500 font-medium">Address</p>
                     <p className="text-sm text-gray-900">{place.address}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <FiPhone className="text-gray-400 mt-0.5 shrink-0" size={18} />
+                  <FiPhone
+                    className="text-gray-400 mt-0.5 shrink-0"
+                    size={18}
+                  />
                   <div>
                     <p className="text-xs text-gray-500 font-medium">Phone</p>
                     <p className="text-sm text-gray-900">{place.phone}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <FiGlobe className="text-gray-400 mt-0.5 shrink-0" size={18} />
+                  <FiGlobe
+                    className="text-gray-400 mt-0.5 shrink-0"
+                    size={18}
+                  />
                   <div>
                     <p className="text-xs text-gray-500 font-medium">Website</p>
-                    <a href={`https://${place.website}`} target="_blank" rel="noreferrer" className="text-sm text-teal-700 hover:underline">
+                    <a
+                      href={`https://${place.website}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-teal-700 hover:underline"
+                    >
                       {place.website}
                     </a>
                   </div>
@@ -390,7 +436,9 @@ const PlacesDetails = () => {
                 <div className="flex items-start gap-3">
                   <FiTag className="text-gray-400 mt-0.5 shrink-0" size={18} />
                   <div>
-                    <p className="text-xs text-gray-500 font-medium">Services</p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      Services
+                    </p>
                     <p className="text-sm text-gray-900">{place.services}</p>
                   </div>
                 </div>
@@ -400,15 +448,19 @@ const PlacesDetails = () => {
             {/* Reviews (Hardcoded) */}
             <section className="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 shadow-sm">
               <h2 className="text-lg font-bold text-gray-900 mb-6">Reviews</h2>
-              
+
               {/* Rating Summary */}
               <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-gray-100">
                 <div className="flex flex-col items-center justify-center">
-                  <span className="text-4xl font-bold text-gray-900">{place.rating}</span>
+                  <span className="text-4xl font-bold text-gray-900">
+                    {place.rating}
+                  </span>
                   <div className="flex items-center gap-1 mt-1">
                     {renderStars(place.rating)}
                   </div>
-                  <span className="text-xs text-gray-500 mt-1">{place.reviewsCount} reviews</span>
+                  <span className="text-xs text-gray-500 mt-1">
+                    {place.reviewsCount} reviews
+                  </span>
                 </div>
                 <div className="flex-1 w-full space-y-2">
                   {[5, 4, 3, 2, 1].map((star) => (
@@ -418,17 +470,27 @@ const PlacesDetails = () => {
                       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-orange-500 rounded-full"
-                          style={{ width: `${star === 5 ? 70 : star === 4 ? 20 : star === 3 ? 5 : star === 2 ? 3 : 2}%` }}
+                          style={{
+                            width: `${star === 5 ? 70 : star === 4 ? 20 : star === 3 ? 5 : star === 2 ? 3 : 2}%`,
+                          }}
                         ></div>
                       </div>
                       <span className="w-8 text-right text-gray-500">
-                        {star === 5 ? '70%' : star === 4 ? '20%' : star === 3 ? '5%' : star === 2 ? '3%' : '2%'}
+                        {star === 5
+                          ? "70%"
+                          : star === 4
+                            ? "20%"
+                            : star === 3
+                              ? "5%"
+                              : star === 2
+                                ? "3%"
+                                : "2%"}
                       </span>
                     </div>
                   ))}
                 </div>
                 <button
-                  onClick={() => setActiveModal('review')}
+                  onClick={() => setActiveModal("review")}
                   className="px-4 py-2 text-sm font-medium text-teal-700 border border-teal-700 rounded-lg hover:bg-teal-50 transition-colors whitespace-nowrap"
                 >
                   Write a review
@@ -446,8 +508,12 @@ const PlacesDetails = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-bold text-gray-900">{review.name}</h4>
-                        <span className="text-xs text-gray-500">{review.date}</span>
+                        <h4 className="text-sm font-bold text-gray-900">
+                          {review.name}
+                        </h4>
+                        <span className="text-xs text-gray-500">
+                          {review.date}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 mt-0.5">
                         {renderStars(review.rating)}
@@ -459,7 +525,7 @@ const PlacesDetails = () => {
                   </div>
                 ))}
               </div>
-              
+
               {visibleReviews < place.reviews.length && (
                 <button
                   onClick={() => setVisibleReviews((prev) => prev + 3)}
@@ -483,13 +549,15 @@ const PlacesDetails = () => {
                   frameBorder="0"
                   style={{ border: 0 }}
                   src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                    place.address
+                    place.address,
                   )}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
                   allowFullScreen
                 ></iframe>
               </div>
               <div className="p-4">
-                <p className="text-sm text-gray-900 font-medium mb-3">{place.address}</p>
+                <p className="text-sm text-gray-900 font-medium mb-3">
+                  {place.address}
+                </p>
                 <a
                   href={directionsUrl}
                   target="_blank"
@@ -504,7 +572,9 @@ const PlacesDetails = () => {
 
             {/* Popular Meals (Hardcoded) */}
             <section className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Popular meals</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">
+                Popular meals
+              </h2>
               <div className="space-y-4">
                 {place.popularMeals.map((meal) => (
                   <div key={meal.id} className="flex items-center gap-3">
@@ -522,11 +592,15 @@ const PlacesDetails = () => {
                       </p>
                     </div>
                     <button
-                      onClick={() => setSelectedMeal(selectedMeal === meal.id ? null : meal.id)}
+                      onClick={() =>
+                        setSelectedMeal(
+                          selectedMeal === meal.id ? null : meal.id,
+                        )
+                      }
                       className={`p-2 rounded-full transition-colors ${
                         selectedMeal === meal.id
-                          ? 'bg-teal-50 text-teal-700'
-                          : 'text-gray-400 hover:text-teal-700 hover:bg-gray-50'
+                          ? "bg-teal-50 text-teal-700"
+                          : "text-gray-400 hover:text-teal-700 hover:bg-gray-50"
                       }`}
                     >
                       <FiCheck size={18} />
@@ -535,7 +609,7 @@ const PlacesDetails = () => {
                 ))}
               </div>
               <button
-                onClick={() => setActiveModal('menu')}
+                onClick={() => setActiveModal("menu")}
                 className="mt-4 w-full py-2 text-sm font-medium text-teal-700 border border-teal-700 rounded-lg hover:bg-teal-50 transition-colors"
               >
                 View full menu
@@ -549,7 +623,7 @@ const PlacesDetails = () => {
 
       {/* Photo Gallery Modal */}
       <Modal
-        isOpen={activeModal === 'photos'}
+        isOpen={activeModal === "photos"}
         onClose={() => setActiveModal(null)}
         title="All Photos"
         maxWidth="max-w-4xl"
@@ -595,7 +669,7 @@ const PlacesDetails = () => {
 
       {/* Full Menu Modal */}
       <Modal
-        isOpen={activeModal === 'menu'}
+        isOpen={activeModal === "menu"}
         onClose={() => setActiveModal(null)}
         title="Full Menu"
         maxWidth="max-w-xl"
@@ -608,9 +682,14 @@ const PlacesDetails = () => {
               </h4>
               <div className="space-y-3">
                 {category.items.map((item, itemIdx) => (
-                  <div key={itemIdx} className="flex justify-between items-center text-sm">
+                  <div
+                    key={itemIdx}
+                    className="flex justify-between items-center text-sm"
+                  >
                     <span className="text-gray-700">{item.name}</span>
-                    <span className="font-medium text-gray-900">{item.price}</span>
+                    <span className="font-medium text-gray-900">
+                      {item.price}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -621,7 +700,7 @@ const PlacesDetails = () => {
 
       {/* Write a Review Modal */}
       <Modal
-        isOpen={activeModal === 'review'}
+        isOpen={activeModal === "review"}
         onClose={() => setActiveModal(null)}
         title="Write a Review"
         maxWidth="max-w-lg"
@@ -632,23 +711,31 @@ const PlacesDetails = () => {
               <FiCheck size={32} />
             </div>
             <h4 className="text-lg font-bold text-gray-900">Thank you!</h4>
-            <p className="text-sm text-gray-500 mt-1">Your review has been submitted successfully.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Your review has been submitted successfully.
+            </p>
           </div>
         ) : (
           <form onSubmit={handleReviewSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Your Name
+              </label>
               <input
                 type="text"
                 required
                 value={newReview.name}
-                onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
+                onChange={(e) =>
+                  setNewReview({ ...newReview, name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
                 placeholder="e.g. John Doe"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Rating
+              </label>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -659,19 +746,27 @@ const PlacesDetails = () => {
                   >
                     <FaStar
                       size={24}
-                      className={star <= newReview.rating ? 'text-orange-500' : 'text-gray-300'}
+                      className={
+                        star <= newReview.rating
+                          ? "text-orange-500"
+                          : "text-gray-300"
+                      }
                     />
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Review</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Your Review
+              </label>
               <textarea
                 required
                 rows={4}
                 value={newReview.text}
-                onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
+                onChange={(e) =>
+                  setNewReview({ ...newReview, text: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm resize-none"
                 placeholder="Tell us about your experience..."
               ></textarea>
@@ -688,7 +783,7 @@ const PlacesDetails = () => {
 
       <Footer />
     </div>
-  )
-}
+  );
+};
 
-export default PlacesDetails
+export default PlacesDetails;

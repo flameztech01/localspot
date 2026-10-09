@@ -1,70 +1,69 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { FiSearch, FiMapPin, FiChevronDown } from 'react-icons/fi'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FiSearch, FiMapPin, FiChevronDown } from "react-icons/fi";
 
 // Column next to the edge: 3 images (fully visible, top/bottom bleed a little)
 const columnA = [
-  { 
-    h: 'h-[24%]', 
-    pos: 'object-top', 
-    src: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800' 
+  {
+    h: "h-[24%]",
+    pos: "object-top",
+    src: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800",
   },
-  { 
-    h: 'h-[44%]', 
-    pos: 'object-center', 
-    src: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=800' 
+  {
+    h: "h-[44%]",
+    pos: "object-center",
+    src: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=800",
   },
-  { 
-    h: 'h-[36%]', 
-    pos: 'object-bottom', 
-    src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800' 
+  {
+    h: "h-[36%]",
+    pos: "object-bottom",
+    src: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800",
   },
-]
+];
 
 // Extreme right column: 2 images, half of each is cut off by the screen edge.
 // They share the column height (flex) so the space above and below is equal.
 const columnB = [
-  { 
-    flex: 'flex-[4]', 
-    pos: 'object-left', 
-    src: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=800' 
+  {
+    flex: "flex-[4]",
+    pos: "object-left",
+    src: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=800",
   },
-  { 
-    flex: 'flex-[6]', 
-    pos: 'object-right', 
-    src: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&q=80&w=800' 
+  {
+    flex: "flex-[6]",
+    pos: "object-right",
+    src: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&q=80&w=800",
   },
-]
+];
 
-const cities = ['Port Harcourt', 'Lagos', 'Abuja', 'Ibadan', 'Enugu', 'Kano']
+const cities = ["Port Harcourt", "Lagos", "Abuja", "Ibadan", "Enugu", "Kano"];
 
 const Hero = ({ onSearch }) => {
-  const navigate = useNavigate()
-  const [query, setQuery] = useState('')
-  const [city, setCity] = useState(cities[0])
-  const [isCityOpen, setIsCityOpen] = useState(false)
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [city, setCity] = useState(cities[0]);
+  const [isCityOpen, setIsCityOpen] = useState(false);
 
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (onSearch) {
-      onSearch({ query: query.trim(), city })
+      onSearch({ query: query.trim(), city });
     } else {
-      const params = new URLSearchParams()
-      if (query.trim()) params.set('q', query.trim())
-      if (city) params.set('city', city)
-      navigate(`/search?${params.toString()}`)
+      const params = new URLSearchParams();
+      if (query.trim()) params.set("q", query.trim());
+      if (city) params.set("city", city);
+      navigate(`/search?${params.toString()}`);
     }
-  }
+  };
 
   const handleCitySelect = (selectedCity) => {
-    setCity(selectedCity)
-    setIsCityOpen(false)
-  }
+    setCity(selectedCity);
+    setIsCityOpen(false);
+  };
 
   return (
     // Exactly one screen: 100svh minus the navbar (4rem + 1px border) so there is no scroll
     <section className="relative h-[calc(100svh-4.0625rem)] min-h-[36rem] w-full overflow-hidden bg-slate-50/60 lg:min-h-0">
-      
       {/* Mobile Background Image & Overlay */}
       <div className="absolute inset-0 lg:hidden">
         <img
@@ -78,7 +77,6 @@ const Hero = ({ onSearch }) => {
 
       {/* Left: copy + search */}
       <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-between px-4 pb-12 pt-6 sm:px-6 lg:ml-13 lg:flex lg:flex-row lg:items-center lg:justify-start lg:py-0 lg:pr-6">
-        
         {/* Top Minimal Element (Mobile Only) */}
         <div className="flex justify-center lg:hidden">
           <span className="rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-sm">
@@ -109,7 +107,10 @@ const Hero = ({ onSearch }) => {
           >
             {/* Search input */}
             <label className="flex flex-1 items-center gap-2 px-3 py-2">
-              <FiSearch className="shrink-0 text-white/70 lg:text-gray-400" size={16} />
+              <FiSearch
+                className="shrink-0 text-white/70 lg:text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 value={query}
@@ -132,13 +133,16 @@ const Hero = ({ onSearch }) => {
                 aria-expanded={isCityOpen}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors hover:bg-white/5 lg:hover:bg-gray-50"
               >
-                <FiMapPin className="shrink-0 text-white/70 lg:text-gray-500" size={16} />
+                <FiMapPin
+                  className="shrink-0 text-white/70 lg:text-gray-500"
+                  size={16}
+                />
                 <span className="flex-1 truncate text-sm font-medium text-white lg:text-gray-800">
                   {city}
                 </span>
                 <FiChevronDown
                   className={`shrink-0 text-white/70 transition-transform duration-200 lg:text-gray-500 ${
-                    isCityOpen ? 'rotate-180' : ''
+                    isCityOpen ? "rotate-180" : ""
                   }`}
                   size={14}
                 />
@@ -166,8 +170,8 @@ const Hero = ({ onSearch }) => {
                           onClick={() => handleCitySelect(c)}
                           className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                             city === c
-                              ? 'bg-white/20 font-semibold text-white lg:bg-gray-100 lg:text-gray-900'
-                              : 'text-gray-300 hover:bg-white/10 hover:text-white lg:text-gray-700 lg:hover:bg-gray-50 lg:hover:text-gray-900'
+                              ? "bg-white/20 font-semibold text-white lg:bg-gray-100 lg:text-gray-900"
+                              : "text-gray-300 hover:bg-white/10 hover:text-white lg:text-gray-700 lg:hover:bg-gray-50 lg:hover:text-gray-900"
                           }`}
                         >
                           {c}
@@ -229,7 +233,7 @@ const Hero = ({ onSearch }) => {
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default Hero
+export default Hero;

@@ -1,6 +1,6 @@
 // src/components/BusinessSidebar.jsx
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   LayoutDashboard,
@@ -57,12 +57,14 @@ const NAV_ITEMS = [
 const statusMeta = {
   approved: {
     label: "Verified",
-    color: "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400",
+    color:
+      "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400",
     Icon: BadgeCheck,
   },
   pending: {
     label: "Pending",
-    color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400",
+    color:
+      "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400",
     Icon: Clock,
   },
   rejected: {
@@ -93,10 +95,10 @@ const BusinessSidebar = () => {
   const approvalStatus = !isEmailVerified
     ? "unverified"
     : isApproved
-    ? "approved"
-    : isRejected
-    ? "rejected"
-    : "pending";
+      ? "approved"
+      : isRejected
+        ? "rejected"
+        : "pending";
 
   const meta = statusMeta[approvalStatus];
   const StatusIcon = meta.Icon;

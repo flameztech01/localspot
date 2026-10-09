@@ -1,6 +1,6 @@
 // src/pages/business/BusinessAds.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   BarChart3,
@@ -98,15 +98,13 @@ const statusStyle = (status) => {
       };
     case "rejected":
       return {
-        color:
-          "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400",
+        color: "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400",
         Icon: XCircle,
       };
     case "disabled":
     case "expired":
       return {
-        color:
-          "text-gray-500 bg-gray-100 dark:bg-gray-800 dark:text-gray-400",
+        color: "text-gray-500 bg-gray-100 dark:bg-gray-800 dark:text-gray-400",
         Icon: AlertCircle,
       };
     case "draft":
@@ -186,17 +184,26 @@ const BusinessAds = () => {
   const types = typesResp?.data || [];
   const slots = slotsResp?.data || [];
 
-  const [createAd, { isLoading: isCreating }] = useCreateAdvertisementMutation();
-  const [updateAd, { isLoading: isUpdating }] = useUpdateMyAdvertisementMutation();
-  const [deleteAd, { isLoading: isDeleting }] = useDeleteMyAdvertisementMutation();
+  const [createAd, { isLoading: isCreating }] =
+    useCreateAdvertisementMutation();
+  const [updateAd, { isLoading: isUpdating }] =
+    useUpdateMyAdvertisementMutation();
+  const [deleteAd, { isLoading: isDeleting }] =
+    useDeleteMyAdvertisementMutation();
   const [submitAd, { isLoading: isSubmitting }] =
     useSubmitMyAdvertisementMutation();
   const [pauseAd, { isLoading: isPausing }] = usePauseMyAdvertisementMutation();
-  const [resumeAd, { isLoading: isResuming }] = useResumeMyAdvertisementMutation();
+  const [resumeAd, { isLoading: isResuming }] =
+    useResumeMyAdvertisementMutation();
   const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
 
   const isMutating =
-    isCreating || isUpdating || isDeleting || isSubmitting || isPausing || isResuming;
+    isCreating ||
+    isUpdating ||
+    isDeleting ||
+    isSubmitting ||
+    isPausing ||
+    isResuming;
 
   const isUnauthorized = error?.status === 401;
 
@@ -205,7 +212,9 @@ const BusinessAds = () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutBusinessAccount()
+        .unwrap()
+        .catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -244,7 +253,7 @@ const BusinessAds = () => {
         acc.budget += Number(a.budget || 0);
         return acc;
       },
-      { impressions: 0, clicks: 0, budget: 0 }
+      { impressions: 0, clicks: 0, budget: 0 },
     );
   }, [advertisements]);
 
@@ -265,7 +274,7 @@ const BusinessAds = () => {
           a.title?.toLowerCase().includes(q) ||
           a.description?.toLowerCase().includes(q) ||
           a.slot?.name?.toLowerCase().includes(q) ||
-          a.type?.name?.toLowerCase().includes(q)
+          a.type?.name?.toLowerCase().includes(q),
       );
     }
     return list;
@@ -400,7 +409,9 @@ const BusinessAds = () => {
               aria-label="Refresh"
               className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-60"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
+              />
             </button>
             <button
               type="button"
@@ -586,7 +597,8 @@ const BusinessAds = () => {
 
           <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800 text-center">
             <p className="text-[11px] text-gray-400 dark:text-gray-500">
-              © {new Date().getFullYear()} LocalSpot Systems Ltd. — Business Account Center
+              © {new Date().getFullYear()} LocalSpot Systems Ltd. — Business
+              Account Center
             </p>
           </footer>
         </div>
@@ -607,14 +619,14 @@ const BusinessAds = () => {
               showToast(
                 result?.message ||
                   (id ? "Advertisement updated" : "Advertisement created"),
-                "success"
+                "success",
               );
               closeFormModal();
             } catch (err) {
               showToast(
                 err?.data?.message ||
                   (id ? "Failed to update" : "Failed to create"),
-                "error"
+                "error",
               );
               throw err;
             }
@@ -877,7 +889,11 @@ const AdvertisementCard = ({
               type="button"
               onClick={onSubmit}
               disabled={isMutating || !ad.image}
-              title={!ad.image ? "Add an image before submitting" : "Submit for review"}
+              title={
+                !ad.image
+                  ? "Add an image before submitting"
+                  : "Submit for review"
+              }
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="h-3 w-3" />
@@ -927,7 +943,14 @@ const AdvertisementCard = ({
 };
 
 // ─── Form modal ────────────────────────────────────────────
-const AdvertisementFormModal = ({ ad, types, slots, onClose, onSave, isSaving }) => {
+const AdvertisementFormModal = ({
+  ad,
+  types,
+  slots,
+  onClose,
+  onSave,
+  isSaving,
+}) => {
   const { showToast } = useToast();
   const isEdit = !!ad;
 
@@ -999,7 +1022,8 @@ const AdvertisementFormModal = ({ ad, types, slots, onClose, onSave, isSaving })
     fd.append("type", form.type);
     fd.append("slot", form.slot);
     fd.append("title", form.title.trim());
-    if (form.description.trim()) fd.append("description", form.description.trim());
+    if (form.description.trim())
+      fd.append("description", form.description.trim());
     if (form.link.trim()) fd.append("link", form.link.trim());
     fd.append("startDate", form.startDate);
     fd.append("endDate", form.endDate);
@@ -1326,7 +1350,12 @@ const PerformanceModal = ({ ad, onClose }) => {
   });
 
   const perf = data?.data;
-  const totals = perf?.totals || { impressions: 0, clicks: 0, conversions: 0, ctr: 0 };
+  const totals = perf?.totals || {
+    impressions: 0,
+    clicks: 0,
+    conversions: 0,
+    ctr: 0,
+  };
   const series = (perf?.series || []).map((d) => ({
     date: typeof d.date === "string" ? d.date.slice(5, 10) : "",
     impressions: d.impressions || 0,
@@ -1349,7 +1378,10 @@ const PerformanceModal = ({ ad, onClose }) => {
             <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">
               Performance
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate" title={ad.title}>
+            <p
+              className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"
+              title={ad.title}
+            >
               {ad.title}
             </p>
           </div>
@@ -1410,10 +1442,19 @@ const PerformanceModal = ({ ad, onClose }) => {
             <>
               {/* KPI tiles */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <KpiTile label="Impressions" value={totals.impressions.toLocaleString()} />
-                <KpiTile label="Clicks" value={totals.clicks.toLocaleString()} />
+                <KpiTile
+                  label="Impressions"
+                  value={totals.impressions.toLocaleString()}
+                />
+                <KpiTile
+                  label="Clicks"
+                  value={totals.clicks.toLocaleString()}
+                />
                 <KpiTile label="CTR" value={`${totals.ctr}%`} accent />
-                <KpiTile label="Conversions" value={totals.conversions.toLocaleString()} />
+                <KpiTile
+                  label="Conversions"
+                  value={totals.conversions.toLocaleString()}
+                />
               </div>
 
               {/* Chart */}
@@ -1424,7 +1465,10 @@ const PerformanceModal = ({ ad, onClose }) => {
                   </h4>
                   <div className="flex items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400 flex-shrink-0">
                     <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full" style={{ background: ACCENT }} />
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ background: ACCENT }}
+                      />
                       Impressions
                     </span>
                     <span className="inline-flex items-center gap-1">
@@ -1443,9 +1487,23 @@ const PerformanceModal = ({ ad, onClose }) => {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={series}>
                         <defs>
-                          <linearGradient id="impressionsGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={ACCENT} stopOpacity={0.3} />
-                            <stop offset="95%" stopColor={ACCENT} stopOpacity={0} />
+                          <linearGradient
+                            id="impressionsGradient"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor={ACCENT}
+                              stopOpacity={0.3}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor={ACCENT}
+                              stopOpacity={0}
+                            />
                           </linearGradient>
                         </defs>
                         <CartesianGrid

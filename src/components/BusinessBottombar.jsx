@@ -1,6 +1,6 @@
 // src/components/BusinessBottombar.jsx
 import React from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Megaphone,
@@ -44,8 +44,7 @@ const BusinessBottombar = () => {
   const isActive = (tab) => {
     if (tab.exact) return location.pathname === tab.to;
     return (
-      location.pathname === tab.to ||
-      location.pathname.startsWith(`${tab.to}/`)
+      location.pathname === tab.to || location.pathname.startsWith(`${tab.to}/`)
     );
   };
 
@@ -68,16 +67,12 @@ const BusinessBottombar = () => {
             >
               <Icon
                 className={`h-5 w-5 transition-colors ${
-                  active
-                    ? "text-[#3B82F6]"
-                    : "text-gray-400 dark:text-gray-500"
+                  active ? "text-[#3B82F6]" : "text-gray-400 dark:text-gray-500"
                 }`}
               />
               <span
                 className={`text-[10px] font-medium transition-colors ${
-                  active
-                    ? "text-[#3B82F6]"
-                    : "text-gray-400 dark:text-gray-500"
+                  active ? "text-[#3B82F6]" : "text-gray-400 dark:text-gray-500"
                 }`}
               >
                 {tab.label}

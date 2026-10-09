@@ -34,10 +34,10 @@ const AdminPage = ({ initialTab = "dashboard" }) => {
 
   const tabFromQuery = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(
-    tabFromQuery || initialTab || "dashboard"
+    tabFromQuery || initialTab || "dashboard",
   );
   const [selectedBusinessId, setSelectedBusinessId] = useState(
-    routeBusinessId || null
+    routeBusinessId || null,
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
