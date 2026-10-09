@@ -865,10 +865,33 @@ export default function Details() {
           </Link>
         </div>
         <div className="flex items-center gap-5 text-gray-500">
-          <FaFacebookF className="w-4.5 h-4.5 hover:text-gray-900 cursor-pointer transition-colors" />
-          <FaInstagram className="w-4.5 h-4.5 hover:text-gray-900 cursor-pointer transition-colors" />
-          <FaTiktok className="w-4.5 h-4.5 hover:text-gray-900 cursor-pointer transition-colors" />
-          <FaXTwitter className="w-4.5 h-4.5 hover:text-gray-900 cursor-pointer transition-colors" />
+          <a
+            href="https://www.facebook.com/share/19cKqfiyHS/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook"
+            className="hover:text-blue-600 transition-colors"
+          >
+            <FaFacebookF className="w-4.5 h-4.5" />
+          </a>
+          <a
+            href="https://www.instagram.com/localspot_nigeria?stkn=d3U1YXU4bjY3aDZp"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            className="hover:text-pink-600 transition-colors"
+          >
+            <FaInstagram className="w-4.5 h-4.5" />
+          </a>
+          <a
+            href="https://www.linkedin.com/pulse/localspot-localspot-nigeria-8lbwe"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="LinkedIn"
+            className="hover:text-blue-700 transition-colors"
+          >
+            <FaXTwitter className="w-4.5 h-4.5" />
+          </a>
         </div>
       </footer>
     </div>

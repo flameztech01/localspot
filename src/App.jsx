@@ -9,6 +9,9 @@ import PlacesDetails from "./pages/PlacesDetails";
 import SavedPlaces from "./pages/SavedPlaces";
 import Profile from "./pages/Profile";
 import BusinessPage from "./pages/business/BusinessPage";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import ScrollToTop from "./components/ScrollToTop";
 
 //business
 import BusinessSignup from "./pages/business/BusinessSignup";
@@ -26,6 +29,7 @@ import AdminPage from "./pages/admin/AdminPage";
 function App() {
   return (
     <div>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<SearchResults />} />
@@ -34,6 +38,8 @@ function App() {
         <Route path="/details/:id" element={<Details />} />
         <Route path="/favorites" element={<Favorites />} />
         <Route path="/saved" element={<SavedPlaces />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
 
         {/* new screens */}
         <Route path="/places/:id" element={<PlacesDetails />} />
