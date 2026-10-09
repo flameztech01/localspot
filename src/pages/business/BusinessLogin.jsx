@@ -66,7 +66,7 @@ const BusinessLogin = () => {
       const result = await loginBusiness(payload).unwrap()
 
       // Backend response shape:
-      // { success, message, data: { _id, businessName, email, ... }, token }
+      // { success, message, data: { _id, businessName, email, role, ... }, token }
       const account = result?.data || result?.account || null
       const token = result?.token || null
 
@@ -84,8 +84,15 @@ const BusinessLogin = () => {
 
       showToast(result?.message || 'Welcome back!', 'success')
 
+      // Route by role — admins go to the admin dashboard, businesses to their dashboard
+      const role = account.role
+      const destination =
+        role === 'admin'
+          ? '/admin?tab=dashboard'
+          : '/business'
+
       // Give the toast a moment to be seen before redirecting
-      setTimeout(() => navigate('/business'), 800)
+      setTimeout(() => navigate(destination, { replace: true }), 800)
     } catch (err) {
       const status = err?.status
       const msg =
