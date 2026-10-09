@@ -1,0 +1,14 @@
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+    image: localspot-frontend
+    ports:
+      - "1010:80"
+    environment:
+      API_PROXY_PASS: ${API_PROXY_PASS:-http://host.docker.internal:8000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
