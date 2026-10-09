@@ -1,47 +1,46 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { FiMapPin, FiMail, FiArrowLeft, FiCheckCircle } from 'react-icons/fi'
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FiMapPin, FiMail, FiArrowLeft, FiCheckCircle } from "react-icons/fi";
 
 // --- 10 High-Quality Images for the Slider ---
 const sliderImages = [
-  'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200', // Hotel
-  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200', // Restaurant
-  'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200', // Lounge/Bar
-  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200', // Cafe
-  'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200', // Resort
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200', // Office/Workspace
-  'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200', // Fine Dining
-  'https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200', // Rooftop Bar
-  'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200', // Spa/Wellness
-  'https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200', // Boutique Hotel
-]
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200", // Hotel
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200", // Restaurant
+  "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200", // Lounge/Bar
+  "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200", // Cafe
+  "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200", // Resort
+  "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200", // Office/Workspace
+  "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200", // Fine Dining
+  "https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200", // Rooftop Bar
+  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200", // Spa/Wellness
+  "https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200", // Boutique Hotel
+];
 
 const Reset = () => {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Slider State
-  const [activeImage, setActiveImage] = useState(0)
+  const [activeImage, setActiveImage] = useState(0);
 
   // Auto-play Slider Effect
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveImage((prev) => (prev + 1) % sliderImages.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
+      setActiveImage((prev) => (prev + 1) % sliderImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!email) return
+    e.preventDefault();
+    if (!email) return;
     // Simulate API call to send reset link
-    setIsSubmitted(true)
-  }
+    setIsSubmitted(true);
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans text-gray-900">
-      
       {/* ================= LEFT SIDE: IMAGE SLIDER (Fixed/Sticky) ================= */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gray-900 overflow-hidden lg:sticky lg:top-0 lg:h-screen">
         {sliderImages.map((img, index) => (
@@ -50,25 +49,41 @@ const Reset = () => {
             src={img}
             alt={`Venue slide ${index + 1}`}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
-              index === activeImage ? 'opacity-100' : 'opacity-0'
+              index === activeImage ? "opacity-100" : "opacity-0"
             }`}
           />
         ))}
-        
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
 
         {/* Top Header Links */}
         <div className="absolute top-0 left-0 right-0 z-20 px-10 py-8 flex items-center justify-between text-sm text-white/90">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <img src="/logo.png" alt="LocalSpot" className="h-7 w-7 object-contain brightness-0 invert" />
-            <span className="font-bold tracking-wide text-white">LOCALSPOT</span>
+          <Link
+            to="/"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <img
+              src="/logo.png"
+              alt="LocalSpot"
+              className="h-7 w-7 object-contain brightness-0 invert"
+            />
+            <span className="font-bold tracking-wide text-white">
+              LOCALSPOT
+            </span>
           </Link>
           <div className="flex items-center gap-5">
-            <Link to="/support" className="hover:text-white transition-colors">Support</Link>
+            <Link to="/support" className="hover:text-white transition-colors">
+              Support
+            </Link>
             <span className="text-white/40">|</span>
             <span className="text-white/80">
-              Remember your password?{' '}
-              <Link to="/business/signin" className="font-semibold text-white hover:underline">Log in</Link>
+              Remember your password?{" "}
+              <Link
+                to="/business/signin"
+                className="font-semibold text-white hover:underline"
+              >
+                Log in
+              </Link>
             </span>
           </div>
         </div>
@@ -83,32 +98,40 @@ const Reset = () => {
               We'll help you get back into your account securely and quickly.
             </p>
           </div>
-          
+
           <p className="text-[10px] text-white/50 text-center tracking-wide">
-            &copy; LocalSpot Systems Ltd. Business Account Center - Where Local Ecommerce Meets Directory
+            &copy; LocalSpot Systems Ltd. Business Account Center - Where Local
+            Ecommerce Meets Directory
           </p>
         </div>
       </div>
 
       {/* ================= RIGHT SIDE: FORM (Scrolls naturally) ================= */}
       <div className="w-full lg:w-1/2 flex flex-col bg-slate-50 lg:bg-white lg:h-screen lg:overflow-y-auto">
-        
         {/* Mobile Header (Fixed/Sticky) */}
         <div className="lg:hidden sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white shadow-sm">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="LocalSpot" className="h-6 w-6 object-contain" />
+            <img
+              src="/logo.png"
+              alt="LocalSpot"
+              className="h-6 w-6 object-contain"
+            />
             <span className="text-sm font-bold tracking-wide">LOCALSPOT</span>
           </Link>
           <div className="flex items-center gap-3 text-xs text-gray-600">
             <Link to="/support">Support</Link>
             <span>|</span>
-            <Link to="/business/signin" className="font-medium text-blue-600 hover:underline">Log in</Link>
+            <Link
+              to="/business/signin"
+              className="font-medium text-blue-600 hover:underline"
+            >
+              Log in
+            </Link>
           </div>
         </div>
 
         <div className="flex-grow flex items-center justify-center py-10 px-4 sm:px-6 lg:px-12">
           <div className="w-full max-w-[480px]">
-            
             {/* Back Button (History) */}
             <button
               onClick={() => navigate(-1)}
@@ -121,20 +144,23 @@ const Reset = () => {
             {/* Top Icon */}
             <div className="flex justify-center lg:justify-start mb-6">
               <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500">
-                {isSubmitted ? <FiCheckCircle size={22} /> : <FiMail size={22} />}
+                {isSubmitted ? (
+                  <FiCheckCircle size={22} />
+                ) : (
+                  <FiMail size={22} />
+                )}
               </div>
             </div>
 
             {/* Header Text */}
             <div className="text-center lg:text-left mb-8">
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                {isSubmitted ? 'Check your email' : 'Reset your password'}
+                {isSubmitted ? "Check your email" : "Reset your password"}
               </h1>
               <p className="text-sm text-gray-500 mt-2">
-                {isSubmitted 
-                  ? "We've sent a password reset link to your email address." 
-                  : "Enter your email address and we'll send you a link to reset your password."
-                }
+                {isSubmitted
+                  ? "We've sent a password reset link to your email address."
+                  : "Enter your email address and we'll send you a link to reset your password."}
               </p>
             </div>
 
@@ -143,7 +169,8 @@ const Reset = () => {
               {isSubmitted ? (
                 <div className="text-center space-y-6">
                   <p className="text-sm text-gray-600">
-                    Didn't receive the email? Check your spam folder or try again.
+                    Didn't receive the email? Check your spam folder or try
+                    again.
                   </p>
                   <button
                     onClick={() => setIsSubmitted(false)}
@@ -154,10 +181,12 @@ const Reset = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  
                   {/* Email Address */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -184,8 +213,8 @@ const Reset = () => {
 
               {/* Back to Login */}
               <div className="mt-6 text-center lg:text-left">
-                <Link 
-                  to="/business/signin" 
+                <Link
+                  to="/business/signin"
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   <FiArrowLeft size={14} />
@@ -197,7 +226,7 @@ const Reset = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Reset
+export default Reset;

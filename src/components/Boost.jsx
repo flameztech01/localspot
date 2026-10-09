@@ -1,14 +1,14 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { FiChevronRight } from 'react-icons/fi'
+import React from "react";
+import { Link } from "react-router-dom";
+import { FiChevronRight } from "react-icons/fi";
 
 const IMG =
-  'https://i.pinimg.com/736x/22/c2/c5/22c2c520f3dfead37f645e9d9974fb3c.jpg'
+  "https://i.pinimg.com/736x/22/c2/c5/22c2c520f3dfead37f645e9d9974fb3c.jpg";
 
 const stats = [
-  { value: '10,000', label: 'WEBSITE VISITORS MONTHLY' },
-  { value: '5,000', label: 'PAGE VIEWS DAILY' },
-]
+  { value: "10,000", label: "WEBSITE VISITORS MONTHLY" },
+  { value: "5,000", label: "PAGE VIEWS DAILY" },
+];
 
 const Boost = () => {
   return (
@@ -54,7 +54,7 @@ const Boost = () => {
             {stats.map((s, i) => (
               <div
                 key={s.label}
-                className={i > 0 ? 'border-l border-gray-300 pl-6 sm:pl-8' : ''}
+                className={i > 0 ? "border-l border-gray-300 pl-6 sm:pl-8" : ""}
               >
                 <p className="text-xl font-bold text-gray-900 sm:text-2xl">
                   {s.value}
@@ -83,7 +83,7 @@ const Boost = () => {
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default Boost
+export default Boost;

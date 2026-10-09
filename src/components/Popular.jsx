@@ -1,45 +1,51 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { FiChevronRight } from 'react-icons/fi'
-import { FaBed, FaUtensils, FaHamburger, FaCocktail, FaTree } from 'react-icons/fa'
+import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { FiChevronRight } from "react-icons/fi";
+import {
+  FaBed,
+  FaUtensils,
+  FaHamburger,
+  FaCocktail,
+  FaTree,
+} from "react-icons/fa";
 
 const categories = [
   {
-    slug: 'hotels',
-    name: 'Hotels',
-    count: '164 spots',
+    slug: "hotels",
+    name: "Hotels",
+    count: "164 spots",
     Icon: FaBed,
-    img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800',
+    img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=800",
   },
   {
-    slug: 'restaurants',
-    name: 'Restaurants',
-    count: '412 spots',
+    slug: "restaurants",
+    name: "Restaurants",
+    count: "412 spots",
     Icon: FaUtensils,
-    img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800',
+    img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800",
   },
   {
-    slug: 'local-food',
-    name: 'Local food',
-    count: '295 spots',
+    slug: "local-food",
+    name: "Local food",
+    count: "295 spots",
     Icon: FaHamburger,
-    img: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?auto=format&fit=crop&q=80&w=800',
+    img: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?auto=format&fit=crop&q=80&w=800",
   },
   {
-    slug: 'bars-lounges',
-    name: 'Bars & Lounges',
-    count: '128 spots',
+    slug: "bars-lounges",
+    name: "Bars & Lounges",
+    count: "128 spots",
     Icon: FaCocktail,
-    img: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=800',
+    img: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=800",
   },
   {
-    slug: 'parks-recreation',
-    name: 'Parks & Rec',
-    count: '46 places',
+    slug: "parks-recreation",
+    name: "Parks & Rec",
+    count: "46 places",
     Icon: FaTree,
-    img: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?auto=format&fit=crop&q=80&w=800',
+    img: "https://images.unsplash.com/photo-1519331379826-f10be5486c6f?auto=format&fit=crop&q=80&w=800",
   },
-]
+];
 
 const CategoryCard = ({ slug, name, count, Icon, img }) => (
   <Link
@@ -69,56 +75,56 @@ const CategoryCard = ({ slug, name, count, Icon, img }) => (
       <p className="text-[10px] text-white/85 sm:text-xs">{count}</p>
     </div>
   </Link>
-)
+);
 
 const Popular = () => {
-  const trackRef = useRef(null)
-  const [isPaused, setIsPaused] = useState(false)
+  const trackRef = useRef(null);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Auto-scroll the mobile carousel
   useEffect(() => {
-    const el = trackRef.current
-    if (!el) return
+    const el = trackRef.current;
+    if (!el) return;
 
-    const isMobile = () => window.innerWidth < 768
-    let resumeTimeout = null
+    const isMobile = () => window.innerWidth < 768;
+    let resumeTimeout = null;
 
     const tick = () => {
-      if (!isMobile() || isPaused) return
+      if (!isMobile() || isPaused) return;
 
-      const firstCard = el.querySelector('[data-card]')
-      if (!firstCard) return
+      const firstCard = el.querySelector("[data-card]");
+      if (!firstCard) return;
 
-      const cardWidth = firstCard.offsetWidth + 12 // + gap-3 (12px)
-      const maxScroll = el.scrollWidth - el.clientWidth
+      const cardWidth = firstCard.offsetWidth + 12; // + gap-3 (12px)
+      const maxScroll = el.scrollWidth - el.clientWidth;
 
       if (el.scrollLeft >= maxScroll - 4) {
-        el.scrollTo({ left: 0, behavior: 'smooth' })
+        el.scrollTo({ left: 0, behavior: "smooth" });
       } else {
-        el.scrollBy({ left: cardWidth, behavior: 'smooth' })
+        el.scrollBy({ left: cardWidth, behavior: "smooth" });
       }
-    }
+    };
 
-    const interval = setInterval(tick, 2800)
+    const interval = setInterval(tick, 2800);
 
     const handlePause = () => {
-      setIsPaused(true)
-      if (resumeTimeout) clearTimeout(resumeTimeout)
-      resumeTimeout = setTimeout(() => setIsPaused(false), 4000)
-    }
+      setIsPaused(true);
+      if (resumeTimeout) clearTimeout(resumeTimeout);
+      resumeTimeout = setTimeout(() => setIsPaused(false), 4000);
+    };
 
-    el.addEventListener('touchstart', handlePause, { passive: true })
-    el.addEventListener('wheel', handlePause, { passive: true })
-    el.addEventListener('mousedown', handlePause)
+    el.addEventListener("touchstart", handlePause, { passive: true });
+    el.addEventListener("wheel", handlePause, { passive: true });
+    el.addEventListener("mousedown", handlePause);
 
     return () => {
-      clearInterval(interval)
-      if (resumeTimeout) clearTimeout(resumeTimeout)
-      el.removeEventListener('touchstart', handlePause)
-      el.removeEventListener('wheel', handlePause)
-      el.removeEventListener('mousedown', handlePause)
-    }
-  }, [isPaused])
+      clearInterval(interval);
+      if (resumeTimeout) clearTimeout(resumeTimeout);
+      el.removeEventListener("touchstart", handlePause);
+      el.removeEventListener("wheel", handlePause);
+      el.removeEventListener("mousedown", handlePause);
+    };
+  }, [isPaused]);
 
   return (
     <section className="w-full bg-white py-8 sm:py-12">
@@ -155,7 +161,7 @@ const Popular = () => {
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default Popular
+export default Popular;

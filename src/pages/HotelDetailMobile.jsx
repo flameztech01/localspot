@@ -1,6 +1,15 @@
 import React, { useState } from "react";
-import { Link } from "react-router";
-import { ArrowLeft, Share2, Heart, Star, MapPin, Phone, Mail, BedDouble } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  ArrowLeft,
+  Share2,
+  Heart,
+  Star,
+  MapPin,
+  Phone,
+  Mail,
+  BedDouble,
+} from "lucide-react";
 
 export default function HotelDetailMobile({
   backHref = "/",
@@ -13,17 +22,18 @@ export default function HotelDetailMobile({
   const [liked, setLiked] = useState(false);
 
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-    address
+    address,
   )}`;
 
   const handleShare = async (e) => {
     e.preventDefault();
     if (navigator.share) {
       try {
-        await navigator.share({ title: "The Hotel Presidential", url: shareUrl });
-      } catch {
-      
-      }
+        await navigator.share({
+          title: "The Hotel Presidential",
+          url: shareUrl,
+        });
+      } catch {}
     } else {
       window.open(shareUrl, "_blank", "noopener,noreferrer");
     }
@@ -32,7 +42,6 @@ export default function HotelDetailMobile({
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center py-6">
       <div className="w-full max-w-sm bg-gray-100">
-      
         <div className="flex items-center justify-between px-5 pt-2 pb-4">
           <Link to={backHref} className="flex items-center gap-2 text-gray-900">
             <ArrowLeft className="w-5 h-5" />
@@ -48,7 +57,6 @@ export default function HotelDetailMobile({
           </Link>
         </div>
 
-      
         <div className="relative h-56 w-full mx-4 rounded-t-3xl overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200&auto=format&fit=crop"
@@ -64,7 +72,6 @@ export default function HotelDetailMobile({
             <span className="text-sm font-medium text-gray-900">Hotel</span>
           </Link>
 
-         
           <button
             onClick={() => setLiked((v) => !v)}
             aria-pressed={liked}
@@ -79,7 +86,6 @@ export default function HotelDetailMobile({
           </button>
         </div>
 
-    
         <div className="relative -mt-6 mx-4   bg-white rounded-t-3xl rounded-b-3xl shadow-sm px-5 pt-5 pb-5">
           <h1 className="text-3xl font-bold text-gray-900  leading-tight">
             The Hotel Presidential
@@ -101,7 +107,6 @@ export default function HotelDetailMobile({
           </div>
         </div>
 
-  
         <div className="bg-gray-100 mx-4 mt-4 space-y-3">
           <Link
             to="/book"

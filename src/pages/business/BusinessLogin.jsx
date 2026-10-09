@@ -1,89 +1,116 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
-import { FiMapPin, FiEye, FiEyeOff } from 'react-icons/fi'
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { FiMapPin, FiEye, FiEyeOff } from "react-icons/fi";
 
-// ✅ Correct relative paths — 2 levels up from pages/business/
-import { useLoginBusinessAccountMutation } from '../../features/businessApiSlice'
-import { setCredentials } from '../../features/auth/authSlice'
-import { useToast } from '../../hooks/useToast'
+import { useLoginBusinessAccountMutation } from "../../features/businessApiSlice";
+import { setCredentials } from "../../features/auth/authSlice";
+import { useToast } from "../../hooks/useToast";
 
 // --- 10 High-Quality Images for the Slider ---
 const sliderImages = [
-  'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200',
-]
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200",
+];
 
 const BusinessLogin = () => {
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const { showToast } = useToast()
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { showToast } = useToast();
 
   // --- RTK Query mutation ---
-  const [loginBusiness, { isLoading }] = useLoginBusinessAccountMutation()
+  const [loginBusiness, { isLoading }] = useLoginBusinessAccountMutation();
 
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Slider State
-  const [activeImage, setActiveImage] = useState(0)
+  const [activeImage, setActiveImage] = useState(0);
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
+    email: "",
+    password: "",
+  });
 
   // Auto-play Slider Effect
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveImage((prev) => (prev + 1) % sliderImages.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
+      setActiveImage((prev) => (prev + 1) % sliderImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  }
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+
+    const email = formData.email.trim().toLowerCase();
 
     try {
       const payload = {
-        email: formData.email.trim().toLowerCase(),
+        email,
         password: formData.password,
+      };
+
+      const result = await loginBusiness(payload).unwrap();
+
+      // Backend response shape:
+      // { success, message, data: { _id, businessName, email, role, ... }, token }
+      const account = result?.data || result?.account || null;
+      const token = result?.token || null;
+
+      if (!account || !token) {
+        showToast("Login response was malformed. Please try again.", "error");
+        return;
       }
 
-      const result = await loginBusiness(payload).unwrap()
-
-      // result = { message, account, token }
       dispatch(
         setCredentials({
-          ...result.account,
-          token: result.token,
-        })
-      )
+          ...account,
+          token,
+        }),
+      );
 
-      showToast('Welcome back!', 'success')
+      showToast(result?.message || "Welcome back!", "success");
+
+      // Route by role — admins go to the admin dashboard, businesses to their dashboard
+      const role = account.role;
+      const destination =
+        role === "admin" ? "/admin?tab=dashboard" : "/business";
 
       // Give the toast a moment to be seen before redirecting
-      setTimeout(() => navigate('/business'), 800)
+      setTimeout(() => navigate(destination, { replace: true }), 800);
     } catch (err) {
+      const status = err?.status;
       const msg =
         err?.data?.message ||
         err?.data?.errors?.[0]?.message ||
-        'Invalid email or password. Please try again.'
-      showToast(msg, 'error')
+        "Invalid email or password. Please try again.";
+
+      // Backend sends 403 for unverified accounts + fresh OTP.
+      // Route the user to the signup/verify step with their email prefilled.
+      if (status === 403 && /not verified/i.test(msg)) {
+        showToast(msg, "error");
+        navigate("/business/signup", {
+          state: { verifyEmail: email, fromLogin: true },
+        });
+        return;
+      }
+
+      showToast(msg, "error");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans text-gray-900">
@@ -95,7 +122,7 @@ const BusinessLogin = () => {
             src={img}
             alt={`Venue slide ${index + 1}`}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
-              index === activeImage ? 'opacity-100' : 'opacity-0'
+              index === activeImage ? "opacity-100" : "opacity-0"
             }`}
           />
         ))}
@@ -123,7 +150,7 @@ const BusinessLogin = () => {
             </Link>
             <span className="text-white/40">|</span>
             <span className="text-white/80">
-              New to LocalSpot?{' '}
+              New to LocalSpot?{" "}
               <Link
                 to="/business/signup"
                 className="font-semibold text-white hover:underline"
@@ -228,7 +255,7 @@ const BusinessLogin = () => {
                       Password <span className="text-red-500">*</span>
                     </label>
                     <Link
-                      to="/business/reset"
+                      to="/business/forgot-password"
                       className="text-[10px] text-blue-600 hover:underline font-medium"
                     >
                       Forgot password?
@@ -236,7 +263,7 @@ const BusinessLogin = () => {
                   </div>
                   <div className="relative">
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       id="password"
                       name="password"
                       required
@@ -287,7 +314,7 @@ const BusinessLogin = () => {
                       Logging in...
                     </>
                   ) : (
-                    'Log in'
+                    "Log in"
                   )}
                 </button>
               </form>
@@ -295,7 +322,7 @@ const BusinessLogin = () => {
               {/* Bottom Link */}
               <div className="mt-6 text-center lg:text-left">
                 <p className="text-xs text-gray-500">
-                  Don't have an account?{' '}
+                  Don't have an account?{" "}
                   <Link
                     to="/business/signup"
                     className="font-medium text-blue-600 hover:underline"
@@ -309,7 +336,7 @@ const BusinessLogin = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default BusinessLogin
+export default BusinessLogin;

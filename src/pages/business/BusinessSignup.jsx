@@ -1,132 +1,262 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
+import React, { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import {
   FiMapPin,
   FiEye,
   FiEyeOff,
   FiChevronDown,
-  FiAlertCircle,
-  FiCheckCircle,
-} from 'react-icons/fi'
+  FiArrowLeft,
+  FiMail,
+} from "react-icons/fi";
 
-// ✅ Correct relative paths — 2 levels up from pages/business/
-import { useRegisterBusinessAccountMutation } from '../../features/businessApiSlice'
-import { setCredentials } from '../../features/auth/authSlice'
-import { useToast } from '../../hooks/useToast'
+import {
+  useRegisterBusinessAccountMutation,
+  useVerifyBusinessAccountMutation,
+  useResendBusinessOTPMutation,
+} from "../../features/businessApiSlice";
+import { setCredentials } from "../../features/auth/authSlice";
+import { useToast } from "../../hooks/useToast";
 
 // --- 10 High-Quality Images for the Slider ---
 const sliderImages = [
-  'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200',
-]
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200",
+];
 
 const countryCodes = [
-  { code: '+234', label: 'NG' },
-  { code: '+1', label: 'US' },
-  { code: '+44', label: 'UK' },
-  { code: '+27', label: 'ZA' },
-]
+  { code: "+234", label: "NG" },
+  { code: "+1", label: "US" },
+  { code: "+44", label: "UK" },
+  { code: "+27", label: "ZA" },
+];
+
+const OTP_LENGTH = 6;
+const RESEND_COOLDOWN_SECONDS = 60;
 
 const BusinessSignup = () => {
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const { showToast } = useToast()
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { showToast } = useToast();
 
-  // --- RTK Query mutation ---
-  const [registerBusiness, { isLoading }] =
-    useRegisterBusinessAccountMutation()
+  // --- RTK Query mutations ---
+  const [registerBusiness, { isLoading: isRegistering }] =
+    useRegisterBusinessAccountMutation();
+  const [verifyBusiness, { isLoading: isVerifying }] =
+    useVerifyBusinessAccountMutation();
+  const [resendOTP, { isLoading: isResending }] =
+    useResendBusinessOTPMutation();
 
-  const [showPassword, setShowPassword] = useState(false)
-  const [isCountryOpen, setIsCountryOpen] = useState(false)
-  const [countryCode, setCountryCode] = useState('+234')
-  const countryRef = useRef(null)
+  // --- Page step: "register" | "verify" ---
+  const [step, setStep] = useState("register");
 
-  const [agreedToTerms, setAgreedToTerms] = useState(false)
+  // --- Register form state ---
+  const [showPassword, setShowPassword] = useState(false);
+  const [isCountryOpen, setIsCountryOpen] = useState(false);
+  const [countryCode, setCountryCode] = useState("+234");
+  const countryRef = useRef(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  const [formData, setFormData] = useState({
+    businessName: "",
+    email: "",
+    phone: "",
+    password: "",
+  });
+
+  // --- Verify state ---
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [otpValues, setOtpValues] = useState(Array(OTP_LENGTH).fill(""));
+  const otpRefs = useRef([]);
+  const [resendIn, setResendIn] = useState(0);
 
   // Slider
-  const [activeImage, setActiveImage] = useState(0)
+  const [activeImage, setActiveImage] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveImage((prev) => (prev + 1) % sliderImages.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
+      setActiveImage((prev) => (prev + 1) % sliderImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Close country dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (countryRef.current && !countryRef.current.contains(event.target)) {
-        setIsCountryOpen(false)
+        setIsCountryOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  // Form state — field names match typical business register payload
-  const [formData, setFormData] = useState({
-    name: '',
-    ownerName: '',
-    email: '',
-    phone: '',
-    password: '',
-  })
+  // Resend countdown
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
+
+  // Autofocus first OTP box when we enter verify step
+  useEffect(() => {
+    if (step === "verify") {
+      const t = setTimeout(() => otpRefs.current[0]?.focus(), 100);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  }
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  // ── Register submit ──────────────────────────────────────
+  const handleRegister = async (e) => {
+    e.preventDefault();
     if (!agreedToTerms) {
-      showToast('Please accept the Terms & Privacy Policy', 'error')
-      return
+      showToast("Please accept the Terms & Privacy Policy", "error");
+      return;
     }
 
+    const payload = {
+      businessName: formData.businessName.trim(),
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
+      phone: formData.phone
+        ? `${countryCode}${formData.phone.replace(/\D/g, "")}`
+        : undefined,
+    };
+
     try {
-      const payload = {
-        name: formData.name.trim(),
-        ownerName: formData.ownerName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: `${countryCode}${formData.phone.replace(/\D/g, '')}`,
-        password: formData.password,
-      }
-
-      const result = await registerBusiness(payload).unwrap()
-
-      // result = { message, account, token }
-      dispatch(
-        setCredentials({
-          ...result.account,
-          token: result.token,
-        })
-      )
-
-      showToast('Account created successfully', 'success')
-
-      // Give the toast a moment to be seen before redirecting
-      setTimeout(() => navigate('/business'), 800)
+      const result = await registerBusiness(payload).unwrap();
+      // Expected: { success, message, data: { email } }
+      const email = result?.data?.email || payload.email;
+      setPendingEmail(email);
+      setOtpValues(Array(OTP_LENGTH).fill(""));
+      setResendIn(RESEND_COOLDOWN_SECONDS);
+      setStep("verify");
+      showToast(
+        result?.message || "Verification code sent to your email",
+        "success",
+      );
     } catch (err) {
       const msg =
         err?.data?.message ||
         err?.data?.errors?.[0]?.message ||
-        'Registration failed. Please try again.'
-      showToast(msg, 'error')
+        "Registration failed. Please try again.";
+      showToast(msg, "error");
     }
-  }
+  };
+
+  // ── OTP input handling ───────────────────────────────────
+  const handleOtpChange = (index, value) => {
+    const digit = value.replace(/\D/g, "").slice(0, 1);
+    const next = [...otpValues];
+    next[index] = digit;
+    setOtpValues(next);
+    if (digit && index < OTP_LENGTH - 1) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otpValues[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+    if (e.key === "ArrowLeft" && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
+    if (!pasted) return;
+    const next = Array(OTP_LENGTH).fill("");
+    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
+    setOtpValues(next);
+    const lastFilled = Math.min(pasted.length, OTP_LENGTH - 1);
+    otpRefs.current[lastFilled]?.focus();
+  };
+
+  // ── Verify submit ────────────────────────────────────────
+  const handleVerify = async (e) => {
+    e?.preventDefault();
+    const otp = otpValues.join("");
+    if (otp.length !== OTP_LENGTH) {
+      showToast("Please enter the full 6-digit code", "error");
+      return;
+    }
+
+    try {
+      const result = await verifyBusiness({
+        email: pendingEmail,
+        otp,
+      }).unwrap();
+      // Expected: { success, message, data: user, token }
+      dispatch(
+        setCredentials({
+          ...result.data,
+          token: result.token,
+        }),
+      );
+
+      showToast(result?.message || "Account verified successfully", "success");
+      setTimeout(() => navigate("/business"), 700);
+    } catch (err) {
+      const msg =
+        err?.data?.message ||
+        err?.data?.errors?.[0]?.message ||
+        "Verification failed. Please try again.";
+      showToast(msg, "error");
+      // Clear OTP so they can re-enter
+      setOtpValues(Array(OTP_LENGTH).fill(""));
+      otpRefs.current[0]?.focus();
+    }
+  };
+
+  // ── Resend OTP ───────────────────────────────────────────
+  const handleResend = async () => {
+    if (resendIn > 0 || isResending) return;
+    try {
+      await resendOTP({
+        email: pendingEmail,
+        purpose: "verification",
+      }).unwrap();
+      showToast("A new code has been sent to your email", "success");
+      setResendIn(RESEND_COOLDOWN_SECONDS);
+      setOtpValues(Array(OTP_LENGTH).fill(""));
+      otpRefs.current[0]?.focus();
+    } catch (err) {
+      const msg =
+        err?.data?.message || "Could not resend code. Please try again later.";
+      showToast(msg, "error");
+    }
+  };
+
+  const handleBackToRegister = () => {
+    setStep("register");
+    setOtpValues(Array(OTP_LENGTH).fill(""));
+    setPendingEmail("");
+    setResendIn(0);
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans text-gray-900">
-      {/* ================= LEFT SIDE: IMAGE SLIDER (Fixed/Sticky) ================= */}
+      {/* ================= LEFT SIDE: IMAGE SLIDER ================= */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gray-900 overflow-hidden lg:sticky lg:top-0 lg:h-screen">
         {sliderImages.map((img, index) => (
           <img
@@ -134,14 +264,13 @@ const BusinessSignup = () => {
             src={img}
             alt={`Venue slide ${index + 1}`}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
-              index === activeImage ? 'opacity-100' : 'opacity-0'
+              index === activeImage ? "opacity-100" : "opacity-0"
             }`}
           />
         ))}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
 
-        {/* Top Header Links */}
         <div className="absolute top-0 left-0 right-0 z-20 px-10 py-8 flex items-center justify-between text-sm text-white/90">
           <Link
             to="/"
@@ -162,7 +291,7 @@ const BusinessSignup = () => {
             </Link>
             <span className="text-white/40">|</span>
             <span className="text-white/80">
-              Already registered?{' '}
+              Already registered?{" "}
               <Link
                 to="/business/signin"
                 className="font-semibold text-white hover:underline"
@@ -173,7 +302,6 @@ const BusinessSignup = () => {
           </div>
         </div>
 
-        {/* Glass Morphism Text Block + Copyright */}
         <div className="absolute bottom-10 left-12 right-12 z-10 flex flex-col gap-4">
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-2xl">
             <h2 className="text-2xl font-bold text-white mb-3">
@@ -192,9 +320,9 @@ const BusinessSignup = () => {
         </div>
       </div>
 
-      {/* ================= RIGHT SIDE: FORM (Scrolls naturally) ================= */}
+      {/* ================= RIGHT SIDE: FORM ================= */}
       <div className="w-full lg:w-1/2 flex flex-col bg-slate-50 lg:bg-white lg:h-screen lg:overflow-y-auto">
-        {/* Mobile Header (Fixed/Sticky) */}
+        {/* Mobile Header */}
         <div className="lg:hidden sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white shadow-sm">
           <Link to="/" className="flex items-center gap-2">
             <img
@@ -220,260 +348,365 @@ const BusinessSignup = () => {
           <div className="w-full max-w-[480px]">
             <div className="flex justify-center mb-6 lg:hidden">
               <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500">
-                <FiMapPin size={22} />
+                {step === "verify" ? (
+                  <FiMail size={22} />
+                ) : (
+                  <FiMapPin size={22} />
+                )}
               </div>
             </div>
 
-            <div className="text-center lg:text-left mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                Create your business account
-              </h1>
-              <p className="text-sm text-gray-500 mt-2">
-                Join LocalSpot and start managing your business presence
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Business Name */}
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Business Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    required
-                    placeholder="e.g. Maple Bakery & Cafe"
-                    value={formData.name}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                  />
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    This public name will be shown on your profile
+            {/* ─────────── REGISTER STEP ─────────── */}
+            {step === "register" && (
+              <>
+                <div className="text-center lg:text-left mb-8">
+                  <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                    Create your business account
+                  </h1>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Join LocalSpot and start managing your business presence
                   </p>
                 </div>
 
-                {/* Owner / Contact Name */}
-                <div>
-                  <label
-                    htmlFor="ownerName"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Owner / Contact Name{' '}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="ownerName"
-                    name="ownerName"
-                    required
-                    placeholder="e.g. Eleanor Vance"
-                    value={formData.ownerName}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                {/* Email Address */}
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    placeholder="name@business.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                  />
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Used for signing in and account notifications
-                  </p>
-                </div>
-
-                {/* Phone Number */}
-                <div>
-                  <label
-                    htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative w-24 shrink-0" ref={countryRef}>
-                      <button
-                        type="button"
-                        disabled={isLoading}
-                        onClick={() => setIsCountryOpen(!isCountryOpen)}
-                        className="w-full flex items-center justify-between bg-white border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+                  <form onSubmit={handleRegister} className="space-y-5">
+                    {/* Business Name */}
+                    <div>
+                      <label
+                        htmlFor="businessName"
+                        className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        <span>{countryCode}</span>
-                        <FiChevronDown
-                          className={`text-gray-400 transition-transform ${
-                            isCountryOpen ? 'rotate-180' : ''
-                          }`}
-                          size={14}
-                        />
-                      </button>
-
-                      {isCountryOpen && (
-                        <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
-                          {countryCodes.map((country) => (
-                            <button
-                              key={country.code}
-                              type="button"
-                              onClick={() => {
-                                setCountryCode(country.code)
-                                setIsCountryOpen(false)
-                              }}
-                              className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
-                                countryCode === country.code
-                                  ? 'bg-blue-50 text-blue-600 font-semibold'
-                                  : 'text-gray-700 hover:bg-gray-50'
-                              }`}
-                            >
-                              <span>{country.code}</span>
-                              <span className="text-[10px] text-gray-400">
-                                {country.label}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                        Business Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="businessName"
+                        name="businessName"
+                        required
+                        placeholder="e.g. Maple Bakery & Cafe"
+                        value={formData.businessName}
+                        onChange={handleChange}
+                        disabled={isRegistering}
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                      />
+                      <p className="text-xs text-gray-500 mt-1.5">
+                        This public name will be shown on your profile
+                      </p>
                     </div>
 
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      required
-                      placeholder="803 123 4567"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      disabled={isLoading}
-                      className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-                </div>
+                    {/* Email */}
+                    <div>
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Email Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        placeholder="name@business.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        disabled={isRegistering}
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                      />
+                      <p className="text-xs text-gray-500 mt-1.5">
+                        We'll send a verification code to this email
+                      </p>
+                    </div>
 
-                {/* Password */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Password <span className="text-red-500">*</span>
-                    </label>
-                    <span className="text-[10px] text-gray-400 font-medium">
-                      Must be 8+ characters
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      id="password"
-                      name="password"
-                      required
-                      minLength={8}
-                      placeholder="Create a strong password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      disabled={isLoading}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 pr-10 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                    />
+                    {/* Phone */}
+                    <div>
+                      <label
+                        htmlFor="phone"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Phone Number
+                      </label>
+                      <div className="flex gap-2">
+                        <div
+                          className="relative w-24 shrink-0"
+                          ref={countryRef}
+                        >
+                          <button
+                            type="button"
+                            disabled={isRegistering}
+                            onClick={() => setIsCountryOpen(!isCountryOpen)}
+                            className="w-full flex items-center justify-between bg-white border border-gray-300 text-gray-700 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
+                          >
+                            <span>{countryCode}</span>
+                            <FiChevronDown
+                              className={`text-gray-400 transition-transform ${
+                                isCountryOpen ? "rotate-180" : ""
+                              }`}
+                              size={14}
+                            />
+                          </button>
+
+                          {isCountryOpen && (
+                            <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
+                              {countryCodes.map((country) => (
+                                <button
+                                  key={country.code}
+                                  type="button"
+                                  onClick={() => {
+                                    setCountryCode(country.code);
+                                    setIsCountryOpen(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
+                                    countryCode === country.code
+                                      ? "bg-blue-50 text-blue-600 font-semibold"
+                                      : "text-gray-700 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  <span>{country.code}</span>
+                                  <span className="text-[10px] text-gray-400">
+                                    {country.label}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <input
+                          type="tel"
+                          id="phone"
+                          name="phone"
+                          placeholder="803 123 4567"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          disabled={isRegistering}
+                          className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Password */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label
+                          htmlFor="password"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Password <span className="text-red-500">*</span>
+                        </label>
+                        <span className="text-[10px] text-gray-400 font-medium">
+                          Must be 8+ characters
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          id="password"
+                          name="password"
+                          required
+                          minLength={8}
+                          placeholder="Create a strong password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          disabled={isRegistering}
+                          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 pr-10 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        >
+                          {showPassword ? (
+                            <FiEyeOff size={16} />
+                          ) : (
+                            <FiEye size={16} />
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1.5">
+                        Must include at least 8 characters, numbers and symbols.
+                      </p>
+                    </div>
+
+                    {/* Submit */}
                     <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      type="submit"
+                      disabled={isRegistering || !agreedToTerms}
+                      className="w-full py-3 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition-colors shadow-sm mt-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      {showPassword ? (
-                        <FiEyeOff size={16} />
+                      {isRegistering ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Sending code...
+                        </>
                       ) : (
-                        <FiEye size={16} />
+                        "Create Business Account"
                       )}
                     </button>
+                  </form>
+
+                  {/* Terms */}
+                  <div className="mt-4 flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      required
+                      className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label
+                      htmlFor="terms"
+                      className="text-[11px] text-gray-500 leading-relaxed"
+                    >
+                      By continuing, you agree to LocalSpot's{" "}
+                      <Link
+                        to="/terms"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link
+                        to="/privacy"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Privacy Policy
+                      </Link>
+                      .
+                    </label>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Must include at least 8 characters, numbers and symbols.
+
+                  {/* Bottom Link */}
+                  <div className="mt-6 text-center lg:text-left">
+                    <p className="text-xs text-gray-500">
+                      Already have an account?{" "}
+                      <Link
+                        to="/business/signin"
+                        className="font-medium text-blue-600 hover:underline"
+                      >
+                        Log in
+                      </Link>
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ─────────── VERIFY STEP ─────────── */}
+            {step === "verify" && (
+              <>
+                <div className="text-center lg:text-left mb-8">
+                  <button
+                    type="button"
+                    onClick={handleBackToRegister}
+                    className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 mb-4"
+                  >
+                    <FiArrowLeft size={14} />
+                    Back to signup
+                  </button>
+
+                  <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                    Verify your email
+                  </h1>
+                  <p className="text-sm text-gray-500 mt-2">
+                    We sent a 6-digit code to{" "}
+                    <span className="font-medium text-gray-700">
+                      {pendingEmail}
+                    </span>
                   </p>
                 </div>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isLoading || !agreedToTerms}
-                  className="w-full py-3 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition-colors shadow-sm mt-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    'Create Business Account'
-                  )}
-                </button>
-              </form>
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+                  <form onSubmit={handleVerify} className="space-y-6">
+                    {/* OTP boxes */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3 text-center lg:text-left">
+                        Enter verification code
+                      </label>
 
-              {/* Terms */}
-              <div className="mt-4 flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  required
-                  className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label
-                  htmlFor="terms"
-                  className="text-[11px] text-gray-500 leading-relaxed"
-                >
-                  By continuing, you agree to LocalSpot's{' '}
-                  <Link to="/terms" className="text-blue-600 hover:underline">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="text-blue-600 hover:underline">
-                    Privacy Policy
-                  </Link>
-                  .
-                </label>
-              </div>
+                      <div
+                        className="flex justify-center lg:justify-between gap-2"
+                        onPaste={handleOtpPaste}
+                      >
+                        {otpValues.map((value, index) => (
+                          <input
+                            key={index}
+                            ref={(el) => (otpRefs.current[index] = el)}
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={1}
+                            value={value}
+                            onChange={(e) =>
+                              handleOtpChange(index, e.target.value)
+                            }
+                            onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                            disabled={isVerifying}
+                            className="w-11 h-13 sm:w-12 sm:h-14 text-center text-lg font-semibold text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed"
+                          />
+                        ))}
+                      </div>
 
-              {/* Bottom Link */}
-              <div className="mt-6 text-center lg:text-left">
-                <p className="text-xs text-gray-500">
-                  Already have an account?{' '}
-                  <Link
-                    to="/business/signin"
-                    className="font-medium text-blue-600 hover:underline"
-                  >
-                    Log in
-                  </Link>
-                </p>
-              </div>
-            </div>
+                      <p className="text-xs text-gray-500 mt-3 text-center lg:text-left">
+                        Code expires in 10 minutes
+                      </p>
+                    </div>
+
+                    {/* Submit */}
+                    <button
+                      type="submit"
+                      disabled={isVerifying || otpValues.some((v) => !v)}
+                      className="w-full py-3 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isVerifying ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        "Verify & Continue"
+                      )}
+                    </button>
+                  </form>
+
+                  {/* Resend */}
+                  <div className="mt-6 text-center">
+                    <p className="text-xs text-gray-500">
+                      Didn't get the code?{" "}
+                      {resendIn > 0 ? (
+                        <span className="text-gray-400">
+                          Resend in {resendIn}s
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleResend}
+                          disabled={isResending}
+                          className="font-medium text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isResending ? "Sending..." : "Resend code"}
+                        </button>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Hint */}
+                  <div className="mt-6 pt-6 border-t border-gray-100">
+                    <p className="text-[11px] text-gray-400 leading-relaxed text-center">
+                      After verifying your email, your account will be reviewed
+                      by our team before it goes live. You'll be notified once
+                      it's approved.
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default BusinessSignup
+export default BusinessSignup;

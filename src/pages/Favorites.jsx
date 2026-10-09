@@ -5,7 +5,6 @@ import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 import directoryData from "../../data/places.json";
 
-
 const LocalSpotIcon = ({ className = "" }) => (
   <svg
     viewBox="0 0 24 24"
@@ -17,15 +16,9 @@ const LocalSpotIcon = ({ className = "" }) => (
       d="M12 22C12 22 20 14.8 20 9.5C20 5.36 16.42 2 12 2C7.58 2 4 5.36 4 9.5C4 14.8 12 22 12 22Z"
       fill="#1655F2"
     />
-    <circle
-      cx="12"
-      cy="9.5"
-      r="3"
-      fill="white"
-    />
+    <circle cx="12" cy="9.5" r="3" fill="white" />
   </svg>
 );
-
 
 const getCategoryFallback = (place) => {
   const cat = (place.category || "").toLowerCase();
@@ -95,16 +88,14 @@ export default function Favorites() {
     });
   };
 
-
   const favoritePlaces = (directoryData.places || []).filter((place) =>
-    favorites.includes(place.id)
+    favorites.includes(place.id),
   );
 
   return (
     <div className="w-full min-h-screen bg-white font-sans text-gray-900 overflow-x-hidden flex flex-col justify-between">
       <div>
         <header className="w-full bg-white border-b border-gray-100 flex items-center justify-between px-6 py-4 md:px-12 lg:px-24 relative">
-       
           <Link to="/" className="flex items-center gap-2">
             <LocalSpotIcon className="w-6 h-6 text-[#1655F2]" />
             <span className="font-bold text-gray-900 text-lg md:text-xl tracking-tight">
@@ -112,7 +103,6 @@ export default function Favorites() {
             </span>
           </Link>
 
-      
           <nav className="hidden md:flex items-center justify-center">
             <Link
               to="/"
@@ -122,7 +112,6 @@ export default function Favorites() {
             </Link>
           </nav>
 
-        
           <div className="hidden md:flex">
             <Link
               to="/favorites"
@@ -133,7 +122,6 @@ export default function Favorites() {
             </Link>
           </div>
 
-         
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden text-gray-900 focus:outline-none cursor-pointer p-1"
@@ -146,7 +134,6 @@ export default function Favorites() {
             )}
           </button>
 
-         
           {mobileMenuOpen && (
             <div className="absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-lg z-50 flex flex-col p-5 md:hidden gap-4">
               <Link
@@ -168,7 +155,6 @@ export default function Favorites() {
           )}
         </header>
 
-       
         <main className="w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-10 flex-1">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
@@ -179,7 +165,6 @@ export default function Favorites() {
             </p>
           </div>
 
-         
           {favoritePlaces.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed border-gray-200 rounded-2xl max-w-lg mx-auto px-6 mt-8 flex flex-col items-center">
               <Heart className="w-12 h-12 text-gray-300 mb-4 stroke-1" />
@@ -187,8 +172,8 @@ export default function Favorites() {
                 No favorites saved yet
               </h2>
               <p className="text-gray-500 text-sm mb-6 max-w-sm">
-                Explore local hotels, restaurants, cafes, and attractions to save
-                your favorite spots!
+                Explore local hotels, restaurants, cafes, and attractions to
+                save your favorite spots!
               </p>
               <Link
                 to="/"
@@ -205,7 +190,6 @@ export default function Favorites() {
                   to={`/details/${place.id}`}
                   className="group flex flex-col bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-md transition-all duration-150"
                 >
-               
                   <div className="relative w-full aspect-video sm:h-44 md:h-48 overflow-hidden bg-gray-100">
                     <img
                       src={getPlaceImage(place)}
@@ -213,7 +197,6 @@ export default function Favorites() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                     />
 
-                   
                     <button
                       onClick={(e) => toggleFavorite(place.id, e)}
                       className="absolute top-3 right-3 w-8 h-8 bg-white hover:bg-gray-100 rounded-full flex items-center justify-center shadow-sm z-10 transition-colors cursor-pointer"
@@ -222,20 +205,16 @@ export default function Favorites() {
                     </button>
                   </div>
 
-                
                   <div className="p-4 flex-1 flex flex-col justify-between">
                     <div>
-                  
                       <span className="inline-block bg-[#111111] text-white text-[10px] uppercase font-semibold px-2 py-0.5 rounded">
                         {getCategoryLabel(place.category)}
                       </span>
 
-                 
                       <h3 className="mt-2 text-sm md:text-base font-bold text-gray-900 group-hover:text-[#1655F2] transition-colors leading-snug line-clamp-1">
                         {place.name}
                       </h3>
 
-                 
                       <div className="flex items-center gap-1.5 mt-2.5 text-xs text-gray-800">
                         <span className="text-[#FFB800] text-sm">★</span>
                         <span className="font-semibold">
@@ -247,7 +226,6 @@ export default function Favorites() {
                       </div>
                     </div>
 
-                
                     <div className="flex items-center gap-1 mt-3.5 text-xs text-gray-500">
                       <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                       <span className="truncate">
@@ -262,15 +240,12 @@ export default function Favorites() {
         </main>
       </div>
 
-    
       <footer className="w-full bg-white border-t border-gray-100 px-6 py-8 md:px-12 lg:px-24 flex flex-col md:flex-row items-center justify-between gap-6 mt-12">
-     
         <div className="flex items-center gap-2">
           <LocalSpotIcon className="w-7 h-7 text-[#1655F2]" />
           <span className="font-bold text-gray-900 text-lg">LocalSpot</span>
         </div>
 
-       
         <div className="flex items-center gap-8 text-sm md:text-base font-medium">
           <Link
             to="/"
@@ -294,30 +269,29 @@ export default function Favorites() {
 
         <div className="flex items-center gap-5 text-gray-500">
           <a
-            href="#"
+            href="https://www.facebook.com/share/19cKqfiyHS/"
+            target="_blank"
+            rel="noopener noreferrer"
             aria-label="Facebook"
-            className="hover:text-gray-900 transition-colors"
+            className="hover:text-blue-600 transition-colors"
           >
             <FaFacebookF className="w-4.5 h-4.5" />
           </a>
           <a
-            href="#"
+            href="https://www.instagram.com/localspot_nigeria?stkn=d3U1YXU4bjY3aDZp"
+            target="_blank"
+            rel="noopener noreferrer"
             aria-label="Instagram"
-            className="hover:text-gray-900 transition-colors"
+            className="hover:text-pink-600 transition-colors"
           >
             <FaInstagram className="w-4.5 h-4.5" />
           </a>
           <a
-            href="#"
-            aria-label="TikTok"
-            className="hover:text-gray-900 transition-colors"
-          >
-            <FaTiktok className="w-4.5 h-4.5" />
-          </a>
-          <a
-            href="#"
-            aria-label="X (Twitter)"
-            className="hover:text-gray-900 transition-colors"
+            href="https://www.linkedin.com/pulse/localspot-localspot-nigeria-8lbwe"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="LinkedIn"
+            className="hover:text-blue-700 transition-colors"
           >
             <FaXTwitter className="w-4.5 h-4.5" />
           </a>

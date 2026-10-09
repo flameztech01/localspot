@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react'
-import { NavLink, Link, useNavigate } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
+// src/components/Navbar.jsx
+import React, { useEffect, useState, useRef } from "react";
+import { NavLink, Link, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import {
   FiUser,
   FiMenu,
@@ -11,115 +12,112 @@ import {
   FiMessageSquare,
   FiLogOut,
   FiChevronDown,
-} from 'react-icons/fi'
-import { logout } from '../features/auth/authSlice'
+  FiHeart,
+} from "react-icons/fi";
+import { logout } from "../features/auth/authSlice";
 
 // --- Public links (not signed in) ---
 const publicLinks = [
-  { label: 'Explore', to: '/search' },
-  { label: 'About Us', to: '/about' },
-  { label: 'Contact', to: '/contact' },
-  { label: 'Saved Places', to: '/saved' },
-]
+  { label: "Explore", to: "/search" },
+  { label: "About Us", to: "/about" },
+  { label: "Contact", to: "/contact" },
+  { label: "Saved Places", to: "/saved" },
+];
 
 // --- Business links (signed in) — scroll to sections ---
 const businessLinks = [
-  { label: 'Overview', targetId: 'overview', icon: FiGrid },
-  { label: 'Listings', targetId: 'listings', icon: FiMapPin },
-  { label: 'Deals', targetId: 'deals', icon: FiTag },
-  { label: 'Reviews', targetId: 'reviews', icon: FiMessageSquare },
-]
+  { label: "Overview", targetId: "overview", icon: FiGrid },
+  { label: "Listings", targetId: "listings", icon: FiMapPin },
+  { label: "Deals", targetId: "deals", icon: FiTag },
+  { label: "Reviews", targetId: "reviews", icon: FiMessageSquare },
+];
 
 // --- Logo ---
 const Logo = () => (
   <Link to="/" className="flex items-center gap-2" aria-label="LocalSpot home">
-    <img
-      src="/logo.png"
-      alt="LocalSpot"
-      className="h-7 w-7 object-contain"
-    />
+    <img src="/logo.png" alt="LocalSpot" className="h-7 w-7 object-contain" />
     <span className="text-sm font-bold tracking-wide text-gray-900">
       LOCALSPOT
     </span>
   </Link>
-)
+);
 
 const Navbar = () => {
-  const [open, setOpen] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef(null)
-  const navigate = useNavigate()
+  const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  const navigate = useNavigate();
 
   // --- Redux auth state ---
-  const { userInfo } = useSelector((state) => state.auth)
-  const dispatch = useDispatch()
+  const { userInfo } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
 
   // ---- Close profile dropdown on outside click ----
   useEffect(() => {
-    if (!menuOpen) return
+    if (!menuOpen) return;
     const onClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false)
+        setMenuOpen(false);
       }
-    }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [menuOpen])
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen]);
 
   // ---- Lock body scroll while mobile menu is open ----
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
+    document.body.style.overflow = open ? "hidden" : "";
     return () => {
-      document.body.style.overflow = ''
-    }
-  }, [open])
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   // ---- Close mobile menu on desktop resize ----
   useEffect(() => {
-    const onResize = () => window.innerWidth >= 768 && setOpen(false)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
+    const onResize = () => window.innerWidth >= 768 && setOpen(false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // ---- Handle business nav link click (scroll to section) ----
   const handleScrollTo = (targetId) => {
-    if (window.location.pathname !== '/business') {
-      navigate('/business')
+    if (window.location.pathname !== "/business") {
+      navigate("/business");
       setTimeout(() => {
-        const el = document.getElementById(targetId)
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 350)
+        const el = document.getElementById(targetId);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 350);
     } else {
-      const el = document.getElementById(targetId)
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const el = document.getElementById(targetId);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    setOpen(false)
-  }
+    setOpen(false);
+  };
 
   // ---- Logout via Redux ----
   const handleLogout = () => {
-    dispatch(logout())
-    setMenuOpen(false)
-    setOpen(false)
-    navigate('/')
-  }
+    dispatch(logout());
+    setMenuOpen(false);
+    setOpen(false);
+    navigate("/");
+  };
 
   const desktopLink = ({ isActive }) =>
     `rounded-md px-3 py-1.5 text-sm transition-colors ${
       isActive
-        ? 'bg-gray-100 font-semibold text-gray-900'
-        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium'
-    }`
+        ? "bg-gray-100 font-semibold text-gray-900"
+        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium"
+    }`;
 
   const mobileLink = ({ isActive }) =>
     `block rounded-xl px-4 py-3 text-base transition-colors ${
       isActive
-        ? 'bg-gray-100 font-medium text-gray-900'
-        : 'text-gray-600 hover:bg-gray-50'
-    }`
+        ? "bg-gray-100 font-medium text-gray-900"
+        : "text-gray-600 hover:bg-gray-50"
+    }`;
 
   // First letter for avatar
-  const initial = userInfo?.name?.[0]?.toUpperCase() || 'B'
+  const initial = userInfo?.name?.[0]?.toUpperCase() || "B";
 
   return (
     <>
@@ -131,21 +129,39 @@ const Navbar = () => {
           {/* ============= DESKTOP LINKS ============= */}
           <ul className="hidden items-center gap-2 md:flex lg:gap-4">
             {userInfo ? (
-              businessLinks.map(({ label, targetId, icon: Icon }) => (
-                <li key={label}>
-                  <button
-                    onClick={() => handleScrollTo(targetId)}
-                    className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              <>
+                {businessLinks.map(({ label, targetId, icon: Icon }) => (
+                  <li key={label}>
+                    <button
+                      onClick={() => handleScrollTo(targetId)}
+                      className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                    >
+                      <Icon size={14} />
+                      {label}
+                    </button>
+                  </li>
+                ))}
+                {/* Saved Places — route link for signed-in users */}
+                <li>
+                  <NavLink
+                    to="/saved"
+                    className={({ isActive }) =>
+                      `inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${
+                        isActive
+                          ? "bg-gray-100 font-semibold text-gray-900"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium"
+                      }`
+                    }
                   >
-                    <Icon size={14} />
-                    {label}
-                  </button>
+                    <FiHeart size={14} />
+                    Saved Places
+                  </NavLink>
                 </li>
-              ))
+              </>
             ) : (
               publicLinks.map(({ label, to }) => (
                 <li key={label}>
-                  <NavLink to={to} end={to === '/'} className={desktopLink}>
+                  <NavLink to={to} end={to === "/"} className={desktopLink}>
                     {label}
                   </NavLink>
                 </li>
@@ -174,12 +190,12 @@ const Navbar = () => {
                     </span>
                   )}
                   <span className="max-w-[100px] truncate text-sm font-medium text-gray-800">
-                    {userInfo.name?.split(' ')[0] || 'Business'}
+                    {userInfo.name?.split(" ")[0] || "Business"}
                   </span>
                   <FiChevronDown
                     size={14}
                     className={`text-gray-400 transition-transform ${
-                      menuOpen ? 'rotate-180' : ''
+                      menuOpen ? "rotate-180" : ""
                     }`}
                   />
                 </button>
@@ -201,6 +217,13 @@ const Navbar = () => {
                       className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       <FiGrid size={15} /> Business Dashboard
+                    </Link>
+                    <Link
+                      to="/saved"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <FiHeart size={15} /> Saved Places
                     </Link>
                     <Link
                       to="/profile"
@@ -267,7 +290,7 @@ const Navbar = () => {
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
-              aria-label={open ? 'Close menu' : 'Open menu'}
+              aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
               aria-controls="mobile-menu"
               className="relative flex h-10 w-10 items-center justify-center rounded-lg text-gray-900 transition-colors hover:bg-gray-100"
@@ -275,13 +298,17 @@ const Navbar = () => {
               <FiMenu
                 size={22}
                 className={`absolute transition-all duration-300 ${
-                  open ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
+                  open
+                    ? "rotate-90 scale-0 opacity-0"
+                    : "rotate-0 scale-100 opacity-100"
                 }`}
               />
               <FiX
                 size={22}
                 className={`absolute transition-all duration-300 ${
-                  open ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'
+                  open
+                    ? "rotate-0 scale-100 opacity-100"
+                    : "-rotate-90 scale-0 opacity-0"
                 }`}
               />
             </button>
@@ -294,7 +321,9 @@ const Navbar = () => {
         aria-hidden="true"
         onClick={() => setOpen(false)}
         className={`fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
-          open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          open
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
         }`}
       />
 
@@ -302,7 +331,7 @@ const Navbar = () => {
       <aside
         id="mobile-menu"
         className={`fixed left-0 top-0 z-[70] flex h-[100svh] w-[78%] max-w-[320px] flex-col overflow-y-auto border-r border-white/40 bg-white/90 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out md:hidden ${
-          open ? 'translate-x-0' : '-translate-x-full'
+          open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Drawer header */}
@@ -343,14 +372,19 @@ const Navbar = () => {
 
         {/* Drawer links */}
         <ul className="flex-1 space-y-1 px-4 py-4">
-          {userInfo
-            ? businessLinks.map(({ label, targetId, icon: Icon }, i) => (
+          {userInfo ? (
+            <>
+              {businessLinks.map(({ label, targetId, icon: Icon }, i) => (
                 <li
                   key={label}
                   className={`transition-all duration-300 ease-out ${
-                    open ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
+                    open
+                      ? "translate-x-0 opacity-100"
+                      : "-translate-x-4 opacity-0"
                   }`}
-                  style={{ transitionDelay: open ? `${i * 60 + 100}ms` : '0ms' }}
+                  style={{
+                    transitionDelay: open ? `${i * 60 + 100}ms` : "0ms",
+                  }}
                 >
                   <button
                     onClick={() => handleScrollTo(targetId)}
@@ -360,45 +394,81 @@ const Navbar = () => {
                     {label}
                   </button>
                 </li>
-              ))
-            : publicLinks.map(({ label, to }, i) => (
-                <li
-                  key={label}
-                  className={`transition-all duration-300 ease-out ${
-                    open ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
-                  }`}
-                  style={{ transitionDelay: open ? `${i * 60 + 100}ms` : '0ms' }}
-                >
-                  <NavLink
-                    to={to}
-                    end={to === '/'}
-                    onClick={() => setOpen(false)}
-                    className={mobileLink}
-                  >
-                    {label}
-                  </NavLink>
-                </li>
               ))}
 
-          {/* Logout button when signed in */}
-          {userInfo && (
-            <li
-              className={`transition-all duration-300 ease-out ${
-                open ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
-              }`}
-              style={{
-                transitionDelay: open
-                  ? `${businessLinks.length * 60 + 100}ms`
-                  : '0ms',
-              }}
-            >
-              <button
-                onClick={handleLogout}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-base text-red-600 transition-colors hover:bg-red-50"
+              {/* Saved Places for signed-in users */}
+              <li
+                className={`transition-all duration-300 ease-out ${
+                  open
+                    ? "translate-x-0 opacity-100"
+                    : "-translate-x-4 opacity-0"
+                }`}
+                style={{
+                  transitionDelay: open
+                    ? `${businessLinks.length * 60 + 100}ms`
+                    : "0ms",
+                }}
               >
-                <FiLogOut size={18} /> Log out
-              </button>
-            </li>
+                <NavLink
+                  to="/saved"
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-xl px-4 py-3 text-base transition-colors ${
+                      isActive
+                        ? "bg-gray-100 font-medium text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`
+                  }
+                >
+                  <FiHeart size={18} />
+                  Saved Places
+                </NavLink>
+              </li>
+
+              {/* Logout button */}
+              <li
+                className={`transition-all duration-300 ease-out ${
+                  open
+                    ? "translate-x-0 opacity-100"
+                    : "-translate-x-4 opacity-0"
+                }`}
+                style={{
+                  transitionDelay: open
+                    ? `${(businessLinks.length + 1) * 60 + 100}ms`
+                    : "0ms",
+                }}
+              >
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-base text-red-600 transition-colors hover:bg-red-50"
+                >
+                  <FiLogOut size={18} /> Log out
+                </button>
+              </li>
+            </>
+          ) : (
+            publicLinks.map(({ label, to }, i) => (
+              <li
+                key={label}
+                className={`transition-all duration-300 ease-out ${
+                  open
+                    ? "translate-x-0 opacity-100"
+                    : "-translate-x-4 opacity-0"
+                }`}
+                style={{
+                  transitionDelay: open ? `${i * 60 + 100}ms` : "0ms",
+                }}
+              >
+                <NavLink
+                  to={to}
+                  end={to === "/"}
+                  onClick={() => setOpen(false)}
+                  className={mobileLink}
+                >
+                  {label}
+                </NavLink>
+              </li>
+            ))
           )}
         </ul>
 
@@ -406,10 +476,12 @@ const Navbar = () => {
         {!userInfo && (
           <div
             className={`border-t border-gray-100 p-4 transition-all duration-300 ease-out ${
-              open ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
+              open ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
             }`}
             style={{
-              transitionDelay: open ? `${publicLinks.length * 60 + 100}ms` : '0ms',
+              transitionDelay: open
+                ? `${publicLinks.length * 60 + 100}ms`
+                : "0ms",
             }}
           >
             <div className="space-y-2">
@@ -432,7 +504,7 @@ const Navbar = () => {
         )}
       </aside>
     </>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

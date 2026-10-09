@@ -1,35 +1,39 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { FaXTwitter, FaInstagram, FaYoutube, FaLinkedin } from 'react-icons/fa6'
+import React from "react";
+import { Link } from "react-router-dom";
+import { FaInstagram, FaLinkedin, FaFacebook, FaTiktok } from "react-icons/fa6";
+import { FiMail } from "react-icons/fi";
 
 const footerLinks = {
   explore: [
-    { label: 'Explore Spots', href: '/search' },
-    { label: 'All Categories', href: '/category' },
-    { label: 'Saved Places (3)', href: '/saved' },
+    { label: "Explore Spots", href: "/search" },
+    { label: "All Categories", href: "/category" },
+    { label: "Saved Places (3)", href: "/saved" },
   ],
   business: [
-    { label: 'List Your Business', href: '/business' },
-    { label: 'Claim Existing Place', href: '/business' },
-    { label: 'Merchant Portal Login', href: '/business' },
-    { label: 'Ad Pricing', href: '/business' },
+    { label: "List Your Business", href: "/business" },
+    { label: "Claim Existing Place", href: "/business" },
+    { label: "Merchant Portal Login", href: "/business" },
+    { label: "Ad Pricing", href: "/business" },
   ],
   support: [
-    { label: 'Contact us', href: '/contact' },
-    { label: 'City guides', href: '/search' },
-    { label: 'Privacy & terms', href: '/about' },
+    { label: "About Us", href: "/about" },
+    { label: "Contact us", href: "/contact" },
+    { label: "City guides", href: "/search" },
+    { label: "Privacy & terms", href: "/about" },
   ],
-}
+};
 
 const SocialIcon = ({ href, label, icon: Icon }) => (
   <a
     href={href}
+    target="_blank"
+    rel="noopener noreferrer"
     aria-label={label}
-    className="text-gray-700 transition-colors hover:text-gray-950"
+    className="text-gray-700 transition-colors hover:text-blue-600"
   >
     <Icon size={18} />
   </a>
-)
+);
 
 const Footer = () => {
   return (
@@ -51,14 +55,42 @@ const Footer = () => {
             </div>
 
             <p className="mb-5 max-w-sm text-xs leading-relaxed text-gray-500">
-              Hyperlocal neighborhood discovery, venues and merchant coordination.
+              Hyperlocal neighborhood discovery, venues and merchant
+              coordination.
             </p>
 
             <div className="flex items-center gap-4">
-              <SocialIcon href="#" label="X (Twitter)" icon={FaXTwitter} />
-              <SocialIcon href="#" label="Instagram" icon={FaInstagram} />
-              <SocialIcon href="#" label="YouTube" icon={FaYoutube} />
-              <SocialIcon href="#" label="LinkedIn" icon={FaLinkedin} />
+              <SocialIcon
+                href="https://www.facebook.com/share/19cKqfiyHS/"
+                label="Facebook"
+                icon={FaFacebook}
+              />
+              <SocialIcon
+                href="https://www.instagram.com/localspot_nigeria?stkn=d3U1YXU4bjY3aDZp"
+                label="Instagram"
+                icon={FaInstagram}
+              />
+              <SocialIcon
+                href="https://www.linkedin.com/pulse/localspot-localspot-nigeria-8lbwe"
+                label="LinkedIn"
+                icon={FaLinkedin}
+              />
+              <SocialIcon
+                href="https://www.tiktok.com/@local_spot"
+                label="TikTok"
+                icon={FaTiktok}
+              />
+              <a
+                href="mailto:Local.spot.co@gmail.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Email LocalSpot"
+                title="Email LocalSpot"
+                className="text-gray-700 transition-colors hover:text-blue-600"
+              >
+                <FiMail size={18} />
+              </a>
+              <a />
             </div>
           </div>
 
@@ -81,7 +113,9 @@ const Footer = () => {
 
           {/* For Businesses Column (3 cols) */}
           <div className="lg:col-span-3">
-            <h3 className="mb-3.5 text-xs font-bold text-gray-900">For Businesses</h3>
+            <h3 className="mb-3.5 text-xs font-bold text-gray-900">
+              For Businesses
+            </h3>
             <ul className="space-y-2.5">
               {footerLinks.business.map((link) => (
                 <li key={link.label}>
@@ -98,7 +132,9 @@ const Footer = () => {
 
           {/* Support & Resources Column (2 cols) */}
           <div className="lg:col-span-2">
-            <h3 className="mb-3.5 text-xs font-bold text-gray-900">Support &amp; Resources</h3>
+            <h3 className="mb-3.5 text-xs font-bold text-gray-900">
+              Support &amp; Resources
+            </h3>
             <ul className="space-y-2.5">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
@@ -122,7 +158,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;
