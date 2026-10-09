@@ -75,9 +75,9 @@ const Footer = () => {
                 label="LinkedIn"
                 icon={FaLinkedin}
               />
-               <SocialIcon
-                href="https://www.linkedin.com/pulse/localspot-localspot-nigeria-8lbwe"
-                label="LinkedIn"
+              <SocialIcon
+                href="https://www.tiktok.com/@local_spot"
+                label="TikTok"
                 icon={FaTiktok}
               />
               <a
