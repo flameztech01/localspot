@@ -3,46 +3,30 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
-  BarChart3,
   Plus,
-  Search,
-  Edit3,
-  Trash2,
-  Send,
-  X,
-  Loader2,
-  Save,
   Image as ImageIcon,
-  Calendar,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
   Eye,
   MousePointerClick,
-  ArrowLeft,
-  LogOut,
+  MoreVertical,
+  BarChart3,
+  Pencil,
+  Trash2,
+  Send,
   Pause,
   Play,
-  TrendingUp,
-  DollarSign,
-  ExternalLink,
-  RefreshCw,
-  Sparkles,
+  X,
+  Loader,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Ban,
+  Megaphone,
+  Upload,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
 
 import {
   useListMyAdvertisementsQuery,
-  useGetMyAdvertisementQuery,
   useCreateAdvertisementMutation,
   useUpdateMyAdvertisementMutation,
   useDeleteMyAdvertisementMutation,
@@ -60,69 +44,28 @@ import BusinessSidebar from "../../components/BusinessSidebar";
 import BusinessBottombar from "../../components/BusinessBottombar";
 
 // ─── Constants ─────────────────────────────────────────────
-const ACCENT = "#3B82F6";
-
-const STATUS_FILTERS = [
-  { value: "all", label: "All" },
-  { value: "draft", label: "Drafts" },
-  { value: "pending", label: "Pending" },
-  { value: "approved", label: "Approved" },
-  { value: "paused", label: "Paused" },
-  { value: "rejected", label: "Rejected" },
-  { value: "expired", label: "Expired" },
+const TABS = [
+  { id: "active", label: "Active", statuses: ["approved"] },
+  { id: "pending", label: "Pending approval", statuses: ["pending"] },
+  { id: "draft", label: "Drafts", statuses: ["draft"] },
+  { id: "rejected", label: "Rejected", statuses: ["rejected"] },
+  {
+    id: "expired",
+    label: "Expired/Disabled",
+    statuses: ["expired", "disabled", "paused"],
+  },
 ];
 
 const inputClass =
-  "w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed";
+  "w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed transition";
 
-// ─── Status pill ───────────────────────────────────────────
-const statusStyle = (status) => {
-  switch (status) {
-    case "approved":
-      return {
-        color:
-          "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400",
-        Icon: CheckCircle2,
-      };
-    case "pending":
-      return {
-        color:
-          "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400",
-        Icon: Clock,
-      };
-    case "paused":
-      return {
-        color:
-          "text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400",
-        Icon: Pause,
-      };
-    case "rejected":
-      return {
-        color: "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400",
-        Icon: XCircle,
-      };
-    case "disabled":
-    case "expired":
-      return {
-        color: "text-gray-500 bg-gray-100 dark:bg-gray-800 dark:text-gray-400",
-        Icon: AlertCircle,
-      };
-    case "draft":
-    default:
-      return {
-        color:
-          "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400",
-        Icon: Edit3,
-      };
-  }
-};
-
+// ─── Helpers ───────────────────────────────────────────────
 const formatDate = (d) => {
   if (!d) return "—";
   try {
-    return new Date(d).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
+    return new Date(d).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
       year: "numeric",
     });
   } catch {
@@ -134,87 +77,69 @@ const toInputDate = (d) => {
   if (!d) return "";
   const date = new Date(d);
   if (Number.isNaN(date.getTime())) return "";
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return `${y}-${m}-${dd}`;
 };
 
-const formatCurrency = (v) => {
-  const n = Number(v || 0);
-  if (!Number.isFinite(n)) return "₦0";
-  return `₦${n.toLocaleString()}`;
+const formatBudget = (n) => {
+  const v = Number(n || 0);
+  if (!v) return "$---";
+  return `$${v.toLocaleString()}`;
 };
 
-// ─── Component ─────────────────────────────────────────────
+const formatNumber = (n) => Number(n || 0).toLocaleString();
+
+// ─── Main component ────────────────────────────────────────
 const BusinessAds = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { showToast } = useToast();
 
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const [showFormModal, setShowFormModal] = useState(false);
-  const [editingAd, setEditingAd] = useState(null);
-  const [performanceAd, setPerformanceAd] = useState(null);
+  const [activeTab, setActiveTab] = useState("active");
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [submitTarget, setSubmitTarget] = useState(null);
-  const [pauseTarget, setPauseTarget] = useState(null);
-  const [resumeTarget, setResumeTarget] = useState(null);
-
+  const [performanceTarget, setPerformanceTarget] = useState(null);
+  const [formModal, setFormModal] = useState(null); // null | { mode: 'create' } | { mode: 'edit', ad }
   const [loggingOut, setLoggingOut] = useState(false);
 
-  // ─── Queries ──────────────────────────────────────────────
+  // ─── Queries ─────────────────────────────────────────────
   const {
     data: adsResp,
     isLoading,
-    isFetching,
     error,
     refetch,
   } = useListMyAdvertisementsQuery();
 
   const advertisements = adsResp?.data || [];
-
-  const { data: typesResp, isLoading: typesLoading } =
-    useListAdvertisementTypesQuery();
-  const { data: slotsResp, isLoading: slotsLoading } =
-    useListAdvertisementSlotsQuery();
-
-  const types = typesResp?.data || [];
-  const slots = slotsResp?.data || [];
-
-  const [createAd, { isLoading: isCreating }] =
-    useCreateAdvertisementMutation();
-  const [updateAd, { isLoading: isUpdating }] =
-    useUpdateMyAdvertisementMutation();
-  const [deleteAd, { isLoading: isDeleting }] =
-    useDeleteMyAdvertisementMutation();
-  const [submitAd, { isLoading: isSubmitting }] =
-    useSubmitMyAdvertisementMutation();
-  const [pauseAd, { isLoading: isPausing }] = usePauseMyAdvertisementMutation();
-  const [resumeAd, { isLoading: isResuming }] =
-    useResumeMyAdvertisementMutation();
-  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
-
-  const isMutating =
-    isCreating ||
-    isUpdating ||
-    isDeleting ||
-    isSubmitting ||
-    isPausing ||
-    isResuming;
-
   const isUnauthorized = error?.status === 401;
 
-  // ─── Logout ───────────────────────────────────────────────
+  const [deleteAd, { isLoading: isDeleting }] = useDeleteMyAdvertisementMutation();
+  const [submitAd, { isLoading: isSubmitting }] = useSubmitMyAdvertisementMutation();
+  const [pauseAd, { isLoading: isPausing }] = usePauseMyAdvertisementMutation();
+  const [resumeAd, { isLoading: isResuming }] = useResumeMyAdvertisementMutation();
+  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+
+  const isMutating = isDeleting || isSubmitting || isPausing || isResuming;
+
+  // ─── Group by status ─────────────────────────────────────
+  const grouped = useMemo(() => {
+    const map = {};
+    TABS.forEach((tab) => {
+      map[tab.id] = advertisements.filter((a) => tab.statuses.includes(a.status));
+    });
+    return map;
+  }, [advertisements]);
+
+  const visibleAds = grouped[activeTab] || [];
+
+  // ─── Handlers ────────────────────────────────────────────
   const handleLogout = async () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount()
-        .unwrap()
-        .catch(() => {});
+      await logoutBusinessAccount().unwrap().catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -227,78 +152,34 @@ const BusinessAds = () => {
     setTimeout(() => window.location.reload(), 50);
   };
 
-  // ─── Derived ──────────────────────────────────────────────
-  const counts = useMemo(() => {
-    const c = {
-      all: advertisements.length,
-      draft: 0,
-      pending: 0,
-      approved: 0,
-      paused: 0,
-      rejected: 0,
-      disabled: 0,
-      expired: 0,
-    };
-    advertisements.forEach((a) => {
-      if (c[a.status] !== undefined) c[a.status] += 1;
-    });
-    return c;
-  }, [advertisements]);
-
-  const totals = useMemo(() => {
-    return advertisements.reduce(
-      (acc, a) => {
-        acc.impressions += Number(a.impressions || 0);
-        acc.clicks += Number(a.clicks || 0);
-        acc.budget += Number(a.budget || 0);
-        return acc;
-      },
-      { impressions: 0, clicks: 0, budget: 0 },
-    );
-  }, [advertisements]);
-
-  const overallCtr =
-    totals.impressions > 0
-      ? Number(((totals.clicks / totals.impressions) * 100).toFixed(2))
-      : 0;
-
-  const filtered = useMemo(() => {
-    let list = advertisements;
-    if (statusFilter !== "all") {
-      list = list.filter((a) => a.status === statusFilter);
+  const handleSubmit = async (id) => {
+    setOpenMenuId(null);
+    try {
+      const r = await submitAd(id).unwrap();
+      showToast(r?.message || "Submitted for review", "success");
+    } catch (err) {
+      showToast(err?.data?.message || "Failed to submit", "error");
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      list = list.filter(
-        (a) =>
-          a.title?.toLowerCase().includes(q) ||
-          a.description?.toLowerCase().includes(q) ||
-          a.slot?.name?.toLowerCase().includes(q) ||
-          a.type?.name?.toLowerCase().includes(q),
-      );
-    }
-    return list;
-  }, [advertisements, statusFilter, searchQuery]);
-
-  // ─── Handlers ─────────────────────────────────────────────
-  const openCreateModal = () => {
-    setEditingAd(null);
-    setShowFormModal(true);
   };
 
-  const openEditModal = (ad) => {
-    if (!["draft", "rejected", "paused"].includes(ad.status)) {
-      showToast("Only draft, paused or rejected ads can be edited", "error");
-      return;
+  const handlePause = async (id) => {
+    setOpenMenuId(null);
+    try {
+      const r = await pauseAd(id).unwrap();
+      showToast(r?.message || "Ad paused", "success");
+    } catch (err) {
+      showToast(err?.data?.message || "Failed to pause", "error");
     }
-    setEditingAd(ad);
-    setShowFormModal(true);
   };
 
-  const closeFormModal = () => {
-    if (isMutating) return;
-    setShowFormModal(false);
-    setEditingAd(null);
+  const handleResume = async (id) => {
+    setOpenMenuId(null);
+    try {
+      const r = await resumeAd(id).unwrap();
+      showToast(r?.message || "Ad resumed", "success");
+    } catch (err) {
+      showToast(err?.data?.message || "Failed to resume", "error");
+    }
   };
 
   const handleDelete = async () => {
@@ -312,387 +193,245 @@ const BusinessAds = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!submitTarget) return;
-    try {
-      const result = await submitAd(submitTarget._id).unwrap();
-      showToast(result?.message || "Submitted for review", "success");
-      setSubmitTarget(null);
-    } catch (err) {
-      showToast(err?.data?.message || "Failed to submit", "error");
-    }
-  };
-
-  const handlePause = async () => {
-    if (!pauseTarget) return;
-    try {
-      const result = await pauseAd(pauseTarget._id).unwrap();
-      showToast(result?.message || "Advertisement paused", "success");
-      setPauseTarget(null);
-    } catch (err) {
-      showToast(err?.data?.message || "Failed to pause", "error");
-    }
-  };
-
-  const handleResume = async () => {
-    if (!resumeTarget) return;
-    try {
-      const result = await resumeAd(resumeTarget._id).unwrap();
-      showToast(result?.message || "Advertisement resumed", "success");
-      setResumeTarget(null);
-    } catch (err) {
-      showToast(err?.data?.message || "Failed to resume", "error");
-    }
-  };
-
-  // ─── Unauthorized ─────────────────────────────────────────
+  // ─── Guards ──────────────────────────────────────────────
   if (isUnauthorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-8 max-w-md w-full text-center">
-          <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-white px-4">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
+          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="h-7 w-7 text-red-500" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-lg font-bold text-gray-900 mb-2">
             Session expired
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-sm text-gray-500 mb-6">
             Please log in again to continue.
           </p>
-          <div className="space-y-2">
-            <button
-              onClick={() => navigate("/business/signin", { replace: true })}
-              className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
-            >
-              Go to sign in
-            </button>
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="w-full py-2.5 text-sm font-medium text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg hover:bg-red-100 transition disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Clear session
-            </button>
-          </div>
+          <button
+            onClick={() => navigate("/business/signin", { replace: true })}
+            className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
+          >
+            Go to sign in
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-white">
       <BusinessSidebar onLogout={handleLogout} />
 
-      <div className="lg:ml-64 pb-20 lg:pb-8">
-        {/* Header */}
-        <header className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-3 py-3 lg:py-4 lg:px-8 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              type="button"
-              onClick={() => navigate("/business")}
-              aria-label="Back to dashboard"
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex-shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <h1 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white truncate">
-              Advertisements
+      <div className="lg:ml-64 pb-24 lg:pb-10">
+        <main className="max-w-5xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
+          {/* ─── Header ─── */}
+          <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+              Ad campaigns
             </h1>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              aria-label="Refresh"
-              className="hidden sm:flex w-8 h-8 rounded-lg items-center justify-center text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-60"
+              onClick={() => setFormModal({ mode: "create" })}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-[#3B82F6] to-indigo-500 hover:from-blue-700 hover:to-indigo-600 rounded-lg transition shadow-sm"
             >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              aria-label="Log out"
-              className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-700 hover:border-red-200 dark:hover:border-red-800 px-3 py-2 rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loggingOut ? (
-                <>
-                  <span className="w-3 h-3 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
-                  <span className="hidden sm:inline">Logging out...</span>
-                </>
-              ) : (
-                <>
-                  <LogOut className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Log out</span>
-                </>
-              )}
+              <Plus className="h-4 w-4" />
+              Start a new advert
             </button>
           </div>
-        </header>
 
-        <div className="px-3 sm:px-4 lg:px-8 py-4 lg:py-6 max-w-6xl mx-auto">
-          {/* Page header row */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-            <div className="min-w-0">
-              <h2 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">
-                Advertisements
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                Create targeted ad placements and submit them for review.
-              </p>
+          {/* ─── Tabs ─── */}
+          <nav className="mb-6 -mx-4 lg:mx-0 px-4 lg:px-0 overflow-x-auto">
+            <div className="flex items-center gap-2 min-w-max">
+              {TABS.map((tab) => {
+                const active = activeTab === tab.id;
+                const count = grouped[tab.id]?.length || 0;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setOpenMenuId(null);
+                    }}
+                    className={`px-4 py-2 text-xs lg:text-sm font-medium rounded-full border transition whitespace-nowrap ${
+                      active
+                        ? "bg-white text-gray-900 border-gray-900"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                    }`}
+                  >
+                    {tab.label} ({count})
+                  </button>
+                );
+              })}
             </div>
-            <button
-              type="button"
-              onClick={openCreateModal}
-              disabled={typesLoading || slotsLoading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition shadow-sm hover:shadow flex-shrink-0 self-start sm:self-auto disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              New advertisement
-            </button>
-          </div>
+          </nav>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-            <StatCard
-              label="Total Ads"
-              value={counts.all}
-              icon={BarChart3}
-              tone="blue"
-            />
-            <StatCard
-              label="Impressions"
-              value={totals.impressions.toLocaleString()}
-              icon={Eye}
-              tone="default"
-            />
-            <StatCard
-              label="Clicks"
-              value={totals.clicks.toLocaleString()}
-              icon={MousePointerClick}
-              tone="default"
-            />
-            <StatCard
-              label="CTR"
-              value={`${overallCtr}%`}
-              icon={TrendingUp}
-              tone="green"
-            />
-          </div>
-
-          {/* Filter chips + search */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 mb-5">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by title, slot, or type"
-                  className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
-                />
-              </div>
-
-              <div className="flex gap-1 overflow-x-auto pb-1 sm:pb-0">
-                {STATUS_FILTERS.map((f) => {
-                  const active = statusFilter === f.value;
-                  const count = counts[f.value] ?? 0;
-                  return (
-                    <button
-                      key={f.value}
-                      type="button"
-                      onClick={() => setStatusFilter(f.value)}
-                      className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg whitespace-nowrap transition ${
-                        active
-                          ? "bg-[#3B82F6] text-white"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                      }`}
-                    >
-                      {f.label}
-                      {f.value !== "all" && count > 0 && (
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                            active
-                              ? "bg-white/25 text-white"
-                              : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-                          }`}
-                        >
-                          {count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Content */}
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(6)].map((_, i) => (
+          {/* ─── Loading ─── */}
+          {isLoading && (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden"
+                  className="rounded-2xl border border-gray-200 overflow-hidden flex gap-4 p-4"
                 >
-                  <div className="h-40 bg-gray-200 dark:bg-gray-700 animate-pulse" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    <div className="h-3 w-1/2 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    <div className="h-8 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <div className="w-24 h-24 rounded-xl bg-gray-100 animate-pulse flex-shrink-0" />
+                  <div className="flex-1 space-y-3 py-2">
+                    <div className="h-4 w-32 bg-gray-100 rounded animate-pulse" />
+                    <div className="h-6 w-40 bg-gray-100 rounded animate-pulse" />
+                    <div className="h-3 w-56 bg-gray-100 rounded animate-pulse" />
                   </div>
                 </div>
               ))}
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="h-8 w-8 text-[#3B82F6]" />
-              </div>
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                {advertisements.length === 0
-                  ? "No advertisements yet"
-                  : "No advertisements match your filters"}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 max-w-sm mx-auto">
-                {advertisements.length === 0
-                  ? "Create your first advertisement to start getting visibility on LocalSpot."
-                  : "Try adjusting the search or filters above."}
+          )}
+
+          {/* ─── Error ─── */}
+          {!isLoading && error && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+              <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-red-900">
+                Failed to load campaigns
               </p>
-              {advertisements.length === 0 && (
+              <p className="text-xs text-red-700 mt-1">
+                {error?.data?.message || "Something went wrong"}
+              </p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="mt-4 px-4 py-2 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
+          {/* ─── Empty ─── */}
+          {!isLoading && !error && visibleAds.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center">
+              <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
+                <Megaphone className="h-7 w-7 text-[#3B82F6]" />
+              </div>
+              <h3 className="text-base font-bold text-gray-900">
+                {activeTab === "active"
+                  ? "No active campaigns"
+                  : `No ${TABS.find((t) => t.id === activeTab)?.label.toLowerCase()}`}
+              </h3>
+              <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+                {activeTab === "active"
+                  ? "Start a new advert to boost your business visibility."
+                  : "Nothing to see here — try a different tab."}
+              </p>
+              {activeTab === "active" && (
                 <button
                   type="button"
-                  onClick={openCreateModal}
-                  disabled={typesLoading || slotsLoading}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition disabled:opacity-60"
+                  onClick={() => setFormModal({ mode: "create" })}
+                  className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition"
                 >
                   <Plus className="h-4 w-4" />
-                  Create your first ad
+                  Start a new advert
                 </button>
               )}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((ad) => (
-                <AdvertisementCard
+          )}
+
+          {/* ─── Card list ─── */}
+          {!isLoading && !error && visibleAds.length > 0 && (
+            <div className="space-y-4">
+              {visibleAds.map((ad) => (
+                <AdCard
                   key={ad._id}
                   ad={ad}
-                  onEdit={() => openEditModal(ad)}
-                  onDelete={() => setDeleteTarget(ad)}
-                  onSubmit={() => setSubmitTarget(ad)}
-                  onPause={() => setPauseTarget(ad)}
-                  onResume={() => setResumeTarget(ad)}
-                  onViewPerformance={() => setPerformanceAd(ad)}
+                  openMenuId={openMenuId}
+                  setOpenMenuId={setOpenMenuId}
+                  onViewStats={() => setPerformanceTarget(ad)}
+                  onEdit={() => setFormModal({ mode: "edit", ad })}
+                  onDelete={() => {
+                    setOpenMenuId(null);
+                    setDeleteTarget(ad);
+                  }}
+                  onSubmit={() => handleSubmit(ad._id)}
+                  onPause={() => handlePause(ad._id)}
+                  onResume={() => handleResume(ad._id)}
                   isMutating={isMutating}
                 />
               ))}
             </div>
           )}
-
-          <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800 text-center">
-            <p className="text-[11px] text-gray-400 dark:text-gray-500">
-              © {new Date().getFullYear()} LocalSpot Systems Ltd. — Business
-              Account Center
-            </p>
-          </footer>
-        </div>
+        </main>
       </div>
 
-      {/* Create / Edit modal */}
-      {showFormModal && (
-        <AdvertisementFormModal
-          ad={editingAd}
-          types={types}
-          slots={slots}
-          onClose={closeFormModal}
-          onSave={async (formData, id) => {
-            try {
-              const result = id
-                ? await updateAd({ id, ...formData }).unwrap()
-                : await createAd(formData).unwrap();
-              showToast(
-                result?.message ||
-                  (id ? "Advertisement updated" : "Advertisement created"),
-                "success",
-              );
-              closeFormModal();
-            } catch (err) {
-              showToast(
-                err?.data?.message ||
-                  (id ? "Failed to update" : "Failed to create"),
-                "error",
-              );
-              throw err;
-            }
-          }}
-          isSaving={isCreating || isUpdating}
-        />
-      )}
-
-      {/* Performance modal */}
-      {performanceAd && (
-        <PerformanceModal
-          ad={performanceAd}
-          onClose={() => setPerformanceAd(null)}
-        />
-      )}
-
-      {/* Confirm modals */}
+      {/* ─── Delete confirm ─── */}
       {deleteTarget && (
-        <ConfirmModal
-          title="Delete advertisement?"
-          body={`"${deleteTarget.title}" will be permanently deleted. This cannot be undone.`}
-          confirmLabel="Delete"
-          confirmTone="danger"
-          Icon={Trash2}
-          onCancel={() => setDeleteTarget(null)}
-          onConfirm={handleDelete}
-          isLoading={isDeleting}
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => !isDeleting && setDeleteTarget(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 space-y-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-red-500" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-gray-900">
+                  Delete campaign?
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  "{deleteTarget.title}" will be permanently removed. This
+                  cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-red-500 hover:bg-red-600 transition disabled:opacity-60"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader className="h-3.5 w-3.5 animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Performance modal ─── */}
+      {performanceTarget && (
+        <PerformanceModal
+          ad={performanceTarget}
+          onClose={() => setPerformanceTarget(null)}
         />
       )}
 
-      {submitTarget && (
-        <ConfirmModal
-          title="Submit for review?"
-          body={`"${submitTarget.title}" will be sent to our team for approval. You won't be able to edit it while it's under review.`}
-          confirmLabel="Submit"
-          confirmTone="primary"
-          Icon={Send}
-          onCancel={() => setSubmitTarget(null)}
-          onConfirm={handleSubmit}
-          isLoading={isSubmitting}
-        />
-      )}
-
-      {pauseTarget && (
-        <ConfirmModal
-          title="Pause advertisement?"
-          body={`"${pauseTarget.title}" will stop showing to users. You can resume it anytime.`}
-          confirmLabel="Pause"
-          confirmTone="warning"
-          Icon={Pause}
-          onCancel={() => setPauseTarget(null)}
-          onConfirm={handlePause}
-          isLoading={isPausing}
-        />
-      )}
-
-      {resumeTarget && (
-        <ConfirmModal
-          title="Resume advertisement?"
-          body={`"${resumeTarget.title}" will start showing to users again.`}
-          confirmLabel="Resume"
-          confirmTone="primary"
-          Icon={Play}
-          onCancel={() => setResumeTarget(null)}
-          onConfirm={handleResume}
-          isLoading={isResuming}
+      {/* ─── Create/Edit modal ─── */}
+      {formModal && (
+        <AdFormModal
+          mode={formModal.mode}
+          ad={formModal.ad || null}
+          onClose={() => setFormModal(null)}
+          onSuccess={() => {
+            setFormModal(null);
+            refetch();
+          }}
+          onNotify={showToast}
         />
       )}
 
@@ -701,258 +440,290 @@ const BusinessAds = () => {
   );
 };
 
-// ─── Stat card ─────────────────────────────────────────────
-const StatCard = ({ label, value, icon: Icon, tone = "default" }) => {
-  const toneClass = {
-    default: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-    blue: "bg-blue-50 text-[#3B82F6] dark:bg-blue-900/20 dark:text-blue-400",
-    green:
-      "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
-  }[tone];
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 sm:p-4 shadow-sm min-w-0">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 truncate">
-            {label}
-          </p>
-          <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 truncate">
-            {value}
-          </p>
-        </div>
-        <div className={`p-1.5 rounded-lg flex-shrink-0 ${toneClass}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── Advertisement card ────────────────────────────────────
-const AdvertisementCard = ({
+// ──────────────────────────────────────────────────────────
+// Ad card
+// ──────────────────────────────────────────────────────────
+const AdCard = ({
   ad,
+  openMenuId,
+  setOpenMenuId,
+  onViewStats,
   onEdit,
   onDelete,
   onSubmit,
   onPause,
   onResume,
-  onViewPerformance,
   isMutating,
 }) => {
-  const { color, Icon } = statusStyle(ad.status);
-
+  const typeName = ad.type?.name || "Campaign";
   const canEdit = ["draft", "rejected", "paused"].includes(ad.status);
   const canSubmit = ["draft", "rejected"].includes(ad.status);
   const canPause = ad.status === "approved";
   const canResume = ad.status === "paused";
   const canDelete = ad.status !== "approved";
 
-  const ctr =
-    ad.impressions > 0
-      ? Number(((ad.clicks / ad.impressions) * 100).toFixed(2))
-      : 0;
-
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-      {/* Image */}
-      <div className="relative h-40 bg-gray-100 dark:bg-gray-700">
-        {ad.image ? (
-          <img
-            src={ad.image}
-            alt={ad.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="h-10 w-10 text-gray-400" />
-          </div>
-        )}
-        <span
-          className={`absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur-sm ${color}`}
-        >
-          <Icon className="h-3 w-3" />
-          {ad.status || "draft"}
-        </span>
-        {ad.slot?.name && (
-          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-black/60 backdrop-blur-sm text-white truncate max-w-[120px]">
-            {ad.slot.name}
-          </span>
-        )}
-      </div>
-
-      {/* Body */}
-      <div className="p-4 flex-1 flex flex-col min-w-0">
-        <h3
-          className="text-sm font-semibold text-gray-900 dark:text-white truncate"
-          title={ad.title}
-        >
-          {ad.title}
-        </h3>
-
-        {ad.type?.name && (
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-            {ad.type.name}
-            {ad.type.category ? ` · ${ad.type.category}` : ""}
-          </p>
-        )}
-
-        {ad.description && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-            {ad.description}
-          </p>
-        )}
-
-        <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-          <span className="inline-flex items-center gap-1 truncate">
-            <Calendar className="h-3 w-3 flex-shrink-0" />
-            {formatDate(ad.startDate)} → {formatDate(ad.endDate)}
-          </span>
+    <article className="rounded-2xl border border-gray-200 bg-white overflow-hidden hover:shadow-sm transition relative">
+      <div className="flex items-stretch">
+        {/* Thumbnail */}
+        <div className="w-28 sm:w-36 lg:w-40 bg-gray-100 flex-shrink-0 relative">
+          {ad.image ? (
+            <img
+              src={ad.image}
+              alt={ad.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center min-h-[120px]">
+              <ImageIcon className="h-7 w-7 text-gray-400" />
+            </div>
+          )}
         </div>
 
-        {ad.budget > 0 && (
-          <div className="flex items-center gap-1.5 mt-2">
-            <DollarSign className="h-3 w-3 text-gray-400" />
-            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200">
-              {formatCurrency(ad.budget)} budget
+        {/* Content */}
+        <div className="flex-1 min-w-0 p-4 lg:p-5 flex flex-col justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <span className="inline-block px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-semibold mb-1.5">
+                {typeName}
+              </span>
+
+              <p className="text-lg lg:text-xl font-bold text-gray-900 truncate">
+                {formatBudget(ad.budget)}
+              </p>
+
+              <p className="text-xs text-gray-500 mt-0.5 truncate">
+                {ad.title || ad.link || "Untitled campaign"}
+              </p>
+
+              <p className="text-xs font-semibold text-gray-700 mt-1 tabular-nums">
+                {formatNumber(ad.impressions)} imp
+              </p>
+            </div>
+
+            {/* Right side */}
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+              <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                Created: {formatDate(ad.createdAt)}
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                {ad.status === "draft" ? (
+                  <button
+                    type="button"
+                    onClick={onSubmit}
+                    disabled={isMutating}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition disabled:opacity-50 whitespace-nowrap"
+                  >
+                    Finish & publish
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onViewStats}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition whitespace-nowrap"
+                  >
+                    Statistics
+                  </button>
+                )}
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenMenuId(openMenuId === ad._id ? null : ad._id)
+                    }
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+                    aria-label="More options"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+
+                  {openMenuId === ad._id && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-20"
+                        onClick={() => setOpenMenuId(null)}
+                      />
+                      <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-30">
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              onEdit();
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-gray-400" />
+                            Edit
+                          </button>
+                        )}
+
+                        {canSubmit && (
+                          <button
+                            type="button"
+                            onClick={onSubmit}
+                            disabled={isMutating}
+                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
+                          >
+                            <Send className="h-3.5 w-3.5 text-blue-500" />
+                            Submit for review
+                          </button>
+                        )}
+
+                        {canPause && (
+                          <button
+                            type="button"
+                            onClick={onPause}
+                            disabled={isMutating}
+                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
+                          >
+                            <Pause className="h-3.5 w-3.5 text-orange-500" />
+                            Pause
+                          </button>
+                        )}
+
+                        {canResume && (
+                          <button
+                            type="button"
+                            onClick={onResume}
+                            disabled={isMutating}
+                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
+                          >
+                            <Play className="h-3.5 w-3.5 text-emerald-500" />
+                            Resume
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenMenuId(null);
+                            onViewStats();
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <BarChart3 className="h-3.5 w-3.5 text-gray-400" />
+                          View stats
+                        </button>
+
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={onDelete}
+                            className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center gap-2"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom stats */}
+          <div className="flex items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+            <span className="inline-flex items-center gap-1">
+              <Eye className="h-3.5 w-3.5" />
+              {formatNumber(ad.impressions)}
             </span>
+            <span className="inline-flex items-center gap-1">
+              <MousePointerClick className="h-3.5 w-3.5" />
+              {formatNumber(ad.clicks)}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {formatNumber(ad.conversions)}
+            </span>
+            <StatusPill status={ad.status} />
           </div>
-        )}
-
-        {/* Metrics row */}
-        <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-          <div className="min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate">
-              Views
-            </p>
-            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-              {Number(ad.impressions || 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate">
-              Clicks
-            </p>
-            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-              {Number(ad.clicks || 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate">
-              CTR
-            </p>
-            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-              {ctr}%
-            </p>
-          </div>
-        </div>
-
-        {ad.status === "rejected" && ad.rejectionReason && (
-          <div className="mt-3 text-[11px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1.5 rounded-lg">
-            <span className="font-semibold">Rejected:</span>{" "}
-            <span className="break-words">{ad.rejectionReason}</span>
-          </div>
-        )}
-
-        {ad.status === "paused" && ad.pauseReason && (
-          <div className="mt-3 text-[11px] text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-2 py-1.5 rounded-lg">
-            <span className="font-semibold">Paused:</span>{" "}
-            <span className="break-words">{ad.pauseReason}</span>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={onViewPerformance}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition"
-          >
-            <TrendingUp className="h-3 w-3" />
-            Stats
-          </button>
-
-          {canEdit && (
-            <button
-              type="button"
-              onClick={onEdit}
-              disabled={isMutating}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition disabled:opacity-50"
-            >
-              <Edit3 className="h-3 w-3" />
-              Edit
-            </button>
-          )}
-
-          {canSubmit && (
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={isMutating || !ad.image}
-              title={
-                !ad.image
-                  ? "Add an image before submitting"
-                  : "Submit for review"
-              }
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send className="h-3 w-3" />
-              Submit
-            </button>
-          )}
-
-          {canPause && (
-            <button
-              type="button"
-              onClick={onPause}
-              disabled={isMutating}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg transition disabled:opacity-50"
-            >
-              <Pause className="h-3 w-3" />
-              Pause
-            </button>
-          )}
-
-          {canResume && (
-            <button
-              type="button"
-              onClick={onResume}
-              disabled={isMutating}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition disabled:opacity-50"
-            >
-              <Play className="h-3 w-3" />
-              Resume
-            </button>
-          )}
-
-          {canDelete && (
-            <button
-              type="button"
-              onClick={onDelete}
-              disabled={isMutating}
-              className="ml-auto inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition disabled:opacity-50"
-            >
-              <Trash2 className="h-3 w-3" />
-              Delete
-            </button>
-          )}
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 
-// ─── Form modal ────────────────────────────────────────────
-const AdvertisementFormModal = ({
-  ad,
-  types,
-  slots,
-  onClose,
-  onSave,
-  isSaving,
-}) => {
-  const { showToast } = useToast();
-  const isEdit = !!ad;
+// ──────────────────────────────────────────────────────────
+// Status pill
+// ──────────────────────────────────────────────────────────
+const StatusPill = ({ status }) => {
+  const config =
+    {
+      approved: {
+        label: "Active",
+        cls: "text-emerald-700 bg-emerald-50",
+        Icon: CheckCircle2,
+      },
+      pending: {
+        label: "Pending",
+        cls: "text-amber-700 bg-amber-50",
+        Icon: Clock,
+      },
+      rejected: {
+        label: "Rejected",
+        cls: "text-red-700 bg-red-50",
+        Icon: XCircle,
+      },
+      paused: {
+        label: "Paused",
+        cls: "text-orange-700 bg-orange-50",
+        Icon: Pause,
+      },
+      disabled: {
+        label: "Disabled",
+        cls: "text-gray-600 bg-gray-100",
+        Icon: Ban,
+      },
+      expired: {
+        label: "Expired",
+        cls: "text-gray-600 bg-gray-100",
+        Icon: Clock,
+      },
+      draft: {
+        label: "Draft",
+        cls: "text-blue-700 bg-blue-50",
+        Icon: Pencil,
+      },
+    }[status] || {
+      label: status,
+      cls: "text-gray-600 bg-gray-100",
+      Icon: AlertCircle,
+    };
+
+  const Icon = config.Icon;
+  return (
+    <span
+      className={`ml-auto inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${config.cls}`}
+    >
+      <Icon className="h-3 w-3" />
+      {config.label}
+    </span>
+  );
+};
+
+// ──────────────────────────────────────────────────────────
+// Ad form modal (create + edit)
+// ──────────────────────────────────────────────────────────
+const AdFormModal = ({ mode, ad, onClose, onSuccess, onNotify }) => {
+  const isEdit = mode === "edit" && ad;
+
+  const { data: typesResp } = useListAdvertisementTypesQuery();
+  const { data: slotsResp } = useListAdvertisementSlotsQuery();
+
+  const types = typesResp?.data || [];
+  const slots = slotsResp?.data || [];
+
+  const [createAd, { isLoading: isCreating }] =
+    useCreateAdvertisementMutation();
+  const [updateAd, { isLoading: isUpdating }] =
+    useUpdateMyAdvertisementMutation();
+
+  const isSaving = isCreating || isUpdating;
 
   const [form, setForm] = useState({
     type: ad?.type?._id || ad?.type || "",
@@ -976,7 +747,7 @@ const AdvertisementFormModal = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleChange = (field, value) =>
+  const setField = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleImageSelect = (e) => {
@@ -998,23 +769,23 @@ const AdvertisementFormModal = ({
     e.preventDefault();
 
     if (!form.type) {
-      showToast("Please choose an advertisement type", "error");
+      onNotify?.("Please choose an ad type", "error");
       return;
     }
     if (!form.slot) {
-      showToast("Please choose a slot", "error");
+      onNotify?.("Please choose a slot", "error");
       return;
     }
     if (!form.title.trim()) {
-      showToast("Title is required", "error");
+      onNotify?.("Title is required", "error");
       return;
     }
     if (!form.startDate || !form.endDate) {
-      showToast("Start and end dates are required", "error");
+      onNotify?.("Start and end dates are required", "error");
       return;
     }
     if (new Date(form.startDate) >= new Date(form.endDate)) {
-      showToast("End date must be after start date", "error");
+      onNotify?.("End date must be after start date", "error");
       return;
     }
 
@@ -1031,9 +802,20 @@ const AdvertisementFormModal = ({
     if (imageFile) fd.append("image", imageFile);
 
     try {
-      await onSave(fd, ad?._id);
-    } catch (_) {
-      // parent already showed toast
+      const r = isEdit
+        ? await updateAd({ id: ad._id, ...Object.fromEntries(fd) }).unwrap()
+        : await createAd(fd).unwrap();
+
+      onNotify?.(
+        r?.message || (isEdit ? "Ad updated" : "Ad created"),
+        "success",
+      );
+      onSuccess?.();
+    } catch (err) {
+      onNotify?.(
+        err?.data?.message || (isEdit ? "Failed to update" : "Failed to create"),
+        "error",
+      );
     }
   };
 
@@ -1041,31 +823,31 @@ const AdvertisementFormModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto"
-      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 overflow-y-auto"
+      onClick={() => !isSaving && onClose()}
     >
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl mx-0 sm:mx-4 mb-0 sm:mb-4 shadow-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col"
+        className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg shadow-2xl max-h-[92vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <div className="min-w-0">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">
-              {isEdit ? "Edit advertisement" : "New advertisement"}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+            <h2 className="text-base font-bold text-gray-900">
+              {isEdit ? "Edit campaign" : "New campaign"}
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
               {isEdit
-                ? "Update the details and re-submit for review."
-                : "Choose a placement and fill in the creative details."}
+                ? "Update the details and save."
+                : "Fill in the details — you can save it as a draft first."}
             </p>
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => !isSaving && onClose()}
             disabled={isSaving}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex-shrink-0 disabled:opacity-50"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0 disabled:opacity-60"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -1073,25 +855,25 @@ const AdvertisementFormModal = ({
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4 overflow-y-auto flex-1 space-y-4">
+        <div className="p-5 overflow-y-auto flex-1 space-y-4">
           {/* Image */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
               Creative image
             </label>
             {imagePreview ? (
-              <div className="relative w-full aspect-[2/1] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <div className="relative w-full aspect-[2/1] rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
                 <img
                   src={imagePreview}
-                  alt="Ad creative"
+                  alt="Creative"
                   className="w-full h-full object-cover"
                 />
                 <button
                   type="button"
                   onClick={handleRemoveImage}
                   disabled={isSaving}
-                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition disabled:opacity-50"
-                  aria-label="Remove image"
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition disabled:opacity-60"
+                  aria-label="Remove"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -1101,13 +883,13 @@ const AdvertisementFormModal = ({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isSaving}
-                className="w-full aspect-[2/1] rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-[#3B82F6] dark:hover:border-[#3B82F6] bg-gray-50 dark:bg-gray-800/50 flex flex-col items-center justify-center gap-2 transition disabled:opacity-50"
+                className="w-full aspect-[2/1] rounded-xl border-2 border-dashed border-gray-200 hover:border-[#3B82F6] bg-gray-50 flex flex-col items-center justify-center gap-2 transition disabled:opacity-60"
               >
                 <ImageIcon className="h-8 w-8 text-gray-400" />
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Click to upload a creative
+                <span className="text-xs font-semibold text-gray-600">
+                  Click to upload creative
                 </span>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                <span className="text-[10px] text-gray-400">
                   Required before submitting for review
                 </span>
               </button>
@@ -1124,22 +906,22 @@ const AdvertisementFormModal = ({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isSaving}
-                className="mt-2 text-xs text-[#3B82F6] hover:underline disabled:opacity-50"
+                className="mt-2 text-xs font-semibold text-[#3B82F6] hover:underline disabled:opacity-60"
               >
-                Change creative
+                Change image
               </button>
             )}
           </div>
 
-          {/* Type + slot */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Type + Slot */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Advertisement type <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                Ad type <span className="text-red-500">*</span>
               </label>
               <select
                 value={form.type}
-                onChange={(e) => handleChange("type", e.target.value)}
+                onChange={(e) => setField("type", e.target.value)}
                 disabled={isSaving || types.length === 0}
                 className={inputClass}
               >
@@ -1152,19 +934,19 @@ const AdvertisementFormModal = ({
                 ))}
               </select>
               {types.length === 0 && (
-                <p className="text-[10px] text-orange-500 mt-1">
-                  No types configured. Contact support.
+                <p className="text-[10px] text-orange-600 mt-1">
+                  No types available
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">
                 Slot <span className="text-red-500">*</span>
               </label>
               <select
                 value={form.slot}
-                onChange={(e) => handleChange("slot", e.target.value)}
+                onChange={(e) => setField("slot", e.target.value)}
                 disabled={isSaving || slots.length === 0}
                 className={inputClass}
               >
@@ -1177,7 +959,7 @@ const AdvertisementFormModal = ({
                 ))}
               </select>
               {selectedSlot?.dimensions?.width && (
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                <p className="text-[10px] text-gray-400 mt-1">
                   Recommended: {selectedSlot.dimensions.width}×
                   {selectedSlot.dimensions.height}
                 </p>
@@ -1185,14 +967,15 @@ const AdvertisementFormModal = ({
             </div>
           </div>
 
+          {/* Title */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
               Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={form.title}
-              onChange={(e) => handleChange("title", e.target.value)}
+              onChange={(e) => setField("title", e.target.value)}
               placeholder="e.g. Grand opening — 30% off"
               maxLength={100}
               disabled={isSaving}
@@ -1200,117 +983,110 @@ const AdvertisementFormModal = ({
             />
           </div>
 
+          {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
               Description
             </label>
             <textarea
               rows={3}
               value={form.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              placeholder="Short details about your ad..."
+              onChange={(e) => setField("description", e.target.value)}
+              placeholder="Short details about your campaign..."
               maxLength={500}
               disabled={isSaving}
-              className={inputClass}
+              className={`${inputClass} resize-none`}
             />
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+            <p className="text-[10px] text-gray-400 mt-1">
               {form.description.length}/500
             </p>
           </div>
 
+          {/* Link */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
               Destination link
             </label>
-            <div className="relative">
-              <ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <input
-                type="url"
-                value={form.link}
-                onChange={(e) => handleChange("link", e.target.value)}
-                placeholder="https://your-business.com/offer"
-                disabled={isSaving}
-                className={`${inputClass} pl-9`}
-              />
-            </div>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-              Where users land after clicking your ad
-            </p>
+            <input
+              type="url"
+              value={form.link}
+              onChange={(e) => setField("link", e.target.value)}
+              placeholder="https://your-business.com/offer"
+              disabled={isSaving}
+              className={inputClass}
+            />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Start <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={form.startDate}
-                  onChange={(e) => handleChange("startDate", e.target.value)}
-                  disabled={isSaving}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  End <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={form.endDate}
-                  onChange={(e) => handleChange("endDate", e.target.value)}
-                  disabled={isSaving}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
+          {/* Dates */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Budget
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                Start <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={form.budget}
-                  onChange={(e) => handleChange("budget", e.target.value)}
-                  placeholder="0.00"
-                  disabled={isSaving}
-                  className={`${inputClass} pl-9`}
-                />
-              </div>
+              <input
+                type="date"
+                value={form.startDate}
+                onChange={(e) => setField("startDate", e.target.value)}
+                disabled={isSaving}
+                className={inputClass}
+              />
             </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                End <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={form.endDate}
+                onChange={(e) => setField("endDate", e.target.value)}
+                disabled={isSaving}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* Budget */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              Budget
+            </label>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={form.budget}
+              onChange={(e) => setField("budget", e.target.value)}
+              placeholder="0.00"
+              disabled={isSaving}
+              className={inputClass}
+            />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl flex-shrink-0">
+        <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
           <button
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 rounded-lg transition disabled:opacity-60"
+            className="px-4 py-2.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition disabled:opacity-60"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-semibold text-white bg-[#3B82F6] hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Saving...
+                <Loader className="h-3.5 w-3.5 animate-spin" />
+                Saving…
               </>
             ) : (
               <>
-                <Save className="h-3.5 w-3.5" />
-                {isEdit ? "Save changes" : "Create advertisement"}
+                <Upload className="h-3.5 w-3.5" />
+                {isEdit ? "Save changes" : "Create campaign"}
               </>
             )}
           </button>
@@ -1320,7 +1096,9 @@ const AdvertisementFormModal = ({
   );
 };
 
-// ─── Performance modal ─────────────────────────────────────
+// ──────────────────────────────────────────────────────────
+// Performance modal
+// ──────────────────────────────────────────────────────────
 const PerformanceModal = ({ ad, onClose }) => {
   const [range, setRange] = useState("30d");
 
@@ -1356,49 +1134,34 @@ const PerformanceModal = ({ ad, onClose }) => {
     conversions: 0,
     ctr: 0,
   };
-  const series = (perf?.series || []).map((d) => ({
-    date: typeof d.date === "string" ? d.date.slice(5, 10) : "",
-    impressions: d.impressions || 0,
-    clicks: d.clicks || 0,
-    conversions: d.conversions || 0,
-  }));
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl mx-0 sm:mx-4 mb-0 sm:mb-4 shadow-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col"
+        className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+        <div className="flex items-start justify-between p-5 border-b border-gray-100">
           <div className="min-w-0">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">
-              Performance
+            <h3 className="text-base font-bold text-gray-900">
+              Campaign performance
             </h3>
-            <p
-              className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"
-              title={ad.title}
-            >
-              {ad.title}
-            </p>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">{ad.title}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition flex-shrink-0"
-            aria-label="Close"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-5 py-4 overflow-y-auto flex-1 space-y-4">
-          {/* Range picker */}
-          <div className="flex gap-1">
+        <div className="p-5 overflow-y-auto flex-1">
+          <div className="flex gap-1.5 mb-4">
             {[
               { value: "7d", label: "7 days" },
               { value: "30d", label: "30 days" },
@@ -1408,10 +1171,10 @@ const PerformanceModal = ({ ad, onClose }) => {
                 key={r.value}
                 type="button"
                 onClick={() => setRange(r.value)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-full transition ${
                   range === r.value
                     ? "bg-[#3B82F6] text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 {r.label}
@@ -1420,161 +1183,53 @@ const PerformanceModal = ({ ad, onClose }) => {
           </div>
 
           {isLoading ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-3">
-                {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-20 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse"
-                  />
-                ))}
-              </div>
-              <div className="h-48 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+            <div className="grid grid-cols-2 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-20 rounded-xl bg-gray-100 animate-pulse"
+                />
+              ))}
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {error?.data?.message || "Failed to load performance data"}
+              <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">
+                {error?.data?.message || "Failed to load stats"}
               </p>
             </div>
           ) : (
-            <>
-              {/* KPI tiles */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <KpiTile
-                  label="Impressions"
-                  value={totals.impressions.toLocaleString()}
-                />
-                <KpiTile
-                  label="Clicks"
-                  value={totals.clicks.toLocaleString()}
-                />
-                <KpiTile label="CTR" value={`${totals.ctr}%`} accent />
-                <KpiTile
-                  label="Conversions"
-                  value={totals.conversions.toLocaleString()}
-                />
-              </div>
-
-              {/* Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
-                <div className="flex items-center justify-between mb-3 gap-2">
-                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">
-                    Daily breakdown
-                  </h4>
-                  <div className="flex items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400 flex-shrink-0">
-                    <span className="inline-flex items-center gap-1">
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ background: ACCENT }}
-                      />
-                      Impressions
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-gray-400" />
-                      Clicks
-                    </span>
-                  </div>
-                </div>
-
-                {series.length === 0 ? (
-                  <div className="h-48 flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">
-                    No data for this period
-                  </div>
-                ) : (
-                  <div className="h-48 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={series}>
-                        <defs>
-                          <linearGradient
-                            id="impressionsGradient"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                          >
-                            <stop
-                              offset="5%"
-                              stopColor={ACCENT}
-                              stopOpacity={0.3}
-                            />
-                            <stop
-                              offset="95%"
-                              stopColor={ACCENT}
-                              stopOpacity={0}
-                            />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#e5e7eb"
-                          vertical={false}
-                        />
-                        <XAxis
-                          dataKey="date"
-                          tick={{ fontSize: 11 }}
-                          stroke="#9ca3af"
-                          tickMargin={5}
-                          minTickGap={16}
-                          interval="preserveStartEnd"
-                        />
-                        <YAxis
-                          tick={{ fontSize: 11 }}
-                          stroke="#9ca3af"
-                          width={36}
-                          allowDecimals={false}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "rgba(255,255,255,0.95)",
-                            border: "none",
-                            borderRadius: "8px",
-                            boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-                            fontSize: "12px",
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="impressions"
-                          stroke={ACCENT}
-                          strokeWidth={2}
-                          fill="url(#impressionsGradient)"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="clicks"
-                          stroke="#9ca3af"
-                          strokeWidth={2}
-                          fill="transparent"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-
-              {/* Status */}
-              <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  Current status
-                </span>
-                <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyle(ad.status).color}`}
-                >
-                  {ad.status}
-                </span>
-              </div>
-            </>
+            <div className="grid grid-cols-2 gap-3">
+              <KpiTile
+                label="Impressions"
+                value={formatNumber(totals.impressions)}
+                icon={Eye}
+              />
+              <KpiTile
+                label="Clicks"
+                value={formatNumber(totals.clicks)}
+                icon={MousePointerClick}
+              />
+              <KpiTile
+                label="CTR"
+                value={`${totals.ctr || 0}%`}
+                icon={BarChart3}
+                accent
+              />
+              <KpiTile
+                label="Conversions"
+                value={formatNumber(totals.conversions)}
+                icon={CheckCircle2}
+              />
+            </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl flex-shrink-0">
+        <div className="p-5 border-t border-gray-100 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 rounded-lg transition"
+            className="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
           >
             Close
           </button>
@@ -1584,105 +1239,32 @@ const PerformanceModal = ({ ad, onClose }) => {
   );
 };
 
-const KpiTile = ({ label, value, accent = false }) => (
+const KpiTile = ({ label, value, icon: Icon, accent = false }) => (
   <div
-    className={`rounded-xl border p-3 min-w-0 ${
-      accent
-        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800"
-        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+    className={`rounded-xl border p-3.5 ${
+      accent ? "bg-blue-50 border-blue-100" : "bg-white border-gray-200"
     }`}
   >
-    <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 truncate">
-      {label}
-    </p>
+    <div className="flex items-center gap-2 mb-1.5">
+      <Icon
+        className={`h-3.5 w-3.5 ${accent ? "text-[#3B82F6]" : "text-gray-400"}`}
+      />
+      <span
+        className={`text-[10px] font-bold uppercase tracking-wider ${
+          accent ? "text-[#3B82F6]" : "text-gray-500"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
     <p
-      className={`text-lg font-bold mt-0.5 truncate ${
-        accent
-          ? "text-[#3B82F6] dark:text-blue-400"
-          : "text-gray-900 dark:text-white"
+      className={`text-xl font-bold tabular-nums ${
+        accent ? "text-[#3B82F6]" : "text-gray-900"
       }`}
     >
       {value}
     </p>
   </div>
 );
-
-// ─── Confirm modal ─────────────────────────────────────────
-const ConfirmModal = ({
-  title,
-  body,
-  confirmLabel,
-  confirmTone = "primary",
-  Icon = Send,
-  onCancel,
-  onConfirm,
-  isLoading,
-}) => {
-  const toneClass = {
-    danger: "bg-red-500 hover:bg-red-600",
-    warning: "bg-orange-500 hover:bg-orange-600",
-    primary: "bg-[#3B82F6] hover:bg-blue-700",
-  }[confirmTone];
-
-  const iconBg = {
-    danger: "bg-red-50 dark:bg-red-900/20 text-red-500",
-    warning: "bg-orange-50 dark:bg-orange-900/20 text-orange-500",
-    primary: "bg-blue-50 dark:bg-blue-900/20 text-[#3B82F6]",
-  }[confirmTone];
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
-      onClick={() => !isLoading && onCancel()}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-2xl p-5"
-      >
-        <div className="flex items-start gap-3">
-          <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}
-          >
-            <Icon className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              {title}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed break-words">
-              {body}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2 mt-5">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition disabled:opacity-60"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={isLoading}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed ${toneClass}`}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Working...
-              </>
-            ) : (
-              confirmLabel
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default BusinessAds;
