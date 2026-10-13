@@ -1,7 +1,7 @@
 // src/components/BusinessSidebar.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   LayoutDashboard,
   Store,
@@ -21,20 +21,18 @@ import {
 } from "lucide-react";
 
 import {
-  useGetCurrentBusinessAccountQuery,
-  useLogoutBusinessAccountMutation,
-} from "../features/businessApiSlice";
+  useGetCurrentUserQuery,
+  useLogoutUserMutation,
+} from "../features/authApiSlice";
 import { logout } from "../features/auth/authSlice";
 
 // Cream palette — tweak here, applies everywhere
 const CREAM = "#FDFCE8";
-const CREAM_SOFT = "#FBF9DE";
 const CREAM_BORDER = "#EFEBC4";
-const ACCENT = "#3B82F6";
 
 const NAV_ITEMS = [
   { to: "/business", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/business/profile", label: "Business Profile", icon: Store },
+  { to: "/business/application", label: "Business Profile", icon: Store },
   { to: "/business/promotions", label: "Promotions", icon: Megaphone },
   { to: "/business/ads", label: "Advertisements", icon: BarChart3 },
   { to: "/business/reviews", label: "Reviews", icon: Star },
@@ -71,25 +69,28 @@ const BusinessSidebar = ({ onLogout }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const { data: businessResp, isLoading } = useGetCurrentBusinessAccountQuery();
-  const business = businessResp?.data || businessResp;
-  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+  // Now pulls from authApiSlice — /v1/auth/me
+  const { data: userResp, isLoading } = useGetCurrentUserQuery();
+  const user = userResp?.data || userResp;
+  const [logoutUser] = useLogoutUserMutation();
 
-  const isEmailVerified = business?.isVerified ?? false;
-  const isApproved = business?.businessVerified ?? false;
-  const isRejected = !!business?.businessRejectionReason && !isApproved;
+  // ── Approval status derived from the application workflow ──
+  const appStatus = user?.businessApplicationStatus || "none";
+  const isEmailVerified = user?.isVerified ?? false;
+  const isApproved = user?.businessVerified === true && appStatus === "approved";
+  const isRejected = appStatus === "rejected";
 
   const approvalStatus = !isEmailVerified
     ? "unverified"
     : isApproved
-    ? "approved"
-    : isRejected
-    ? "rejected"
-    : "pending";
+      ? "approved"
+      : isRejected
+        ? "rejected"
+        : "pending";
 
   const meta = statusMeta[approvalStatus];
   const StatusIcon = meta.Icon;
-  const imageCount = business?.images?.length || 0;
+  const imageCount = user?.images?.length || 0;
 
   useEffect(() => {
     if (mobileOpen) document.body.style.overflow = "hidden";
@@ -107,17 +108,23 @@ const BusinessSidebar = ({ onLogout }) => {
     );
   };
 
-  const initials = (business?.businessName || "B").charAt(0).toUpperCase();
+  const displayName =
+    user?.businessName || user?.fullName || user?.name || "Your Business";
+  const avatarUrl = user?.logo || user?.avatar;
+  const initials = (displayName || "B").charAt(0).toUpperCase();
 
   const handleLogout = async () => {
     if (loggingOut) return;
     setLoggingOut(true);
+
     if (typeof onLogout === "function") {
       return onLogout();
     }
+
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutUser().unwrap().catch(() => {});
     } catch (_) {}
+
     dispatch(logout());
     try {
       localStorage.removeItem("persist:root");
@@ -125,7 +132,8 @@ const BusinessSidebar = ({ onLogout }) => {
       localStorage.removeItem("token");
       sessionStorage.clear();
     } catch (_) {}
-    navigate("/business/signin", { replace: true });
+
+    navigate("/signin", { replace: true });
     setTimeout(() => window.location.reload(), 50);
   };
 
@@ -171,10 +179,10 @@ const BusinessSidebar = ({ onLogout }) => {
           <>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white border border-[#EFEBC4] flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
-                {business?.coverImage ? (
+                {avatarUrl ? (
                   <img
-                    src={business.coverImage}
-                    alt={business.businessName}
+                    src={avatarUrl}
+                    alt={displayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -186,9 +194,9 @@ const BusinessSidebar = ({ onLogout }) => {
               <div className="flex-1 min-w-0">
                 <p
                   className="text-sm font-semibold text-gray-900 truncate"
-                  title={business?.businessName}
+                  title={displayName}
                 >
-                  {business?.businessName || "Your Business"}
+                  {displayName}
                 </p>
                 <span
                   className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium mt-0.5 ${meta.color}`}

@@ -1,24 +1,20 @@
+// src/pages/business/BusinessLogin.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { FiMapPin, FiEye, FiEyeOff } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiBriefcase } from "react-icons/fi";
 
-import { useLoginBusinessAccountMutation } from "../../features/businessApiSlice";
+import { useLoginUserMutation } from "../../features/authApiSlice";
 import { setCredentials } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 
-// --- 10 High-Quality Images for the Slider ---
+// ─── Static data ────────────────────────────────────────────
 const sliderImages = [
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
   "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200",
   "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200",
   "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200",
   "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200",
 ];
 
 const BusinessLogin = () => {
@@ -26,21 +22,13 @@ const BusinessLogin = () => {
   const dispatch = useDispatch();
   const { showToast } = useToast();
 
-  // --- RTK Query mutation ---
-  const [loginBusiness, { isLoading }] = useLoginBusinessAccountMutation();
+  const [loginUser, { isLoading }] = useLoginUserMutation();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [formData, setFormData] = useState({ email: "", password: "" });
 
-  // Slider State
+  // Slider
   const [activeImage, setActiveImage] = useState(0);
-
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
-  // Auto-play Slider Effect
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveImage((prev) => (prev + 1) % sliderImages.length);
@@ -48,73 +36,53 @@ const BusinessLogin = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const email = formData.email.trim().toLowerCase();
-
     try {
-      const payload = {
-        email,
+      const result = await loginUser({
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
-      };
-
-      const result = await loginBusiness(payload).unwrap();
-
-      // Backend response shape:
-      // { success, message, data: { _id, businessName, email, role, ... }, token }
-      const account = result?.data || result?.account || null;
-      const token = result?.token || null;
-
-      if (!account || !token) {
-        showToast("Login response was malformed. Please try again.", "error");
-        return;
-      }
+      }).unwrap();
 
       dispatch(
         setCredentials({
-          ...account,
-          token,
+          ...result.data,
+          token: result.token,
         }),
       );
 
-      showToast(result?.message || "Welcome back!", "success");
+      showToast(result?.message || "Logged in successfully", "success");
 
-      // Route by role — admins go to the admin dashboard, businesses to their dashboard
-      const role = account.role;
-      const destination =
-        role === "admin" ? "/admin?tab=dashboard" : "/business";
+      const role = result.data?.role;
+      const appStatus = result.data?.businessApplicationStatus;
 
-      // Give the toast a moment to be seen before redirecting
-      setTimeout(() => navigate(destination, { replace: true }), 800);
+      // Route based on role + application state
+      if (role === "admin") {
+        navigate("/admin", { replace: true });
+      } else if (role === "business") {
+        navigate("/business", { replace: true });
+      } else if (appStatus === "pending" || appStatus === "rejected") {
+        navigate("/business/application", { replace: true });
+      } else {
+        // Regular user — send them to apply or home
+        navigate("/", { replace: true });
+      }
     } catch (err) {
-      const status = err?.status;
       const msg =
         err?.data?.message ||
         err?.data?.errors?.[0]?.message ||
-        "Invalid email or password. Please try again.";
-
-      // Backend sends 403 for unverified accounts + fresh OTP.
-      // Route the user to the signup/verify step with their email prefilled.
-      if (status === 403 && /not verified/i.test(msg)) {
-        showToast(msg, "error");
-        navigate("/business/signup", {
-          state: { verifyEmail: email, fromLogin: true },
-        });
-        return;
-      }
-
+        "Login failed. Please check your credentials.";
       showToast(msg, "error");
     }
   };
 
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans text-gray-900">
-      {/* ================= LEFT SIDE: IMAGE SLIDER (Fixed/Sticky) ================= */}
+      {/* ============ LEFT: IMAGE SLIDER ============ */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gray-900 overflow-hidden lg:sticky lg:top-0 lg:h-screen">
         {sliderImages.map((img, index) => (
           <img
@@ -129,7 +97,6 @@ const BusinessLogin = () => {
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
 
-        {/* Top Header Links */}
         <div className="absolute top-0 left-0 right-0 z-20 px-10 py-8 flex items-center justify-between text-sm text-white/90">
           <Link
             to="/"
@@ -150,7 +117,7 @@ const BusinessLogin = () => {
             </Link>
             <span className="text-white/40">|</span>
             <span className="text-white/80">
-              New to LocalSpot?{" "}
+              New here?{" "}
               <Link
                 to="/business/signup"
                 className="font-semibold text-white hover:underline"
@@ -161,15 +128,14 @@ const BusinessLogin = () => {
           </div>
         </div>
 
-        {/* Glass Morphism Text Block + Copyright */}
         <div className="absolute bottom-10 left-12 right-12 z-10 flex flex-col gap-4">
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-2xl">
             <h2 className="text-2xl font-bold text-white mb-3">
               Welcome back.
             </h2>
             <p className="text-sm text-white/80 leading-relaxed">
-              Log in to manage your business presence, connect with locals, and
-              keep your profile up to date.
+              Sign in to manage your business profile, promotions, ads, and
+              reviews — all in one place.
             </p>
           </div>
 
@@ -180,9 +146,9 @@ const BusinessLogin = () => {
         </div>
       </div>
 
-      {/* ================= RIGHT SIDE: FORM (Scrolls naturally) ================= */}
+      {/* ============ RIGHT: FORM ============ */}
       <div className="w-full lg:w-1/2 flex flex-col bg-slate-50 lg:bg-white lg:h-screen lg:overflow-y-auto">
-        {/* Mobile Header (Fixed/Sticky) */}
+        {/* Mobile header */}
         <div className="lg:hidden sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white shadow-sm">
           <Link to="/" className="flex items-center gap-2">
             <img
@@ -208,22 +174,22 @@ const BusinessLogin = () => {
           <div className="w-full max-w-[480px]">
             <div className="flex justify-center mb-6 lg:hidden">
               <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500">
-                <FiMapPin size={22} />
+                <FiBriefcase size={22} />
               </div>
             </div>
 
             <div className="text-center lg:text-left mb-8">
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-                Welcome back
+                Log in to your business
               </h1>
               <p className="text-sm text-gray-500 mt-2">
-                Log in to your LocalSpot business account
+                Welcome back — enter your credentials to continue
               </p>
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
               <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Email Address */}
+                {/* Email */}
                 <div>
                   <label
                     htmlFor="email"
@@ -236,7 +202,6 @@ const BusinessLogin = () => {
                     id="email"
                     name="email"
                     required
-                    autoComplete="email"
                     placeholder="name@business.com"
                     value={formData.email}
                     onChange={handleChange}
@@ -255,10 +220,10 @@ const BusinessLogin = () => {
                       Password <span className="text-red-500">*</span>
                     </label>
                     <Link
-                      to="/business/forgot-password"
-                      className="text-[10px] text-blue-600 hover:underline font-medium"
+                      to="/business/reset"
+                      className="text-xs font-medium text-blue-600 hover:underline"
                     >
-                      Forgot password?
+                      Forgot?
                     </Link>
                   </div>
                   <div className="relative">
@@ -267,7 +232,6 @@ const BusinessLogin = () => {
                       id="password"
                       name="password"
                       required
-                      autoComplete="current-password"
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={handleChange}
@@ -288,21 +252,7 @@ const BusinessLogin = () => {
                   </div>
                 </div>
 
-                {/* Remember Me */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="remember"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="remember" className="text-xs text-gray-600">
-                    Remember me for 30 days
-                  </label>
-                </div>
-
-                {/* Submit Button */}
+                {/* Submit */}
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -319,10 +269,9 @@ const BusinessLogin = () => {
                 </button>
               </form>
 
-              {/* Bottom Link */}
               <div className="mt-6 text-center lg:text-left">
                 <p className="text-xs text-gray-500">
-                  Don't have an account?{" "}
+                  Don't have a business account?{" "}
                   <Link
                     to="/business/signup"
                     className="font-medium text-blue-600 hover:underline"

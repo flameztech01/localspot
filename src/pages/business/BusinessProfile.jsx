@@ -25,12 +25,17 @@ import {
   DollarSign,
   ChevronDown,
   Camera,
+  FileText,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
-  useGetCurrentBusinessAccountQuery,
-  useUpdateBusinessProfileMutation,
-  useLogoutBusinessAccountMutation,
+  useGetCurrentUserQuery,
+  useLogoutUserMutation,
+} from "../../features/authApiSlice";
+import {
+  useGetMyBusinessApplicationQuery,
+  useUpdateBusinessApplicationMutation,
 } from "../../features/businessApiSlice";
 import { logout } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
@@ -84,6 +89,7 @@ const DEFAULT_HOURS = DAY_NAMES.map((_, day) => ({
 const TABS = [
   { id: "general", label: "General information" },
   { id: "contact", label: "Contact details" },
+  { id: "registration", label: "Registration" },
   { id: "location", label: "Location" },
   { id: "hours", label: "Opening hours" },
   { id: "media", label: "Media" },
@@ -198,9 +204,14 @@ const BusinessProfile = () => {
   const [coverPreview, setCoverPreview] = useState(null);
   const [removeCover, setRemoveCover] = useState(false);
 
+  // CAC document
+  const [cacFile, setCacFile] = useState(null);
+  const [cacPreview, setCacPreview] = useState(null);
+
   const imagesInputRef = useRef(null);
   const logoInputRef = useRef(null);
   const coverInputRef = useRef(null);
+  const cacInputRef = useRef(null);
 
   // Form
   const [formData, setFormData] = useState({
@@ -212,6 +223,7 @@ const BusinessProfile = () => {
     website: "",
     phone: "",
     address: "",
+    cacNumber: "",
     priceRange: 2,
     tags: [],
     location: {
@@ -227,18 +239,32 @@ const BusinessProfile = () => {
 
   // ─── Data ────────────────────────────────────────────────
   const {
-    data: businessResp,
-    isLoading,
-    error,
-    refetch,
-  } = useGetCurrentBusinessAccountQuery();
+    data: userResp,
+    isLoading: userLoading,
+    error: userError,
+    refetch: refetchUser,
+  } = useGetCurrentUserQuery();
 
-  const business = businessResp?.data || businessResp;
+  const user = userResp?.data || userResp;
+
+  const {
+    data: appResp,
+    isLoading: appLoading,
+    refetch: refetchApp,
+  } = useGetMyBusinessApplicationQuery(undefined, {
+    skip: !user || user?.role !== "business",
+  });
+
+  const application = appResp?.data?.application || appResp?.application || user;
+  const applicationStatus = appResp?.data?.status || application?.businessApplicationStatus || "none";
+
+  const isLoading = userLoading || appLoading;
+  const error = userError;
   const isUnauthorized = error?.status === 401;
 
-  const [updateProfile, { isLoading: isSaving }] =
-    useUpdateBusinessProfileMutation();
-  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+  const [updateApplication, { isLoading: isSaving }] =
+    useUpdateBusinessApplicationMutation();
+  const [logoutUser] = useLogoutUserMutation();
 
   // Outside click for tabs dropdown
   useEffect(() => {
@@ -259,46 +285,52 @@ const BusinessProfile = () => {
   }, []);
 
   const hydrateForm = () => {
-    if (!business) return;
+    if (!application) return;
     setFormData({
-      businessName: business.businessName || "",
-      description: business.description || "",
-      businessType: business.businessType || "other",
-      businessKind: business.businessKind || "",
-      businessKindOther: business.businessKindOther || "",
-      website: business.website || "",
-      phone: business.phone || "",
-      address: business.address || "",
-      priceRange: business.priceRange || 2,
-      tags: Array.isArray(business.tags) ? business.tags : [],
+      businessName: application.businessName || "",
+      description: application.description || "",
+      businessType: application.businessType || "other",
+      businessKind: application.businessKind || "",
+      businessKindOther: application.businessKindOther || "",
+      website: application.website || "",
+      phone: application.phone || "",
+      address: application.address || "",
+      cacNumber: application.cacNumber || "",
+      priceRange: application.priceRange || 2,
+      tags: Array.isArray(application.tags) ? application.tags : [],
       location: {
-        address: business.location?.address || "",
-        city: business.location?.city || "",
-        state: business.location?.state || "",
-        country: business.location?.country || "",
+        address: application.location?.address || "",
+        city: application.location?.city || "",
+        state: application.location?.state || "",
+        country: application.location?.country || "",
       },
       openingHours:
-        Array.isArray(business.openingHours) && business.openingHours.length > 0
-          ? business.openingHours
+        Array.isArray(application.openingHours) &&
+        application.openingHours.length > 0
+          ? application.openingHours
           : DEFAULT_HOURS,
     });
-    setExistingImages(Array.isArray(business.images) ? business.images : []);
-    setLogoPreview(business.logo || null);
-    setCoverPreview(business.coverImage || null);
+    setExistingImages(
+      Array.isArray(application.images) ? application.images : [],
+    );
+    setLogoPreview(application.logo || null);
+    setCoverPreview(application.coverImage || null);
+    setCacPreview(application.cacDocument || null);
     setRemovedImages([]);
     setNewImageFiles([]);
     setNewImagePreviews([]);
     setLogoFile(null);
     setCoverFile(null);
+    setCacFile(null);
     setRemoveLogo(false);
     setRemoveCover(false);
     setTagInput("");
   };
 
   useEffect(() => {
-    if (business) hydrateForm();
+    if (application) hydrateForm();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [business]);
+  }, [application]);
 
   useEffect(() => {
     return () => {
@@ -307,6 +339,7 @@ const BusinessProfile = () => {
       });
       if (logoPreview?.startsWith("blob:")) URL.revokeObjectURL(logoPreview);
       if (coverPreview?.startsWith("blob:")) URL.revokeObjectURL(coverPreview);
+      if (cacPreview?.startsWith("blob:")) URL.revokeObjectURL(cacPreview);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -316,7 +349,7 @@ const BusinessProfile = () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutUser().unwrap().catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -325,7 +358,7 @@ const BusinessProfile = () => {
       localStorage.removeItem("token");
       sessionStorage.clear();
     } catch (_) {}
-    navigate("/business/signin", { replace: true });
+    navigate("/signin", { replace: true });
     setTimeout(() => window.location.reload(), 50);
   };
 
@@ -449,6 +482,22 @@ const BusinessProfile = () => {
     setRemoveCover(true);
   };
 
+  // CAC
+  const handleCacSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCacFile(file);
+    if (cacPreview?.startsWith("blob:")) URL.revokeObjectURL(cacPreview);
+    setCacPreview(URL.createObjectURL(file));
+    e.target.value = "";
+  };
+
+  const handleRemoveCac = () => {
+    if (cacPreview?.startsWith("blob:")) URL.revokeObjectURL(cacPreview);
+    setCacFile(null);
+    setCacPreview(null);
+  };
+
   // ─── Save ────────────────────────────────────────────────
   const handleSave = async () => {
     if (!formData.businessName.trim()) {
@@ -464,6 +513,15 @@ const BusinessProfile = () => {
       return;
     }
 
+    const totalProjected = existingImages.length + newImageFiles.length;
+    if (totalProjected < MIN_BUSINESS_IMAGES) {
+      showToast(
+        `At least ${MIN_BUSINESS_IMAGES} images required (currently ${totalProjected})`,
+        "error",
+      );
+      return;
+    }
+
     const fd = new FormData();
 
     fd.append("businessName", formData.businessName.trim());
@@ -472,6 +530,7 @@ const BusinessProfile = () => {
     fd.append("website", formData.website.trim());
     fd.append("phone", formData.phone.trim());
     fd.append("address", formData.address.trim());
+    fd.append("cacNumber", formData.cacNumber.trim());
     fd.append("priceRange", String(formData.priceRange));
 
     if (formData.businessKind) {
@@ -499,8 +558,11 @@ const BusinessProfile = () => {
     if (coverFile) fd.append("coverImage", coverFile);
     if (removeCover) fd.append("removeCover", "true");
 
+    // CAC
+    if (cacFile) fd.append("cacDocument", cacFile);
+
     try {
-      const result = await updateProfile(fd).unwrap();
+      const result = await updateApplication(fd).unwrap();
       showToast(result?.message || "Profile updated", "success");
 
       newImagePreviews.forEach((url) => {
@@ -508,16 +570,24 @@ const BusinessProfile = () => {
       });
       if (logoPreview?.startsWith("blob:")) URL.revokeObjectURL(logoPreview);
       if (coverPreview?.startsWith("blob:")) URL.revokeObjectURL(coverPreview);
+      if (cacPreview?.startsWith("blob:")) URL.revokeObjectURL(cacPreview);
 
       setRemovedImages([]);
       setNewImageFiles([]);
       setNewImagePreviews([]);
       setLogoFile(null);
       setCoverFile(null);
+      setCacFile(null);
       setEditMode(false);
-      await refetch();
+
+      await Promise.all([refetchUser(), refetchApp()]);
     } catch (err) {
-      showToast(err?.data?.message || "Failed to update profile", "error");
+      showToast(
+        err?.data?.message ||
+          err?.data?.errors?.[0]?.message ||
+          "Failed to update profile",
+        "error",
+      );
     }
   };
 
@@ -527,17 +597,21 @@ const BusinessProfile = () => {
     });
     if (logoPreview?.startsWith("blob:")) URL.revokeObjectURL(logoPreview);
     if (coverPreview?.startsWith("blob:")) URL.revokeObjectURL(coverPreview);
+    if (cacPreview?.startsWith("blob:")) URL.revokeObjectURL(cacPreview);
     hydrateForm();
     setEditMode(false);
   };
 
   // ─── Derived ─────────────────────────────────────────────
-  const isVerified = business?.isVerified && business?.businessVerified;
-  const location = business?.location || {};
+  const isApproved =
+    application?.businessVerified === true && applicationStatus === "approved";
+  const isRejected = applicationStatus === "rejected";
+  const isPending = applicationStatus === "pending";
+  const location = application?.location || {};
 
   const hoursByGroup = useMemo(() => {
-    const hours = Array.isArray(business?.openingHours)
-      ? business.openingHours
+    const hours = Array.isArray(application?.openingHours)
+      ? application.openingHours
       : [];
     if (hours.length === 0) return [];
 
@@ -592,7 +666,7 @@ const BusinessProfile = () => {
       });
 
     return groups;
-  }, [business?.openingHours]);
+  }, [application?.openingHours]);
 
   // ─── Guards ──────────────────────────────────────────────
   if (isUnauthorized) {
@@ -609,7 +683,7 @@ const BusinessProfile = () => {
             Please log in again to view your profile.
           </p>
           <button
-            onClick={() => navigate("/business/signin", { replace: true })}
+            onClick={() => navigate("/signin", { replace: true })}
             className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
           >
             Go to sign in
@@ -647,7 +721,7 @@ const BusinessProfile = () => {
             {error?.data?.message || "Something went wrong."}
           </p>
           <button
-            onClick={() => refetch()}
+            onClick={() => refetchUser()}
             className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
           >
             Try again
@@ -665,7 +739,7 @@ const BusinessProfile = () => {
         ...existingImages.map((url) => ({ url, isNew: false })),
         ...newImagePreviews.map((url) => ({ url, isNew: true })),
       ]
-    : (business?.images || []).map((url) => ({ url, isNew: false }));
+    : (application?.images || []).map((url) => ({ url, isNew: false }));
 
   const activeTabObj = TABS.find((t) => t.id === activeTab);
 
@@ -730,6 +804,39 @@ const BusinessProfile = () => {
         </header>
 
         <main className="max-w-5xl mx-auto px-4 lg:px-8 py-5 lg:py-6 space-y-6">
+          {/* ─── Status banner ─── */}
+          {isPending && (
+            <div className="border border-yellow-200 bg-yellow-50 rounded-xl p-4 flex items-start gap-3">
+              <Clock className="h-5 w-5 text-yellow-700 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-yellow-800">
+                  Application under review
+                </h3>
+                <p className="text-xs text-yellow-800/90 mt-1 leading-relaxed">
+                  You can still make changes to your profile. Saving updates
+                  will keep your application in the review queue.
+                </p>
+              </div>
+            </div>
+          )}
+          {isRejected && (
+            <div className="border border-red-200 bg-red-50 rounded-xl p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-700 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-red-800">
+                  Application rejected
+                </h3>
+                <p className="text-xs text-red-800/90 mt-1 leading-relaxed">
+                  {application?.businessRejectionReason ||
+                    "Your application was rejected. Please update your profile and resubmit."}
+                </p>
+                <p className="text-[11px] text-red-700/80 mt-2">
+                  Saving changes will resubmit your application for review.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ─── Tabs ─── */}
           <nav>
             {/* Mobile: custom dropdown */}
@@ -868,7 +975,7 @@ const BusinessProfile = () => {
                       {displayLogo ? (
                         <img
                           src={displayLogo}
-                          alt={business?.businessName}
+                          alt={application?.businessName}
                           className="w-full h-full object-cover"
                           style={{ borderRadius: "9999px" }}
                         />
@@ -925,9 +1032,9 @@ const BusinessProfile = () => {
                     ) : (
                       <h2
                         className="text-lg sm:text-2xl font-bold text-gray-900 leading-tight break-words"
-                        title={business?.businessName}
+                        title={application?.businessName}
                       >
-                        {business?.businessName || "Your business"}
+                        {application?.businessName || "Your business"}
                       </h2>
                     )}
 
@@ -939,7 +1046,7 @@ const BusinessProfile = () => {
                   </div>
                 </div>
 
-                {isVerified && (
+                {isApproved && (
                   <span className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#3B82F6] text-white text-xs font-semibold flex-shrink-0 sm:mb-2">
                     <BadgeCheck className="h-3.5 w-3.5" />
                     Verified
@@ -1009,9 +1116,9 @@ const BusinessProfile = () => {
                     )}
                   </div>
                 ) : (
-                  business?.tags?.length > 0 && (
+                  application?.tags?.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {business.tags.map((t) => (
+                      {application.tags.map((t) => (
                         <span
                           key={t}
                           className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full capitalize"
@@ -1034,9 +1141,9 @@ const BusinessProfile = () => {
                     disabled={isSaving}
                     className={`${inputClass} resize-none`}
                   />
-                ) : business?.description ? (
+                ) : application?.description ? (
                   <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                    {business.description}
+                    {application.description}
                   </p>
                 ) : (
                   <p className="text-sm text-gray-400 italic">
@@ -1068,7 +1175,7 @@ const BusinessProfile = () => {
                     ) : (
                       <p className="text-sm font-semibold text-gray-900">
                         {BUSINESS_TYPES.find(
-                          (t) => t.value === business?.businessType,
+                          (t) => t.value === application?.businessType,
                         )?.label || "—"}
                       </p>
                     )}
@@ -1111,11 +1218,11 @@ const BusinessProfile = () => {
                       </div>
                     ) : (
                       <p className="text-sm font-semibold text-gray-900">
-                        {business?.businessKind
-                          ? business.businessKind === "others"
-                            ? business.businessKindOther || "Others"
+                        {application?.businessKind
+                          ? application.businessKind === "others"
+                            ? application.businessKindOther || "Others"
                             : BUSINESS_KINDS.find(
-                                (k) => k.value === business.businessKind,
+                                (k) => k.value === application.businessKind,
                               )?.label || "—"
                           : "—"}
                       </p>
@@ -1150,10 +1257,10 @@ const BusinessProfile = () => {
                       </div>
                     ) : (
                       <p className="text-sm font-semibold text-gray-900">
-                        {"$".repeat(business?.priceRange || 0) || "—"}
+                        {"$".repeat(application?.priceRange || 0) || "—"}
                         <span className="ml-2 text-xs font-normal text-gray-500">
                           {PRICE_RANGES.find(
-                            (p) => p.value === business?.priceRange,
+                            (p) => p.value === application?.priceRange,
                           )?.hint || ""}
                         </span>
                       </p>
@@ -1191,7 +1298,7 @@ const BusinessProfile = () => {
                     />
                   ) : (
                     <p className="text-sm font-semibold text-gray-900 break-words">
-                      {business?.phone || (
+                      {application?.phone || (
                         <span className="text-gray-400 italic">Not added</span>
                       )}
                     </p>
@@ -1206,7 +1313,7 @@ const BusinessProfile = () => {
                     </span>
                   </div>
                   <p className="text-sm font-semibold text-gray-900 break-all">
-                    {business?.email || "—"}
+                    {application?.email || user?.email || "—"}
                   </p>
                   <p className="text-[10px] text-gray-400 mt-1">
                     Email cannot be changed
@@ -1229,21 +1336,151 @@ const BusinessProfile = () => {
                       disabled={isSaving}
                       className={inputClass}
                     />
-                  ) : business?.website ? (
+                  ) : application?.website ? (
                     <a
                       href={
-                        business.website.startsWith("http")
-                          ? business.website
-                          : `https://${business.website}`
+                        application.website.startsWith("http")
+                          ? application.website
+                          : `https://${application.website}`
                       }
                       target="_blank"
                       rel="noreferrer noopener"
                       className="text-sm font-semibold text-[#3B82F6] hover:underline break-all"
                     >
-                      {business.website}
+                      {application.website}
                     </a>
                   ) : (
                     <p className="text-sm text-gray-400 italic">Not added</p>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ══════════════════════════════════════════════════
+              TAB: REGISTRATION (CAC)
+          ══════════════════════════════════════════════════ */}
+          {activeTab === "registration" && (
+            <section>
+              <h3 className="text-base lg:text-lg font-bold text-gray-900 mb-3">
+                Business registration
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div className={TILE}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShieldCheck className="h-3.5 w-3.5 text-gray-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      CAC Registration Number
+                    </span>
+                  </div>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      value={formData.cacNumber}
+                      onChange={(e) => setField("cacNumber", e.target.value)}
+                      placeholder="RC-1234567"
+                      disabled={isSaving}
+                      className={inputClass}
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold text-gray-900">
+                      {application?.cacNumber || (
+                        <span className="text-gray-400 italic">Not added</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+
+                <div className={TILE}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="h-3.5 w-3.5 text-gray-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      CAC Document
+                    </span>
+                  </div>
+
+                  {editMode ? (
+                    <>
+                      {cacPreview ? (
+                        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-white">
+                          {cacPreview.startsWith("blob:") &&
+                          cacFile?.type?.startsWith("image") ? (
+                            <img
+                              src={cacPreview}
+                              alt="CAC document"
+                              className="w-14 h-14 object-cover rounded border border-gray-200 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              <FileText className="h-6 w-6 text-gray-500" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-gray-700 truncate">
+                              {cacFile?.name || "CAC document"}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {cacFile
+                                ? `${(cacFile.size / 1024).toFixed(0)} KB`
+                                : "Currently uploaded"}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => cacInputRef.current?.click()}
+                            disabled={isSaving}
+                            className="p-1.5 text-gray-500 hover:text-[#3B82F6] transition disabled:opacity-60"
+                            aria-label="Change CAC document"
+                          >
+                            <Upload className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveCac}
+                            disabled={isSaving}
+                            className="p-1.5 text-gray-500 hover:text-red-600 transition disabled:opacity-60"
+                            aria-label="Remove CAC document"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => cacInputRef.current?.click()}
+                          disabled={isSaving}
+                          className="w-full py-3.5 border-2 border-dashed border-gray-200 rounded-lg text-sm font-semibold text-gray-500 hover:border-[#3B82F6] hover:text-[#3B82F6] transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                        >
+                          <Upload className="h-4 w-4" />
+                          Upload CAC document
+                        </button>
+                      )}
+
+                      <input
+                        ref={cacInputRef}
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={handleCacSelect}
+                        className="hidden"
+                      />
+                      <p className="text-[10px] text-gray-400 mt-2">
+                        Accepted formats: JPG, PNG, WEBP, PDF
+                      </p>
+                    </>
+                  ) : application?.cacDocument ? (
+                    <a
+                      href={application.cacDocument}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-2 text-sm font-semibold text-[#3B82F6] hover:underline"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View CAC document
+                    </a>
+                  ) : (
+                    <p className="text-sm text-gray-400 italic">
+                      No CAC document uploaded
+                    </p>
                   )}
                 </div>
               </div>
@@ -1335,7 +1572,7 @@ const BusinessProfile = () => {
                     />
                   ) : (
                     <p className="text-sm font-semibold text-gray-900">
-                      {business?.address || (
+                      {application?.address || (
                         <span className="text-gray-400 italic">Not added</span>
                       )}
                     </p>

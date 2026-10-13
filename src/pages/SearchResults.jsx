@@ -213,7 +213,7 @@ const SearchResults = () => {
 
   const handleToggleFavorite = async (id) => {
     if (!userInfo) {
-      navigate("/business/signin", {
+      navigate("/signin", {
         state: { redirectTo: "/search" },
       });
       return;

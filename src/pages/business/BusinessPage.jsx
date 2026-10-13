@@ -36,9 +36,9 @@ import {
 } from "recharts";
 
 import {
-  useGetCurrentBusinessAccountQuery,
-  useLogoutBusinessAccountMutation,
-} from "../../features/businessApiSlice";
+  useGetCurrentUserQuery,
+  useLogoutUserMutation,
+} from "../../features/authApiSlice";
 import { useGetBusinessAnalyticsQuery } from "../../features/analyticsApiSlice";
 import { useListMyPromotionsQuery } from "../../features/promotionApiSlice";
 import { useListMyAdvertisementsQuery } from "../../features/adsApiSlice";
@@ -139,14 +139,14 @@ const BusinessPage = () => {
   const closeDropdown = () => setDropdownOpen(false);
 
   // ─── Logout ─────────────────────────────────────────────
-  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+  const [logoutUser] = useLogoutUserMutation();
 
   const handleLogout = async () => {
     if (loggingOut) return;
     setLoggingOut(true);
 
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutUser().unwrap().catch(() => {});
     } catch (_) {}
 
     dispatch(logout());
@@ -168,7 +168,7 @@ const BusinessPage = () => {
       });
     } catch (_) {}
 
-    navigate("/business/signin", { replace: true });
+    navigate("/signin", { replace: true });
     setTimeout(() => window.location.reload(), 50);
   };
 
@@ -197,13 +197,13 @@ const BusinessPage = () => {
 
   // ─── Queries ───────────────────────────────────────────────
   const {
-    data: businessResp,
+    data: userResp,
     isLoading: bizLoading,
     error: bizError,
     refetch: refetchBusiness,
-  } = useGetCurrentBusinessAccountQuery();
+  } = useGetCurrentUserQuery();
 
-  const business = businessResp?.data || businessResp;
+  const business = userResp?.data || userResp;
   const isUnauthorized = bizError?.status === 401;
 
   const analyticsParams = useMemo(() => {
@@ -276,8 +276,9 @@ const BusinessPage = () => {
 
   // ─── Derived ───────────────────────────────────────────────
   const isEmailVerified = business?.isVerified ?? false;
-  const isApproved = business?.businessVerified ?? false;
-  const isRejected = !!business?.businessRejectionReason && !isApproved;
+  const appStatus = business?.businessApplicationStatus || "none";
+  const isApproved = business?.businessVerified === true && appStatus === "approved";
+  const isRejected = appStatus === "rejected";
 
   const approvalStatus = !isEmailVerified
     ? "unverified"
@@ -368,7 +369,7 @@ const BusinessPage = () => {
 
           <div className="space-y-2">
             <button
-              onClick={() => navigate("/business/signin", { replace: true })}
+              onClick={() => navigate("/signin", { replace: true })}
               className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
             >
               Go to sign in
@@ -474,16 +475,19 @@ const BusinessPage = () => {
 
   // ─── Mobile Hero Card ──────────────────────────────────────
   const HeroCard = () => {
-    const initials = (business?.businessName || "B").charAt(0).toUpperCase();
+    const displayName =
+      business?.businessName || business?.fullName || "Your Business";
+    const initials = (displayName || "B").charAt(0).toUpperCase();
+    const avatarUrl = business?.logo || business?.coverImage;
 
     return (
       <div className="lg:hidden bg-white border border-gray-200 rounded-2xl p-4 mb-4 shadow-sm">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-            {business?.coverImage ? (
+            {avatarUrl ? (
               <img
-                src={business.coverImage}
-                alt={business.businessName}
+                src={avatarUrl}
+                alt={displayName}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -495,9 +499,9 @@ const BusinessPage = () => {
           <div className="flex-1 min-w-0">
             <h1
               className="text-base font-bold text-gray-900 truncate"
-              title={business?.businessName}
+              title={displayName}
             >
-              {business?.businessName || "Your Business"}
+              {displayName}
             </h1>
             <span
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium mt-0.5 ${statusMeta.color}`}
@@ -507,7 +511,7 @@ const BusinessPage = () => {
             </span>
           </div>
           <button
-            onClick={() => navigate("/business/profile")}
+            onClick={() => navigate("/business/application")}
             className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-700 transition flex-shrink-0"
           >
             <Edit3 className="h-4 w-4" />
@@ -800,6 +804,15 @@ const BusinessPage = () => {
           <p className={`text-xs mt-1 leading-relaxed ${meta.text} opacity-90`}>
             {meta.body}
           </p>
+          {approvalStatus === "rejected" && (
+            <button
+              onClick={() => navigate("/business/application")}
+              className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg transition"
+            >
+              <Edit3 className="h-3 w-3" />
+              Fix & resubmit
+            </button>
+          )}
         </div>
       </div>
     );
@@ -842,7 +855,7 @@ const BusinessPage = () => {
             <button
               onClick={() => {
                 setShowImagesModal(false);
-                navigate("/business/profile");
+                navigate("/business/application");
               }}
               className="mt-4 px-6 py-2 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium inline-flex items-center gap-2"
             >
@@ -877,7 +890,7 @@ const BusinessPage = () => {
             <button
               onClick={() => {
                 setShowImagesModal(false);
-                navigate("/business/profile");
+                navigate("/business/application");
               }}
               className="w-full py-2.5 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium inline-flex items-center justify-center gap-2"
             >
@@ -980,6 +993,10 @@ const BusinessPage = () => {
   );
 
   // ─── Render ────────────────────────────────────────────────
+  const displayName =
+    business?.businessName || business?.fullName || "Your Business";
+  const headerAvatar = business?.logo || business?.coverImage;
+
   return (
     <div className="min-h-screen bg-white">
       <BusinessSidebar onLogout={handleLogout} />
@@ -993,18 +1010,18 @@ const BusinessPage = () => {
             {business && (
               <button
                 type="button"
-                onClick={() => navigate("/business/profile")}
+                onClick={() => navigate("/business/application")}
                 aria-label="Open business profile"
                 className="hidden sm:flex items-center gap-2 min-w-0 rounded-full pl-2 pr-0.5 py-0.5 hover:bg-gray-100 active:bg-gray-200 transition-colors"
               >
                 <span className="text-sm text-gray-600 hidden md:inline truncate max-w-[140px]">
-                  {business.businessName}
+                  {displayName}
                 </span>
                 <span className="h-8 w-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {business.coverImage ? (
+                  {headerAvatar ? (
                     <img
-                      src={business.coverImage}
-                      alt={business.businessName}
+                      src={headerAvatar}
+                      alt={displayName}
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -1045,10 +1062,10 @@ const BusinessPage = () => {
           <div className="hidden lg:block">
             <div className="flex items-center gap-3 mb-6 min-w-0">
               <div className="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                {business?.coverImage ? (
+                {headerAvatar ? (
                   <img
-                    src={business.coverImage}
-                    alt={business.businessName}
+                    src={headerAvatar}
+                    alt={displayName}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -1058,9 +1075,9 @@ const BusinessPage = () => {
               <div className="min-w-0 flex-1">
                 <h2
                   className="text-2xl font-bold text-gray-900 truncate"
-                  title={business?.businessName}
+                  title={displayName}
                 >
-                  Welcome back, {business?.businessName || "Business"}!
+                  Welcome back, {displayName}!
                 </h2>
                 <div className="flex items-center gap-3 mt-1">
                   <span
@@ -1194,7 +1211,7 @@ const BusinessPage = () => {
 
             <div className="grid grid-cols-2 gap-2 lg:gap-3">
               <button
-                onClick={() => navigate("/business/profile")}
+                onClick={() => navigate("/business/application")}
                 className="flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-0 px-2.5 py-2.5 lg:p-4 bg-[#3B82F6] hover:bg-blue-700 text-white rounded-xl lg:rounded-2xl transition shadow-sm hover:shadow-md min-w-0"
               >
                 <Edit3 className="h-4 w-4 lg:h-8 lg:w-8 lg:mb-1 flex-shrink-0" />
@@ -1304,7 +1321,7 @@ const BusinessPage = () => {
               </ul>
 
               <button
-                onClick={() => navigate("/business/profile")}
+                onClick={() => navigate("/business/application")}
                 className="mt-4 text-[#3B82F6] hover:underline text-sm font-medium"
               >
                 Complete your profile →
@@ -1464,11 +1481,13 @@ const BusinessPage = () => {
               <button
                 onClick={() => {
                   setShowStatusModal(false);
-                  navigate("/business/profile");
+                  navigate("/business/application");
                 }}
                 className="w-full mt-3 py-2.5 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium"
               >
-                Edit Business Profile
+                {approvalStatus === "rejected"
+                  ? "Fix & Resubmit Application"
+                  : "Edit Business Profile"}
               </button>
 
               <button

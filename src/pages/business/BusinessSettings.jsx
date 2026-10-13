@@ -1,28 +1,26 @@
 // src/pages/business/BusinessSettings.jsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   Store,
   Phone,
   Mail,
-  Lock,
   LogOut,
   Loader,
   AlertCircle,
   Pencil,
   X,
   Save,
-  User as UserIcon,
   Shield,
   CheckCircle2,
 } from "lucide-react";
 
 import {
-  useGetCurrentBusinessAccountQuery,
-  useUpdateBusinessProfileMutation,
-  useLogoutBusinessAccountMutation,
-} from "../../features/businessApiSlice";
+  useGetCurrentUserQuery,
+  useUpdateUserProfileMutation,
+  useLogoutUserMutation,
+} from "../../features/authApiSlice";
 import { logout } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import BusinessSidebar from "../../components/BusinessSidebar";
@@ -42,23 +40,23 @@ const BusinessSettings = () => {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const {
-    data: businessResp,
+    data: userResp,
     isLoading,
     error,
     refetch,
-  } = useGetCurrentBusinessAccountQuery();
+  } = useGetCurrentUserQuery();
 
-  const business = businessResp?.data || businessResp;
+  const user = userResp?.data || userResp;
   const isUnauthorized = error?.status === 401;
 
-  const [updateProfile] = useUpdateBusinessProfileMutation();
-  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+  const [updateProfile] = useUpdateUserProfileMutation();
+  const [logoutUser] = useLogoutUserMutation();
 
   const handleLogout = async () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutUser().unwrap().catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -68,7 +66,7 @@ const BusinessSettings = () => {
       localStorage.removeItem("businessToken");
       sessionStorage.clear();
     } catch (_) {}
-    navigate("/business/signin", { replace: true });
+    navigate("/signin", { replace: true });
     setTimeout(() => window.location.reload(), 50);
   };
 
@@ -87,7 +85,7 @@ const BusinessSettings = () => {
             Please log in again to continue.
           </p>
           <button
-            onClick={() => navigate("/business/signin", { replace: true })}
+            onClick={() => navigate("/signin", { replace: true })}
             className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
           >
             Go to sign in
@@ -96,6 +94,23 @@ const BusinessSettings = () => {
       </div>
     );
   }
+
+  // ─── Derived status ──────────────────────────────────────
+  const isEmailVerified = user?.isVerified ?? false;
+  const appStatus = user?.businessApplicationStatus || "none";
+  const isApproved = user?.businessVerified === true && appStatus === "approved";
+  const isRejected = appStatus === "rejected";
+
+  const approvalLabel = isApproved
+    ? "Approved"
+    : isRejected
+      ? "Rejected"
+      : "Pending review";
+
+  const approvalTone = isApproved ? "good" : isRejected ? "bad" : "warn";
+
+  const displayName =
+    user?.businessName || user?.fullName || user?.name || "—";
 
   return (
     <div className="min-h-screen bg-white">
@@ -151,28 +166,25 @@ const BusinessSettings = () => {
                 title="Account information"
                 description="Your business account details"
               >
-                {/* Business name (read-only) */}
                 <Row
                   label="Business name"
-                  value={business?.businessName || "—"}
+                  value={displayName}
                   icon={Store}
                   hint="Change from Business profile"
                 />
 
-                {/* Email (read-only) */}
                 <Row
                   label="Email address"
-                  value={business?.email || "—"}
+                  value={user?.email || "—"}
                   icon={Mail}
                   hint="Email cannot be changed"
                 />
 
-                {/* Phone (editable) */}
                 <Row
                   label="Phone number"
-                  value={business?.phone || "Not added"}
+                  value={user?.phone || "Not added"}
                   icon={Phone}
-                  muted={!business?.phone}
+                  muted={!user?.phone}
                   action={
                     <button
                       type="button"
@@ -180,7 +192,7 @@ const BusinessSettings = () => {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition"
                     >
                       <Pencil className="h-3 w-3" />
-                      {business?.phone ? "Edit" : "Add"}
+                      {user?.phone ? "Edit" : "Add"}
                     </button>
                   }
                 />
@@ -194,32 +206,30 @@ const BusinessSettings = () => {
               >
                 <Row
                   label="Email verification"
-                  value={business?.isVerified ? "Verified" : "Not verified"}
+                  value={isEmailVerified ? "Verified" : "Not verified"}
                   icon={CheckCircle2}
-                  tone={business?.isVerified ? "good" : "bad"}
+                  tone={isEmailVerified ? "good" : "bad"}
                 />
                 <Row
                   label="Business approval"
-                  value={
-                    business?.businessVerified
-                      ? "Approved"
-                      : business?.businessRejectionReason
-                        ? "Rejected"
-                        : "Pending review"
-                  }
+                  value={approvalLabel}
                   icon={CheckCircle2}
-                  tone={
-                    business?.businessVerified
-                      ? "good"
-                      : business?.businessRejectionReason
-                        ? "bad"
-                        : "warn"
-                  }
+                  tone={approvalTone}
                 />
-                {business?.businessRejectionReason && (
+                {isRejected && user?.businessRejectionReason && (
                   <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-                    {business.businessRejectionReason}
+                    {user.businessRejectionReason}
                   </p>
+                )}
+                {isRejected && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/business/application")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Fix &amp; resubmit application
+                  </button>
                 )}
               </SettingsSection>
 
@@ -256,7 +266,7 @@ const BusinessSettings = () => {
       {/* ─── Edit phone modal ─── */}
       {editPhoneOpen && (
         <EditPhoneModal
-          current={business?.phone || ""}
+          current={user?.phone || ""}
           onClose={() => setEditPhoneOpen(false)}
           onSuccess={() => {
             setEditPhoneOpen(false);
@@ -282,9 +292,7 @@ const BusinessSettings = () => {
                 <LogOut className="h-5 w-5 text-red-500" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-sm font-bold text-gray-900">
-                  Sign out?
-                </h3>
+                <h3 className="text-sm font-bold text-gray-900">Sign out?</h3>
                 <p className="text-xs text-gray-500 mt-1">
                   You'll need to log in again to access your business
                   dashboard.
@@ -377,9 +385,7 @@ const Row = ({ label, value, icon: Icon, hint, action, tone, muted }) => {
           >
             {value}
           </p>
-          {hint && (
-            <p className="text-[10px] text-gray-400 mt-0.5">{hint}</p>
-          )}
+          {hint && <p className="text-[10px] text-gray-400 mt-0.5">{hint}</p>}
         </div>
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}

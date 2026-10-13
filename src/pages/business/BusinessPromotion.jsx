@@ -23,7 +23,6 @@ import {
   Tag,
   Percent,
   DollarSign,
-  Calendar,
 } from "lucide-react";
 
 import {
@@ -33,7 +32,7 @@ import {
   useDeletePromotionMutation,
   useSubmitPromotionForReviewMutation,
 } from "../../features/promotionApiSlice";
-import { useLogoutBusinessAccountMutation } from "../../features/businessApiSlice";
+import { useLogoutUserMutation } from "../../features/authApiSlice";
 import { logout } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import BusinessSidebar from "../../components/BusinessSidebar";
@@ -45,7 +44,11 @@ const TABS = [
   { id: "pending", label: "Pending approval", statuses: ["pending"] },
   { id: "draft", label: "Drafts", statuses: ["draft"] },
   { id: "rejected", label: "Rejected", statuses: ["rejected"] },
-  { id: "expired", label: "Expired/Disabled", statuses: ["expired", "disabled"] },
+  {
+    id: "expired",
+    label: "Expired/Disabled",
+    statuses: ["expired", "disabled"],
+  },
 ];
 
 const DISCOUNT_TYPES = [
@@ -125,7 +128,7 @@ const BusinessPromotion = () => {
     useDeletePromotionMutation();
   const [submitPromo, { isLoading: isSubmitting }] =
     useSubmitPromotionForReviewMutation();
-  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+  const [logoutUser] = useLogoutUserMutation();
 
   const isMutating = isDeleting || isSubmitting;
 
@@ -145,7 +148,7 @@ const BusinessPromotion = () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutUser().unwrap().catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -154,7 +157,7 @@ const BusinessPromotion = () => {
       localStorage.removeItem("token");
       sessionStorage.clear();
     } catch (_) {}
-    navigate("/business/signin", { replace: true });
+    navigate("/signin", { replace: true });
     setTimeout(() => window.location.reload(), 50);
   };
 
@@ -194,7 +197,7 @@ const BusinessPromotion = () => {
             Please log in again to continue.
           </p>
           <button
-            onClick={() => navigate("/business/signin", { replace: true })}
+            onClick={() => navigate("/signin", { replace: true })}
             className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
           >
             Go to sign in
@@ -310,9 +313,7 @@ const BusinessPromotion = () => {
               {activeTab === "active" && (
                 <button
                   type="button"
-                  onClick={() =>
-                    setFormModal({ mode: "create", promo: null })
-                  }
+                  onClick={() => setFormModal({ mode: "create", promo: null })}
                   className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition"
                 >
                   <Plus className="h-4 w-4" />
@@ -331,9 +332,7 @@ const BusinessPromotion = () => {
                   promo={promo}
                   openMenuId={openMenuId}
                   setOpenMenuId={setOpenMenuId}
-                  onEdit={() =>
-                    setFormModal({ mode: "edit", promo })
-                  }
+                  onEdit={() => setFormModal({ mode: "edit", promo })}
                   onDelete={() => {
                     setOpenMenuId(null);
                     setDeleteTarget(promo);

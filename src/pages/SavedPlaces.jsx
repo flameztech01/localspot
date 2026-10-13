@@ -125,7 +125,7 @@ const SavedPlaces = () => {
               Save your favorite spots and find them all in one place.
             </p>
             <Link
-              to="/business/signin"
+              to="/signin"
               className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-teal-700 rounded-lg hover:bg-teal-800 transition-colors"
             >
               Sign in
@@ -154,7 +154,7 @@ const SavedPlaces = () => {
               Please log in again to view saved places.
             </p>
             <Link
-              to="/business/signin"
+              to="/signin"
               className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-teal-700 rounded-lg hover:bg-teal-800 transition-colors"
             >
               Sign in

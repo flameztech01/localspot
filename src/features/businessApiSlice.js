@@ -1,8 +1,8 @@
 // features/businessApiSlice.js
 import { apiSlice } from "./apiSlice.js";
 
-// Matches the mount path: /api/v1/auth/business
-const BUSINESS_AUTH_URL = "/v1/auth/business";
+// Matches the mount path: /api/v1/business
+const BUSINESS_URL = "/v1/business";
 
 export const businessApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -10,12 +10,12 @@ export const businessApiSlice = apiSlice.injectEndpoints({
     // PUBLIC — no auth required
     // =====================================================================
 
-    // GET /api/v1/auth/business/public
+    // GET /api/v1/business/public
     // Query: kind, category, city, country, minRating, featured, q,
     //        sort, page, limit
     listPublicBusinesses: builder.query({
       query: (params = {}) => ({
-        url: `${BUSINESS_AUTH_URL}/public`,
+        url: `${BUSINESS_URL}/public`,
         method: "GET",
         params,
       }),
@@ -31,130 +31,75 @@ export const businessApiSlice = apiSlice.injectEndpoints({
           : ["PublicBusinessList"],
     }),
 
-    // GET /api/v1/auth/business/public/:id
+    // GET /api/v1/business/public/:id
     getPublicBusinessById: builder.query({
       query: (id) => ({
-        url: `${BUSINESS_AUTH_URL}/public/${id}`,
+        url: `${BUSINESS_URL}/public/${id}`,
         method: "GET",
       }),
       providesTags: (_result, _err, id) => [{ type: "Business", id }],
     }),
 
     // =====================================================================
-    // AUTH — public flows
+    // SIGNED-IN USER — business application
     // =====================================================================
 
-    // POST /api/v1/auth/business/register
-    registerBusinessAccount: builder.mutation({
-      query: (body) => ({
-        url: `${BUSINESS_AUTH_URL}/register`,
+    // POST /api/v1/business/apply
+    // Body: FormData
+    //   text:  businessName, businessType, businessKind, businessKindOther,
+    //          description, website, phone, address, cacNumber, priceRange,
+    //          tags (JSON), location (JSON), openingHours (JSON)
+    //   files: images (10–20), logo (single), coverImage (single),
+    //          cacDocument (single, image or PDF)
+    // Do NOT set Content-Type — browser sets multipart boundary
+    submitBusinessApplication: builder.mutation({
+      query: (formData) => ({
+        url: `${BUSINESS_URL}/apply`,
         method: "POST",
-        body,
+        body: formData,
       }),
-      invalidatesTags: ["BusinessAuth"],
+      invalidatesTags: ["BusinessApplication", "Auth"],
     }),
 
-    // POST /api/v1/auth/business/verify-otp
-    verifyBusinessAccount: builder.mutation({
-      query: ({ email, otp }) => ({
-        url: `${BUSINESS_AUTH_URL}/verify-otp`,
-        method: "POST",
-        body: { email, otp },
-      }),
-      invalidatesTags: ["BusinessAuth"],
-    }),
-
-    // POST /api/v1/auth/business/resend-otp
-    // purpose: "verification" | "password-reset"
-    resendBusinessOTP: builder.mutation({
-      query: ({ email, purpose = "verification" }) => ({
-        url: `${BUSINESS_AUTH_URL}/resend-otp`,
-        method: "POST",
-        body: { email, purpose },
-      }),
-    }),
-
-    // POST /api/v1/auth/business/login
-    loginBusinessAccount: builder.mutation({
-      query: ({ email, password }) => ({
-        url: `${BUSINESS_AUTH_URL}/login`,
-        method: "POST",
-        body: { email, password },
-      }),
-      invalidatesTags: ["BusinessAuth"],
-    }),
-
-    // POST /api/v1/auth/business/forgot-password
-    forgotBusinessPassword: builder.mutation({
-      query: ({ email }) => ({
-        url: `${BUSINESS_AUTH_URL}/forgot-password`,
-        method: "POST",
-        body: { email },
-      }),
-    }),
-
-    // POST /api/v1/auth/business/reset-password
-    // Takes { email, otp, password }
-    resetBusinessPassword: builder.mutation({
-      query: ({ email, otp, password }) => ({
-        url: `${BUSINESS_AUTH_URL}/reset-password`,
-        method: "POST",
-        body: { email, otp, password },
-      }),
-      invalidatesTags: ["BusinessAuth"],
-    }),
-
-    // =====================================================================
-    // AUTH — private (business owner)
-    // =====================================================================
-
-    // POST /api/v1/auth/business/logout
-    logoutBusinessAccount: builder.mutation({
+    // GET /api/v1/business/application
+    getMyBusinessApplication: builder.query({
       query: () => ({
-        url: `${BUSINESS_AUTH_URL}/logout`,
-        method: "POST",
-      }),
-      invalidatesTags: ["BusinessAuth"],
-    }),
-
-    // GET /api/v1/auth/business/me
-    getCurrentBusinessAccount: builder.query({
-      query: () => ({
-        url: `${BUSINESS_AUTH_URL}/me`,
+        url: `${BUSINESS_URL}/application`,
         method: "GET",
       }),
-      providesTags: ["BusinessAuth"],
+      providesTags: ["BusinessApplication"],
     }),
 
-    // PUT /api/v1/auth/business/profile
-    // Body: FormData
-    //   text: businessName, description, businessType, website,
-    //         phone, address, priceRange, tags (JSON),
-    //         location (JSON), openingHours (JSON),
-    //         businessKind, businessKindOther (when "others"),
-    //         removeImages (JSON array of URLs to drop)
-    //   files: images (multiple, min 10 max 20 total)
-    //          coverImage (single, optional)
-    // Do NOT set Content-Type — browser sets multipart boundary
-    updateBusinessProfile: builder.mutation({
+    // PUT /api/v1/business/application
+    // Same multipart shape as submit — only send what changed.
+    // Editing a rejected application re-submits it (status → "pending").
+    updateBusinessApplication: builder.mutation({
       query: (formData) => ({
-        url: `${BUSINESS_AUTH_URL}/profile`,
+        url: `${BUSINESS_URL}/application`,
         method: "PUT",
         body: formData,
       }),
-      invalidatesTags: ["BusinessAuth"],
+      invalidatesTags: ["BusinessApplication", "Auth"],
+    }),
+
+    // DELETE /api/v1/business/application
+    withdrawBusinessApplication: builder.mutation({
+      query: () => ({
+        url: `${BUSINESS_URL}/application`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["BusinessApplication", "Auth"],
     }),
 
     // =====================================================================
-    // ADMIN — approval management (under /all)
+    // ADMIN — approval management
     // =====================================================================
 
-    // GET /api/v1/auth/business/all?status=&page=&limit=
-    // status: "pending" | "approved" | "rejected" | "unverified"
-    //       | "featured" | "all"
+    // GET /api/v1/business/applications?status=&page=&limit=
+    // status: "pending" | "approved" | "rejected" | "featured" | "all"
     listBusinesses: builder.query({
       query: ({ status = "pending", page = 1, limit = 20 } = {}) => ({
-        url: `${BUSINESS_AUTH_URL}/all`,
+        url: `${BUSINESS_URL}/applications`,
         method: "GET",
         params: { status, page, limit },
       }),
@@ -170,50 +115,52 @@ export const businessApiSlice = apiSlice.injectEndpoints({
           : ["BusinessList"],
     }),
 
-    // GET /api/v1/auth/business/all/:id
+    // GET /api/v1/business/applications/:id
     getBusinessById: builder.query({
       query: (id) => ({
-        url: `${BUSINESS_AUTH_URL}/all/${id}`,
+        url: `${BUSINESS_URL}/applications/${id}`,
         method: "GET",
       }),
       providesTags: (_result, _err, id) => [{ type: "Business", id }],
     }),
 
-    // PATCH /api/v1/auth/business/all/:id/approve
+    // PATCH /api/v1/business/applications/:id/approve
     approveBusiness: builder.mutation({
       query: (id) => ({
-        url: `${BUSINESS_AUTH_URL}/all/${id}/approve`,
+        url: `${BUSINESS_URL}/applications/${id}/approve`,
         method: "PATCH",
       }),
       invalidatesTags: (_result, _err, id) => [
         { type: "Business", id },
         "BusinessList",
-        "BusinessAuth",
+        "BusinessApplication",
+        "Auth",
         "PublicBusinessList",
       ],
     }),
 
-    // PATCH /api/v1/auth/business/all/:id/reject
+    // PATCH /api/v1/business/applications/:id/reject
     // Body: { reason }
     rejectBusiness: builder.mutation({
       query: ({ id, reason }) => ({
-        url: `${BUSINESS_AUTH_URL}/all/${id}/reject`,
+        url: `${BUSINESS_URL}/applications/${id}/reject`,
         method: "PATCH",
         body: { reason },
       }),
       invalidatesTags: (_result, _err, { id }) => [
         { type: "Business", id },
         "BusinessList",
-        "BusinessAuth",
+        "BusinessApplication",
+        "Auth",
         "PublicBusinessList",
       ],
     }),
 
-    // PATCH /api/v1/auth/business/all/:id/feature
+    // PATCH /api/v1/business/applications/:id/feature
     // Body: { featured: bool, plan?, until?, notes? }
     toggleBusinessFeatured: builder.mutation({
       query: ({ id, ...body }) => ({
-        url: `${BUSINESS_AUTH_URL}/all/${id}/feature`,
+        url: `${BUSINESS_URL}/applications/${id}/feature`,
         method: "PATCH",
         body,
       }),
@@ -232,20 +179,13 @@ export const {
   useListPublicBusinessesQuery,
   useGetPublicBusinessByIdQuery,
 
-  // Auth — public
-  useRegisterBusinessAccountMutation,
-  useVerifyBusinessAccountMutation,
-  useResendBusinessOTPMutation,
-  useLoginBusinessAccountMutation,
-  useForgotBusinessPasswordMutation,
-  useResetBusinessPasswordMutation,
+  // Signed-in user — application
+  useSubmitBusinessApplicationMutation,
+  useGetMyBusinessApplicationQuery,
+  useUpdateBusinessApplicationMutation,
+  useWithdrawBusinessApplicationMutation,
 
-  // Auth — private
-  useLogoutBusinessAccountMutation,
-  useGetCurrentBusinessAccountQuery,
-  useUpdateBusinessProfileMutation,
-
-  // Admin approval
+  // Admin approval — names unchanged from before
   useListBusinessesQuery,
   useGetBusinessByIdQuery,
   useApproveBusinessMutation,

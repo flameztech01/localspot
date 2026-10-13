@@ -21,7 +21,7 @@ import {
   FiLoader,
 } from "react-icons/fi";
 
-import { useLogoutBusinessAccountMutation } from "../../features/businessApiSlice";
+import { useLogoutUserMutation } from "../../features/authApiSlice";
 import { logout } from "../../features/auth/authSlice";
 
 const AdminSidebar = ({
@@ -44,7 +44,7 @@ const AdminSidebar = ({
   });
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+  const [logoutUser] = useLogoutUserMutation();
 
   const toggleSubmenu = (menuKey) => {
     setExpandedMenus((prev) => ({
@@ -62,9 +62,7 @@ const AdminSidebar = ({
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount()
-        .unwrap()
-        .catch(() => {});
+      await logoutUser().unwrap().catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -73,7 +71,7 @@ const AdminSidebar = ({
       localStorage.removeItem("token");
       sessionStorage.clear();
     } catch (_) {}
-    navigate("/business/signin", { replace: true });
+    navigate("/signin", { replace: true });
     setTimeout(() => window.location.reload(), 50);
   };
 

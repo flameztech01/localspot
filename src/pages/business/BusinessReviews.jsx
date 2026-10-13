@@ -24,7 +24,7 @@ import {
   useUpdateReviewReplyMutation,
   useDeleteReviewReplyMutation,
 } from "../../features/reviewApiSlice";
-import { useLogoutBusinessAccountMutation } from "../../features/businessApiSlice";
+import { useLogoutUserMutation } from "../../features/authApiSlice";
 import { logout } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import BusinessSidebar from "../../components/BusinessSidebar";
@@ -103,7 +103,7 @@ const BusinessReviews = () => {
     useUpdateReviewReplyMutation();
   const [deleteReply, { isLoading: isDeletingReply }] =
     useDeleteReviewReplyMutation();
-  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+  const [logoutUser] = useLogoutUserMutation();
 
   const isMutating = isReplying || isUpdatingReply || isDeletingReply;
 
@@ -113,7 +113,7 @@ const BusinessReviews = () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutUser().unwrap().catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -122,7 +122,7 @@ const BusinessReviews = () => {
       localStorage.removeItem("token");
       sessionStorage.clear();
     } catch (_) {}
-    navigate("/business/signin", { replace: true });
+    navigate("/signin", { replace: true });
     setTimeout(() => window.location.reload(), 50);
   };
 
@@ -169,7 +169,7 @@ const BusinessReviews = () => {
             Please log in again to continue.
           </p>
           <button
-            onClick={() => navigate("/business/signin", { replace: true })}
+            onClick={() => navigate("/signin", { replace: true })}
             className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
           >
             Go to sign in
@@ -204,7 +204,7 @@ const BusinessReviews = () => {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/business/profile")}
+                onClick={() => navigate("/business/application")}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition"
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -375,7 +375,13 @@ const BusinessReviews = () => {
 // ──────────────────────────────────────────────────────────
 // Review card
 // ──────────────────────────────────────────────────────────
-const ReviewCard = ({ review, onReply, onEditReply, onDeleteReply, isMutating }) => {
+const ReviewCard = ({
+  review,
+  onReply,
+  onEditReply,
+  onDeleteReply,
+  isMutating,
+}) => {
   const reviewer = review.user || {};
   const name = reviewer.fullName || reviewer.businessName || "Customer";
   const hasReply = !!review.reply?.text;
@@ -449,7 +455,9 @@ const ReviewCard = ({ review, onReply, onEditReply, onDeleteReply, isMutating })
                 <UserIcon className="h-3.5 w-3.5 text-gray-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-bold text-gray-900">Your business</h4>
+                <h4 className="text-xs font-bold text-gray-900">
+                  Your business
+                </h4>
                 <p className="text-[11px] text-gray-400 mt-0.5">
                   {formatDate(review.reply.repliedAt || review.updatedAt)}
                 </p>

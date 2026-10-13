@@ -234,7 +234,7 @@ const BusinessEditProfile = () => {
       localStorage.removeItem("token");
       sessionStorage.clear();
     } catch (_) {}
-    navigate("/business/signin", { replace: true });
+    navigate("/signin", { replace: true });
     setTimeout(() => window.location.reload(), 50);
   };
 
@@ -426,7 +426,7 @@ const BusinessEditProfile = () => {
             Please log in again to continue.
           </p>
           <button
-            onClick={() => navigate("/business/signin", { replace: true })}
+            onClick={() => navigate("/signin", { replace: true })}
             className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
           >
             Go to sign in

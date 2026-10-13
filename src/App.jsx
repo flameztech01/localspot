@@ -3,6 +3,8 @@ import Home from "./pages/Home";
 import Details from "./pages/Details";
 import Favorites from "./pages/Favorites";
 import SearchResults from "./pages/SearchResults";
+import Signup from "./pages/Signup";
+import Signin from "./pages/Signin";
 
 //new screens
 import PlacesDetails from "./pages/PlacesDetails";
@@ -14,13 +16,13 @@ import Contact from "./pages/Contact";
 import ScrollToTop from "./components/ScrollToTop";
 
 //business
-import BusinessSignup from "./pages/business/BusinessSignup";
-import BusinessLogin from "./pages/business/BusinessLogin";
 import BusinessProfile from "./pages/business/BusinessProfile";
 import BusinessPromotion from "./pages/business/BusinessPromotion";
 import BusinessAds from "./pages/business/BusinessAds";
 import BusinessReviews from "./pages/business/BusinessReviews";
 import BusinessSettings from "./pages/business/BusinessSettings";
+import BusinessSignup from "./pages/business/BusinessSignup";
+import BusinessLogin from "./pages/business/BusinessLogin";
 import Reset from "./pages/business/Reset";
 
 //admin screens
@@ -40,14 +42,18 @@ function App() {
         <Route path="/saved" element={<SavedPlaces />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/signin" element={<Signin />} />
 
         {/* new screens */}
         <Route path="/places/:id" element={<PlacesDetails />} />
         <Route path="/profile" element={<Profile />} />
 
-        {/* Business & Admin screens */}
+        {/* Business auth */}
         <Route path="/business/signup" element={<BusinessSignup />} />
         <Route path="/business/signin" element={<BusinessLogin />} />
+
+        {/* Business & Admin screens */}
         <Route path="/business/reset" element={<Reset />} />
         <Route path="/business/reset/:token" element={<Reset />} />
         <Route path="/business" element={<BusinessPage />} />

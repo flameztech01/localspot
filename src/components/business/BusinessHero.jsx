@@ -81,7 +81,7 @@ const BusinessHero = ({ onAddListingClick }) => {
                 List Your Business
               </button>
               <Link
-                to="/business/signin"
+                to="/signin"
                 className="w-full sm:w-auto px-8 py-3.5 bg-white/50 backdrop-blur-sm border border-gray-300 text-gray-900 text-sm font-semibold rounded-lg hover:bg-white transition-all flex items-center justify-center gap-2"
               >
                 View Dashboard

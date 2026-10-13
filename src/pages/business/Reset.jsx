@@ -79,7 +79,7 @@ const Reset = () => {
             <span className="text-white/80">
               Remember your password?{" "}
               <Link
-                to="/business/signin"
+                to="/signin"
                 className="font-semibold text-white hover:underline"
               >
                 Log in
@@ -122,7 +122,7 @@ const Reset = () => {
             <Link to="/support">Support</Link>
             <span>|</span>
             <Link
-              to="/business/signin"
+              to="/signin"
               className="font-medium text-blue-600 hover:underline"
             >
               Log in
@@ -214,7 +214,7 @@ const Reset = () => {
               {/* Back to Login */}
               <div className="mt-6 text-center lg:text-left">
                 <Link
-                  to="/business/signin"
+                  to="/signin"
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   <FiArrowLeft size={14} />

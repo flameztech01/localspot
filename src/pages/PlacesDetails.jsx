@@ -275,7 +275,7 @@ const PlacesDetails = () => {
 
   const handleOpenReviewModal = () => {
     if (!userInfo) {
-      navigate("/business/signin", {
+      navigate("/signin", {
         state: { redirectTo: `/places/${id}` },
       });
       return;

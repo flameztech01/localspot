@@ -37,7 +37,7 @@ import {
   useListAdvertisementTypesQuery,
   useListAdvertisementSlotsQuery,
 } from "../../features/adsApiSlice";
-import { useLogoutBusinessAccountMutation } from "../../features/businessApiSlice";
+import { useLogoutUserMutation } from "../../features/authApiSlice";
 import { logout } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import BusinessSidebar from "../../components/BusinessSidebar";
@@ -115,11 +115,14 @@ const BusinessAds = () => {
   const advertisements = adsResp?.data || [];
   const isUnauthorized = error?.status === 401;
 
-  const [deleteAd, { isLoading: isDeleting }] = useDeleteMyAdvertisementMutation();
-  const [submitAd, { isLoading: isSubmitting }] = useSubmitMyAdvertisementMutation();
+  const [deleteAd, { isLoading: isDeleting }] =
+    useDeleteMyAdvertisementMutation();
+  const [submitAd, { isLoading: isSubmitting }] =
+    useSubmitMyAdvertisementMutation();
   const [pauseAd, { isLoading: isPausing }] = usePauseMyAdvertisementMutation();
-  const [resumeAd, { isLoading: isResuming }] = useResumeMyAdvertisementMutation();
-  const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
+  const [resumeAd, { isLoading: isResuming }] =
+    useResumeMyAdvertisementMutation();
+  const [logoutUser] = useLogoutUserMutation();
 
   const isMutating = isDeleting || isSubmitting || isPausing || isResuming;
 
@@ -127,7 +130,9 @@ const BusinessAds = () => {
   const grouped = useMemo(() => {
     const map = {};
     TABS.forEach((tab) => {
-      map[tab.id] = advertisements.filter((a) => tab.statuses.includes(a.status));
+      map[tab.id] = advertisements.filter((a) =>
+        tab.statuses.includes(a.status),
+      );
     });
     return map;
   }, [advertisements]);
@@ -139,7 +144,7 @@ const BusinessAds = () => {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logoutBusinessAccount().unwrap().catch(() => {});
+      await logoutUser().unwrap().catch(() => {});
     } catch (_) {}
     dispatch(logout());
     try {
@@ -148,7 +153,7 @@ const BusinessAds = () => {
       localStorage.removeItem("token");
       sessionStorage.clear();
     } catch (_) {}
-    navigate("/business/signin", { replace: true });
+    navigate("/signin", { replace: true });
     setTimeout(() => window.location.reload(), 50);
   };
 
@@ -208,7 +213,7 @@ const BusinessAds = () => {
             Please log in again to continue.
           </p>
           <button
-            onClick={() => navigate("/business/signin", { replace: true })}
+            onClick={() => navigate("/signin", { replace: true })}
             className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
           >
             Go to sign in
@@ -803,7 +808,7 @@ const AdFormModal = ({ mode, ad, onClose, onSuccess, onNotify }) => {
 
     try {
       const r = isEdit
-        ? await updateAd({ id: ad._id, ...Object.fromEntries(fd) }).unwrap()
+        ? await updateAd({ id: ad._id, formData: fd }).unwrap()
         : await createAd(fd).unwrap();
 
       onNotify?.(
@@ -813,7 +818,8 @@ const AdFormModal = ({ mode, ad, onClose, onSuccess, onNotify }) => {
       onSuccess?.();
     } catch (err) {
       onNotify?.(
-        err?.data?.message || (isEdit ? "Failed to update" : "Failed to create"),
+        err?.data?.message ||
+          (isEdit ? "Failed to update" : "Failed to create"),
         "error",
       );
     }

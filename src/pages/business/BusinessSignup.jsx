@@ -1,3 +1,4 @@
+// src/pages/business/BusinessSignup.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -8,28 +9,24 @@ import {
   FiChevronDown,
   FiArrowLeft,
   FiMail,
+  FiBriefcase,
 } from "react-icons/fi";
 
 import {
-  useRegisterBusinessAccountMutation,
-  useVerifyBusinessAccountMutation,
-  useResendBusinessOTPMutation,
-} from "../../features/businessApiSlice";
+  useRegisterUserMutation,
+  useVerifyUserOTPMutation,
+  useResendOTPMutation,
+} from "../../features/authApiSlice";
 import { setCredentials } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 
-// --- 10 High-Quality Images for the Slider ---
+// ─── Static data ────────────────────────────────────────────
 const sliderImages = [
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
   "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200",
   "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200",
   "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200",
   "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1578474846511-04ba529f0b88?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
-  "https://images.unsplash.com/photo-1560624052-449f5ddf0c31?auto=format&fit=crop&q=80&w=1200",
 ];
 
 const countryCodes = [
@@ -47,18 +44,14 @@ const BusinessSignup = () => {
   const dispatch = useDispatch();
   const { showToast } = useToast();
 
-  // --- RTK Query mutations ---
-  const [registerBusiness, { isLoading: isRegistering }] =
-    useRegisterBusinessAccountMutation();
-  const [verifyBusiness, { isLoading: isVerifying }] =
-    useVerifyBusinessAccountMutation();
-  const [resendOTP, { isLoading: isResending }] =
-    useResendBusinessOTPMutation();
+  // RTK Query — unified auth
+  const [registerUser, { isLoading: isRegistering }] = useRegisterUserMutation();
+  const [verifyUserOTP, { isLoading: isVerifying }] = useVerifyUserOTPMutation();
+  const [resendOTP, { isLoading: isResending }] = useResendOTPMutation();
 
-  // --- Page step: "register" | "verify" ---
-  const [step, setStep] = useState("register");
+  const [step, setStep] = useState("register"); // "register" | "verify"
 
-  // --- Register form state ---
+  // Register form
   const [showPassword, setShowPassword] = useState(false);
   const [isCountryOpen, setIsCountryOpen] = useState(false);
   const [countryCode, setCountryCode] = useState("+234");
@@ -66,13 +59,13 @@ const BusinessSignup = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [formData, setFormData] = useState({
-    businessName: "",
+    fullName: "",
     email: "",
     phone: "",
     password: "",
   });
 
-  // --- Verify state ---
+  // Verify state
   const [pendingEmail, setPendingEmail] = useState("");
   const [otpValues, setOtpValues] = useState(Array(OTP_LENGTH).fill(""));
   const otpRefs = useRef([]);
@@ -105,7 +98,7 @@ const BusinessSignup = () => {
     return () => clearTimeout(t);
   }, [resendIn]);
 
-  // Autofocus first OTP box when we enter verify step
+  // Autofocus first OTP box
   useEffect(() => {
     if (step === "verify") {
       const t = setTimeout(() => otpRefs.current[0]?.focus(), 100);
@@ -117,7 +110,7 @@ const BusinessSignup = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // ── Register submit ──────────────────────────────────────
+  // ── Register submit ────────────────────────────────────
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!agreedToTerms) {
@@ -126,7 +119,7 @@ const BusinessSignup = () => {
     }
 
     const payload = {
-      businessName: formData.businessName.trim(),
+      fullName: formData.fullName.trim(),
       email: formData.email.trim().toLowerCase(),
       password: formData.password,
       phone: formData.phone
@@ -135,8 +128,7 @@ const BusinessSignup = () => {
     };
 
     try {
-      const result = await registerBusiness(payload).unwrap();
-      // Expected: { success, message, data: { email } }
+      const result = await registerUser(payload).unwrap();
       const email = result?.data?.email || payload.email;
       setPendingEmail(email);
       setOtpValues(Array(OTP_LENGTH).fill(""));
@@ -155,27 +147,22 @@ const BusinessSignup = () => {
     }
   };
 
-  // ── OTP input handling ───────────────────────────────────
+  // ── OTP handlers ───────────────────────────────────────
   const handleOtpChange = (index, value) => {
     const digit = value.replace(/\D/g, "").slice(0, 1);
     const next = [...otpValues];
     next[index] = digit;
     setOtpValues(next);
-    if (digit && index < OTP_LENGTH - 1) {
-      otpRefs.current[index + 1]?.focus();
-    }
+    if (digit && index < OTP_LENGTH - 1) otpRefs.current[index + 1]?.focus();
   };
 
   const handleOtpKeyDown = (index, e) => {
     if (e.key === "Backspace" && !otpValues[index] && index > 0) {
       otpRefs.current[index - 1]?.focus();
     }
-    if (e.key === "ArrowLeft" && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+    if (e.key === "ArrowLeft" && index > 0) otpRefs.current[index - 1]?.focus();
+    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1)
       otpRefs.current[index + 1]?.focus();
-    }
   };
 
   const handleOtpPaste = (e) => {
@@ -188,11 +175,10 @@ const BusinessSignup = () => {
     const next = Array(OTP_LENGTH).fill("");
     for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
     setOtpValues(next);
-    const lastFilled = Math.min(pasted.length, OTP_LENGTH - 1);
-    otpRefs.current[lastFilled]?.focus();
+    otpRefs.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
   };
 
-  // ── Verify submit ────────────────────────────────────────
+  // ── Verify submit ──────────────────────────────────────
   const handleVerify = async (e) => {
     e?.preventDefault();
     const otp = otpValues.join("");
@@ -202,11 +188,11 @@ const BusinessSignup = () => {
     }
 
     try {
-      const result = await verifyBusiness({
+      const result = await verifyUserOTP({
         email: pendingEmail,
         otp,
       }).unwrap();
-      // Expected: { success, message, data: user, token }
+
       dispatch(
         setCredentials({
           ...result.data,
@@ -215,20 +201,20 @@ const BusinessSignup = () => {
       );
 
       showToast(result?.message || "Account verified successfully", "success");
-      setTimeout(() => navigate("/business"), 700);
+
+      // Business flow → next step is the application
+      setTimeout(() => navigate("/business/apply"), 700);
     } catch (err) {
       const msg =
         err?.data?.message ||
         err?.data?.errors?.[0]?.message ||
         "Verification failed. Please try again.";
       showToast(msg, "error");
-      // Clear OTP so they can re-enter
       setOtpValues(Array(OTP_LENGTH).fill(""));
       otpRefs.current[0]?.focus();
     }
   };
 
-  // ── Resend OTP ───────────────────────────────────────────
   const handleResend = async () => {
     if (resendIn > 0 || isResending) return;
     try {
@@ -256,7 +242,7 @@ const BusinessSignup = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans text-gray-900">
-      {/* ================= LEFT SIDE: IMAGE SLIDER ================= */}
+      {/* ============ LEFT: IMAGE SLIDER ============ */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gray-900 overflow-hidden lg:sticky lg:top-0 lg:h-screen">
         {sliderImages.map((img, index) => (
           <img
@@ -320,9 +306,9 @@ const BusinessSignup = () => {
         </div>
       </div>
 
-      {/* ================= RIGHT SIDE: FORM ================= */}
+      {/* ============ RIGHT: FORM ============ */}
       <div className="w-full lg:w-1/2 flex flex-col bg-slate-50 lg:bg-white lg:h-screen lg:overflow-y-auto">
-        {/* Mobile Header */}
+        {/* Mobile header */}
         <div className="lg:hidden sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white shadow-sm">
           <Link to="/" className="flex items-center gap-2">
             <img
@@ -351,7 +337,7 @@ const BusinessSignup = () => {
                 {step === "verify" ? (
                   <FiMail size={22} />
                 ) : (
-                  <FiMapPin size={22} />
+                  <FiBriefcase size={22} />
                 )}
               </div>
             </div>
@@ -370,27 +356,27 @@ const BusinessSignup = () => {
 
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
                   <form onSubmit={handleRegister} className="space-y-5">
-                    {/* Business Name */}
+                    {/* Owner name */}
                     <div>
                       <label
-                        htmlFor="businessName"
+                        htmlFor="fullName"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Business Name <span className="text-red-500">*</span>
+                        Your Full Name <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
-                        id="businessName"
-                        name="businessName"
+                        id="fullName"
+                        name="fullName"
                         required
-                        placeholder="e.g. Maple Bakery & Cafe"
-                        value={formData.businessName}
+                        placeholder="e.g. Jane Doe"
+                        value={formData.fullName}
                         onChange={handleChange}
                         disabled={isRegistering}
                         className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
                       />
                       <p className="text-xs text-gray-500 mt-1.5">
-                        This public name will be shown on your profile
+                        You'll add your business details after verifying.
                       </p>
                     </div>
 
@@ -400,7 +386,7 @@ const BusinessSignup = () => {
                         htmlFor="email"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Email Address <span className="text-red-500">*</span>
+                        Business Email <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="email"
@@ -427,10 +413,7 @@ const BusinessSignup = () => {
                         Phone Number
                       </label>
                       <div className="flex gap-2">
-                        <div
-                          className="relative w-24 shrink-0"
-                          ref={countryRef}
-                        >
+                        <div className="relative w-24 shrink-0" ref={countryRef}>
                           <button
                             type="button"
                             disabled={isRegistering}
@@ -577,7 +560,6 @@ const BusinessSignup = () => {
                     </label>
                   </div>
 
-                  {/* Bottom Link */}
                   <div className="mt-6 text-center lg:text-left">
                     <p className="text-xs text-gray-500">
                       Already have an account?{" "}
@@ -619,7 +601,6 @@ const BusinessSignup = () => {
 
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
                   <form onSubmit={handleVerify} className="space-y-6">
-                    {/* OTP boxes */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-3 text-center lg:text-left">
                         Enter verification code
@@ -653,7 +634,6 @@ const BusinessSignup = () => {
                       </p>
                     </div>
 
-                    {/* Submit */}
                     <button
                       type="submit"
                       disabled={isVerifying || otpValues.some((v) => !v)}
@@ -670,7 +650,6 @@ const BusinessSignup = () => {
                     </button>
                   </form>
 
-                  {/* Resend */}
                   <div className="mt-6 text-center">
                     <p className="text-xs text-gray-500">
                       Didn't get the code?{" "}
@@ -691,12 +670,11 @@ const BusinessSignup = () => {
                     </p>
                   </div>
 
-                  {/* Hint */}
                   <div className="mt-6 pt-6 border-t border-gray-100">
                     <p className="text-[11px] text-gray-400 leading-relaxed text-center">
-                      After verifying your email, your account will be reviewed
-                      by our team before it goes live. You'll be notified once
-                      it's approved.
+                      Next you'll be asked for your business details — CAC
+                      number, address, images, and more. Applications are
+                      reviewed by our team before going live.
                     </p>
                   </div>
                 </div>
