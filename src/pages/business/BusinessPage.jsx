@@ -1,34 +1,39 @@
 // src/pages/business/BusinessPage.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
+  MoreVertical,
+  ArrowUpRight,
+  ArrowDownRight,
+  Phone,
+  MessageCircle,
+  Navigation,
+  Globe,
+  User as UserIcon,
   Store,
-  Eye,
-  Star,
   Megaphone,
-  BadgeCheck,
-  AlertCircle,
-  Clock,
-  ChevronRight,
-  ChevronDown,
-  ChevronLeft,
-  Calendar,
-  Image as ImageIcon,
-  MapPin,
-  Edit3,
-  X,
-  CheckCircle2,
-  XCircle,
-  Upload,
   BarChart3,
-  Package,
+  Star,
+  Heart,
   LogOut,
+  Image as ImageIcon,
+  Menu,
+  X,
+  Building2,
+  Calendar,
+  Check,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   Tooltip,
@@ -39,1105 +44,675 @@ import {
   useGetCurrentBusinessAccountQuery,
   useLogoutBusinessAccountMutation,
 } from "../../features/businessApiSlice";
-import { useGetBusinessAnalyticsQuery } from "../../features/analyticsApiSlice";
-import { useListMyPromotionsQuery } from "../../features/promotionApiSlice";
-import { useListMyAdvertisementsQuery } from "../../features/adsApiSlice";
 import { logout } from "../../features/auth/authSlice";
-import BusinessSidebar from "../../components/BusinessSidebar";
-import BusinessBottombar from "../../components/BusinessBottombar";
+import { useToast } from "../../hooks/useToast";
+import Footer from "../../components/Footer";
 
-// ─── Constants ─────────────────────────────────────────────
-const ACCENT = "#3B82F6";
-const RECENT_PROMOTIONS_LIMIT = 5;
-const MIN_BUSINESS_IMAGES = 10;
-const MAX_BUSINESS_IMAGES = 20;
-
-const QUICK_FILTERS = [
-  { type: "week", label: "This Week" },
-  { type: "month", label: "This Month" },
-  { type: "last2Months", label: "Last 2 Months" },
-  { type: "all", label: "All Time" },
-];
-
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-const formatFilterLabel = (filter) => {
-  switch (filter.type) {
-    case "all":
-      return "All Time";
-    case "week":
-      return "This Week";
-    case "month":
-      return "This Month";
-    case "last2Months":
-      return "Last 2 Months";
-    case "year":
-      return String(filter.year);
-    case "yearMonth": {
-      const d = new Date(filter.year, filter.month, 1);
-      return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-    }
-    default:
-      return "This Week";
-  }
+// ─── Data by Timeframe (Week, Month, Quarter, Year) ──────────────────
+const TIMEFRAME_DATA = {
+  week: {
+    kpis: {
+      impressions: { value: "1,648", change: "+100%", isPositive: true },
+      views: { value: "119", change: "+223%", isPositive: true },
+      searchAppearances: { value: "872", change: "-18%", isPositive: false },
+      conversionRate: "872",
+      totalClicks: 1509,
+    },
+    popularity: [
+      { day: "Mon", date: "15", value: 4800 },
+      { day: "Tue", date: "16", value: 3600 },
+      { day: "Wed", date: "17", value: 4300 },
+      { day: "Thu", date: "18", value: 5800 },
+      { day: "Fri", date: "19", value: 7200 },
+      { day: "Sat", date: "20", value: 8100 },
+      { day: "Sun", date: "21", value: 7900 },
+    ],
+    customerSources: [
+      { day: "Sun 12", ads: 1500, organic: 180 },
+      { day: "Mon 13", ads: 2550, organic: 240, label: "2550" },
+      { day: "Tue 14", ads: 2200, organic: 190 },
+      { day: "Wed 15", ads: 2350, organic: 210 },
+      { day: "Thu 16", ads: 2700, organic: 260 },
+      { day: "Fri 17", ads: 2800, organic: 310 },
+      { day: "Sat 18", ads: 2450, organic: 290 },
+    ],
+    clicksBreakdown: [
+      { name: "Phone clicks", value: 655, color: "#34D399" },
+      { name: "Whatsapp clicks", value: 205, color: "#8B5CF6" },
+      { name: "Direction clicks", value: 359, color: "#FBBF24" },
+      { name: "Website clicks", value: 205, color: "#60A5FA" },
+    ],
+    topPlaces: [
+      {
+        id: 1,
+        name: "Alakaha",
+        volume: 195,
+        image:
+          "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 2,
+        name: "Rumuola",
+        volume: 90,
+        image:
+          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 3,
+        name: "House Quarters",
+        volume: 330,
+        image:
+          "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 4,
+        name: "Plaulk Car wash",
+        volume: 56,
+        image:
+          "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 5,
+        name: "Ada george",
+        volume: 35,
+        image:
+          "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=100&q=80",
+      },
+    ],
+  },
+  month: {
+    kpis: {
+      impressions: { value: "6,920", change: "+48%", isPositive: true },
+      views: { value: "540", change: "+115%", isPositive: true },
+      searchAppearances: { value: "3,410", change: "+12%", isPositive: true },
+      conversionRate: "3,120",
+      totalClicks: 4890,
+    },
+    popularity: [
+      { day: "W1", date: "1-7", value: 4200 },
+      { day: "W2", date: "8-14", value: 5900 },
+      { day: "W3", date: "15-21", value: 7600 },
+      { day: "W4", date: "22-31", value: 9200 },
+    ],
+    customerSources: [
+      { day: "Week 1", ads: 6400, organic: 1200 },
+      { day: "Week 2", ads: 8200, organic: 1600, label: "8200" },
+      { day: "Week 3", ads: 9500, organic: 1800 },
+      { day: "Week 4", ads: 10400, organic: 2100 },
+    ],
+    clicksBreakdown: [
+      { name: "Phone clicks", value: 2140, color: "#34D399" },
+      { name: "Whatsapp clicks", value: 890, color: "#8B5CF6" },
+      { name: "Direction clicks", value: 1240, color: "#FBBF24" },
+      { name: "Website clicks", value: 620, color: "#60A5FA" },
+    ],
+    topPlaces: [
+      {
+        id: 1,
+        name: "House Quarters",
+        volume: 980,
+        image:
+          "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 2,
+        name: "Alakaha",
+        volume: 640,
+        image:
+          "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 3,
+        name: "Rumuola",
+        volume: 380,
+        image:
+          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 4,
+        name: "Ada george",
+        volume: 210,
+        image:
+          "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 5,
+        name: "Plaulk Car wash",
+        volume: 175,
+        image:
+          "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=100&q=80",
+      },
+    ],
+  },
+  quarter: {
+    kpis: {
+      impressions: { value: "19,840", change: "+85%", isPositive: true },
+      views: { value: "1,620", change: "+170%", isPositive: true },
+      searchAppearances: { value: "10,950", change: "+4%", isPositive: true },
+      conversionRate: "8,940",
+      totalClicks: 14200,
+    },
+    popularity: [
+      { day: "Jan", date: "M1", value: 5100 },
+      { day: "Feb", date: "M2", value: 6800 },
+      { day: "Mar", date: "M3", value: 9400 },
+    ],
+    customerSources: [
+      { day: "Jan", ads: 18500, organic: 4200 },
+      { day: "Feb", ads: 24000, organic: 5800, label: "24000" },
+      { day: "Mar", ads: 29500, organic: 6900 },
+    ],
+    clicksBreakdown: [
+      { name: "Phone clicks", value: 6100, color: "#34D399" },
+      { name: "Whatsapp clicks", value: 2900, color: "#8B5CF6" },
+      { name: "Direction clicks", value: 3300, color: "#FBBF24" },
+      { name: "Website clicks", value: 1900, color: "#60A5FA" },
+    ],
+    topPlaces: [
+      {
+        id: 1,
+        name: "House Quarters",
+        volume: 2980,
+        image:
+          "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 2,
+        name: "Alakaha",
+        volume: 1950,
+        image:
+          "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 3,
+        name: "Rumuola",
+        volume: 1240,
+        image:
+          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 4,
+        name: "Plaulk Car wash",
+        volume: 780,
+        image:
+          "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 5,
+        name: "Ada george",
+        volume: 590,
+        image:
+          "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=100&q=80",
+      },
+    ],
+  },
+  year: {
+    kpis: {
+      impressions: { value: "84,320", change: "+140%", isPositive: true },
+      views: { value: "7,810", change: "+290%", isPositive: true },
+      searchAppearances: { value: "48,200", change: "+25%", isPositive: true },
+      conversionRate: "39,400",
+      totalClicks: 61800,
+    },
+    popularity: [
+      { day: "Q1", date: "24", value: 4600 },
+      { day: "Q2", date: "24", value: 6800 },
+      { day: "Q3", date: "24", value: 8900 },
+      { day: "Q4", date: "24", value: 10400 },
+    ],
+    customerSources: [
+      { day: "Q1", ads: 72000, organic: 18000 },
+      { day: "Q2", ads: 94000, organic: 24000 },
+      { day: "Q3", ads: 112000, organic: 29000, label: "112k" },
+      { day: "Q4", ads: 128000, organic: 34000 },
+    ],
+    clicksBreakdown: [
+      { name: "Phone clicks", value: 26400, color: "#34D399" },
+      { name: "Whatsapp clicks", value: 12900, color: "#8B5CF6" },
+      { name: "Direction clicks", value: 14200, color: "#FBBF24" },
+      { name: "Website clicks", value: 8300, color: "#60A5FA" },
+    ],
+    topPlaces: [
+      {
+        id: 1,
+        name: "House Quarters",
+        volume: 12400,
+        image:
+          "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 2,
+        name: "Alakaha",
+        volume: 9100,
+        image:
+          "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 3,
+        name: "Rumuola",
+        volume: 5300,
+        image:
+          "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 4,
+        name: "Plaulk Car wash",
+        volume: 3200,
+        image:
+          "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=100&q=80",
+      },
+      {
+        id: 5,
+        name: "Ada george",
+        volume: 2450,
+        image:
+          "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=100&q=80",
+      },
+    ],
+  },
 };
 
-const formatFilterSubtitle = (filter) => {
-  switch (filter.type) {
-    case "all":
-      return "All time";
-    case "week":
-      return "Last 7 days";
-    case "month":
-      return "This month · daily";
-    case "last2Months":
-      return "Last 2 months · monthly";
-    case "year":
-      return `${filter.year} · monthly`;
-    case "yearMonth": {
-      const d = new Date(filter.year, filter.month, 1);
-      return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-    }
-    default:
-      return "Last 7 days";
-  }
-};
-
-// ─── Component ─────────────────────────────────────────────
-const BusinessPage = () => {
+export default function BusinessPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { showToast } = useToast();
 
-  const [chartFilter, setChartFilter] = useState({ type: "week" });
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [dropLevel, setDropLevel] = useState("root");
-  const [dropYear, setDropYear] = useState(null);
-  const chartFilterRef = useRef(null);
+  // Active Timeframe Pill (Week, Month, Quarter, Year)
+  const [timeframe, setTimeframe] = useState("week");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeMenuCard, setActiveMenuCard] = useState(null);
 
-  const [showImagesModal, setShowImagesModal] = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  const openDropdown = () => {
-    setDropLevel("root");
-    setDropYear(null);
-    setDropdownOpen(true);
-  };
-  const closeDropdown = () => setDropdownOpen(false);
-
-  // ─── Logout ─────────────────────────────────────────────
+  // Business Account Data
+  const { data: businessResp } = useGetCurrentBusinessAccountQuery();
+  const business = businessResp?.data || businessResp;
   const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
 
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
+  const businessName =
+    business?.businessName || "Business account name";
+  const businessEmail =
+    business?.email || "your_business@example.com";
 
+  // Current active data
+  const currentData = TIMEFRAME_DATA[timeframe] || TIMEFRAME_DATA.week;
+
+  const handleLogout = async () => {
     try {
       await logoutBusinessAccount().unwrap().catch(() => {});
     } catch (_) {}
-
     dispatch(logout());
-
-    try {
-      localStorage.removeItem("persist:root");
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("token");
-      localStorage.removeItem("businessToken");
-      sessionStorage.clear();
-    } catch (_) {}
-
-    try {
-      document.cookie.split(";").forEach((c) => {
-        const name = c.split("=")[0].trim();
-        if (name) {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-        }
-      });
-    } catch (_) {}
-
-    navigate("/business/signin", { replace: true });
-    setTimeout(() => window.location.reload(), 50);
+    localStorage.removeItem("token");
+    localStorage.removeItem("userInfo");
+    showToast("Logged out", "info");
+    navigate("/business/signin");
   };
 
+  // Close card menus on outside click
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    }
+    const handler = () => setActiveMenuCard(null);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
   }, []);
 
-  useEffect(() => {
-    const handler = (e) => {
-      if (
-        chartFilterRef.current &&
-        !chartFilterRef.current.contains(e.target)
-      ) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler);
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, []);
-
-  // ─── Queries ───────────────────────────────────────────────
-  const {
-    data: businessResp,
-    isLoading: bizLoading,
-    error: bizError,
-    refetch: refetchBusiness,
-  } = useGetCurrentBusinessAccountQuery();
-
-  const business = businessResp?.data || businessResp;
-  const isUnauthorized = bizError?.status === 401;
-
-  const analyticsParams = useMemo(() => {
-    const now = new Date();
-    const params = { granularity: "day" };
-    switch (chartFilter.type) {
-      case "week": {
-        const from = new Date(now);
-        from.setDate(from.getDate() - 6);
-        params.from = from.toISOString();
-        params.to = now.toISOString();
-        break;
-      }
-      case "month": {
-        const from = new Date(now.getFullYear(), now.getMonth(), 1);
-        params.from = from.toISOString();
-        params.to = now.toISOString();
-        break;
-      }
-      case "last2Months": {
-        const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        params.from = from.toISOString();
-        params.to = now.toISOString();
-        params.granularity = "month";
-        break;
-      }
-      case "year": {
-        params.from = new Date(chartFilter.year, 0, 1).toISOString();
-        params.to = new Date(chartFilter.year, 11, 31).toISOString();
-        params.granularity = "month";
-        break;
-      }
-      case "yearMonth": {
-        params.from = new Date(
-          chartFilter.year,
-          chartFilter.month,
-          1,
-        ).toISOString();
-        params.to = new Date(
-          chartFilter.year,
-          chartFilter.month + 1,
-          0,
-        ).toISOString();
-        break;
-      }
-      case "all":
-      default:
-        break;
-    }
-    return params;
-  }, [chartFilter]);
-
-  const skipAnalytics = isUnauthorized || !!bizError;
-
-  const { data: analyticsResp, isLoading: analyticsLoading } =
-    useGetBusinessAnalyticsQuery(analyticsParams, { skip: skipAnalytics });
-
-  const analytics = analyticsResp?.data;
-
-  const { data: promotionsResp, isLoading: promosLoading } =
-    useListMyPromotionsQuery({ limit: 20 }, { skip: skipAnalytics });
-
-  const promotions = promotionsResp?.data || [];
-
-  const { data: adsResp } = useListMyAdvertisementsQuery(undefined, {
-    skip: skipAnalytics,
-  });
-
-  const advertisements = adsResp?.data || [];
-
-  // ─── Derived ───────────────────────────────────────────────
-  const isEmailVerified = business?.isVerified ?? false;
-  const isApproved = business?.businessVerified ?? false;
-  const isRejected = !!business?.businessRejectionReason && !isApproved;
-
-  const approvalStatus = !isEmailVerified
-    ? "unverified"
-    : isApproved
-      ? "approved"
-      : isRejected
-        ? "rejected"
-        : "pending";
-
-  const profileImages = business?.images || [];
-  const imageCount = profileImages.length;
-  const imagesReady = imageCount >= MIN_BUSINESS_IMAGES;
-
-  const completionItems = [
-    !!business?.businessName,
-    !!business?.description,
-    !!business?.phone,
-    !!business?.address || !!business?.location?.city,
-    !!business?.coverImage,
-    imagesReady,
-    (business?.tags?.length || 0) > 0,
-    (business?.openingHours?.length || 0) > 0,
-    !!business?.website,
-  ];
-  const completionPct = Math.round(
-    (completionItems.filter(Boolean).length / completionItems.length) * 100,
-  );
-
-  const totalViews =
-    analytics?.overview?.profileViews ?? business?.viewCount ?? 0;
-  const rating = business?.rating ?? 0;
-  const numReviews = business?.numReviews ?? 0;
-  const activePromotions = promotions.filter(
-    (p) => p.status === "approved",
-  ).length;
-  const activeAds = advertisements.filter(
-    (a) => a.status === "approved",
-  ).length;
-
-  const recentPromotions = useMemo(() => {
-    return [...promotions]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, RECENT_PROMOTIONS_LIMIT);
-  }, [promotions]);
-
-  const chartData = useMemo(() => {
-    const series = analytics?.series?.views || [];
-    if (series.length) {
-      return series.map((d) => ({
-        label:
-          chartFilter.type === "last2Months" || chartFilter.type === "year"
-            ? d.date
-            : d.date?.slice(-2) || "",
-        amount: d.count || 0,
-      }));
-    }
-    if (chartFilter.type === "week") {
-      const out = [];
-      const now = new Date();
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
-        out.push({
-          label: d.toLocaleDateString("en-US", { weekday: "short" }),
-          amount: 0,
-        });
-      }
-      return out;
-    }
-    return [];
-  }, [analytics, chartFilter]);
-
-  // ─── Unauthorized state ──────────────────────────────────
-  if (isUnauthorized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white px-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
-          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-7 w-7 text-red-500" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-900 mb-2">
-            Session expired
-          </h2>
-          <p className="text-sm text-gray-500 mb-6">
-            You're not signed in, or your session has expired. Please log in
-            again or clear your session.
-          </p>
-
-          <div className="space-y-2">
-            <button
-              onClick={() => navigate("/business/signin", { replace: true })}
-              className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
-            >
-              Go to sign in
-            </button>
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="w-full py-2.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {loggingOut ? (
-                <>
-                  <span className="w-3.5 h-3.5 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
-                  Clearing session...
-                </>
-              ) : (
-                <>
-                  <LogOut className="h-4 w-4" />
-                  Clear session & log out
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Other errors ─────────────────────────────────────────
-  if (bizError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white px-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-bold text-gray-900 mb-2">
-            Failed to load business profile
-          </h2>
-          <p className="text-sm text-gray-500 mb-6">
-            {bizError?.data?.message ||
-              "Something went wrong. Please try again."}
-          </p>
-
-          <div className="space-y-2">
-            <button
-              onClick={() => refetchBusiness()}
-              className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition inline-flex items-center justify-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Try again
-            </button>
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="w-full py-2.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Log out
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Status helpers ────────────────────────────────────────
-  const statusMeta = {
-    approved: {
-      label: "Verified Business",
-      color: "text-green-600 bg-green-50",
-      Icon: BadgeCheck,
-    },
-    pending: {
-      label: "Pending Approval",
-      color: "text-yellow-600 bg-yellow-50",
-      Icon: Clock,
-    },
-    rejected: {
-      label: "Rejected",
-      color: "text-red-600 bg-red-50",
-      Icon: XCircle,
-    },
-    unverified: {
-      label: "Email Unverified",
-      color: "text-gray-500 bg-gray-100",
-      Icon: AlertCircle,
-    },
-  }[approvalStatus];
-
-  const promotionStatusColor = (status) => {
-    switch (status) {
-      case "approved":
-        return "text-green-600 bg-green-50";
-      case "pending":
-        return "text-yellow-600 bg-yellow-50";
-      case "rejected":
-        return "text-red-600 bg-red-50";
-      case "disabled":
-        return "text-gray-500 bg-gray-100";
-      case "draft":
-      default:
-        return "text-blue-600 bg-blue-50";
-    }
-  };
-
-  // ─── Mobile Hero Card ──────────────────────────────────────
-  const HeroCard = () => {
-    const initials = (business?.businessName || "B").charAt(0).toUpperCase();
-
-    return (
-      <div className="lg:hidden bg-white border border-gray-200 rounded-2xl p-4 mb-4 shadow-sm">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-            {business?.coverImage ? (
-              <img
-                src={business.coverImage}
-                alt={business.businessName}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-lg font-bold text-[#3B82F6]">
-                {initials}
-              </span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1
-              className="text-base font-bold text-gray-900 truncate"
-              title={business?.businessName}
-            >
-              {business?.businessName || "Your Business"}
-            </h1>
-            <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium mt-0.5 ${statusMeta.color}`}
-            >
-              <statusMeta.Icon className="h-3 w-3" />
-              {statusMeta.label}
-            </span>
-          </div>
-          <button
-            onClick={() => navigate("/business/profile")}
-            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-700 transition flex-shrink-0"
-          >
-            <Edit3 className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div>
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider">
-              Profile Views
-            </span>
-            <p className="text-2xl font-bold text-gray-900 truncate">
-              {totalViews}
-            </p>
-          </div>
-          <div>
-            <span className="text-[10px] text-gray-500 uppercase tracking-wider">
-              Rating
-            </span>
-            <p className="text-2xl font-bold text-gray-900 truncate">
-              {rating.toFixed(1)}
-              <span className="text-xs font-medium text-gray-400 ml-1">
-                ({numReviews})
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between bg-gray-100 rounded-xl px-3 py-2 border border-gray-200 gap-2">
-          <div className="flex items-center gap-5 min-w-0">
-            <div className="min-w-0">
-              <span className="text-[10px] text-gray-500">Promos</span>
-              <p className="text-sm font-bold text-gray-900 truncate">
-                {activePromotions}
-              </p>
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] text-gray-500">Ads</span>
-              <p className="text-sm font-bold text-gray-900 truncate">
-                {activeAds}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowImagesModal(true)}
-            className="flex items-center gap-1 text-xs font-medium text-white bg-[#3B82F6] hover:bg-blue-700 px-3 py-1.5 rounded-lg transition shadow-sm flex-shrink-0"
-          >
-            <ImageIcon className="h-3 w-3" />
-            {imageCount}/{MAX_BUSINESS_IMAGES}
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // ─── Desktop Stat Card ─────────────────────────────────────
-  const StatCard = ({ icon: Icon, label, value, sub }) => (
-    <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm min-w-0">
-      <div className="flex items-center justify-between gap-2 min-w-0">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider truncate">
-            {label}
-          </p>
-          <p className="text-2xl font-bold text-gray-900 mt-1 truncate">
-            {value}
-          </p>
-          {sub && (
-            <p className="text-[11px] text-gray-400 mt-0.5 truncate">{sub}</p>
-          )}
-        </div>
-        <div className="p-2 rounded-lg bg-blue-50 text-[#3B82F6] flex-shrink-0">
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-    </div>
-  );
-
-  // ─── Chart Filter Dropdown ────────────────────────────────
-  const ChartFilterDropdown = () => {
-    const availableYears = useMemo(() => {
-      const years = new Set();
-      years.add(new Date().getFullYear());
-      const earliest = business?.createdAt
-        ? new Date(business.createdAt)
-        : null;
-      if (earliest) {
-        for (
-          let y = earliest.getFullYear();
-          y <= new Date().getFullYear();
-          y++
-        ) {
-          years.add(y);
-        }
-      }
-      return Array.from(years).sort((a, b) => b - a);
-    }, [business]);
-
-    const isActive = (type, extras = {}) => {
-      if (chartFilter.type !== type) return false;
-      if ("year" in extras && chartFilter.year !== extras.year) return false;
-      if ("month" in extras && chartFilter.month !== extras.month) return false;
-      return true;
-    };
-
-    const Item = ({ onClick, children, active = false }) => (
-      <button
-        type="button"
-        onClick={onClick}
-        className={`w-full text-left px-3 py-2 text-xs transition flex items-center justify-between gap-2 ${
-          active
-            ? "bg-blue-50 text-[#3B82F6] font-medium"
-            : "text-gray-700 hover:bg-gray-50"
-        }`}
-      >
-        <span className="truncate">{children}</span>
-        {active && (
-          <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6] flex-shrink-0" />
-        )}
-      </button>
-    );
-
-    const DrillItem = ({ onClick, label }) => (
-      <button
-        type="button"
-        onClick={onClick}
-        className="w-full text-left px-3 py-2 text-xs transition flex items-center justify-between gap-2 text-gray-700 hover:bg-gray-50"
-      >
-        <span className="truncate">{label}</span>
-        <ChevronRight className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-      </button>
-    );
-
-    const BackBtn = ({ onClick, children }) => (
-      <button
-        type="button"
-        onClick={onClick}
-        className="w-full text-left px-3 py-2 text-xs font-semibold text-gray-900 hover:bg-gray-50 transition flex items-center gap-1.5 border-b border-gray-100"
-      >
-        <ChevronLeft className="h-3.5 w-3.5" />
-        {children}
-      </button>
-    );
-
-    const SectionLabel = ({ children }) => (
-      <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-gray-400 font-medium">
-        {children}
-      </div>
-    );
-
-    return (
-      <div ref={chartFilterRef} className="relative flex-shrink-0">
-        <button
-          type="button"
-          onClick={() => (dropdownOpen ? closeDropdown() : openDropdown())}
-          className="flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg border border-gray-200 transition max-w-[180px]"
-        >
-          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="truncate">{formatFilterLabel(chartFilter)}</span>
-          <ChevronDown
-            className={`h-3.5 w-3.5 flex-shrink-0 transition-transform ${
-              dropdownOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
-
-        {dropdownOpen && (
-          <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-30 py-1 overflow-hidden max-h-[420px] overflow-y-auto">
-            {dropLevel === "root" && (
-              <>
-                <SectionLabel>Quick Ranges</SectionLabel>
-                {QUICK_FILTERS.map((f) => (
-                  <Item
-                    key={f.type}
-                    active={isActive(f.type)}
-                    onClick={() => {
-                      setChartFilter({ type: f.type });
-                      closeDropdown();
-                    }}
-                  >
-                    {f.label}
-                  </Item>
-                ))}
-
-                <div className="my-1 border-t border-gray-100" />
-                <SectionLabel>Browse by Year</SectionLabel>
-
-                {availableYears.map((y) => (
-                  <DrillItem
-                    key={y}
-                    label={y}
-                    onClick={() => {
-                      setDropYear(y);
-                      setDropLevel("months");
-                    }}
-                  />
-                ))}
-              </>
-            )}
-
-            {dropLevel === "months" && (
-              <>
-                <BackBtn
-                  onClick={() => {
-                    setDropLevel("root");
-                    setDropYear(null);
-                  }}
-                >
-                  {dropYear}
-                </BackBtn>
-
-                <Item
-                  active={isActive("year", { year: dropYear })}
-                  onClick={() => {
-                    setChartFilter({ type: "year", year: dropYear });
-                    closeDropdown();
-                  }}
-                >
-                  Full year of {dropYear}
-                </Item>
-
-                <div className="my-1 border-t border-gray-100" />
-
-                {MONTH_NAMES.map((name, idx) => (
-                  <Item
-                    key={idx}
-                    active={isActive("yearMonth", {
-                      year: dropYear,
-                      month: idx,
-                    })}
-                    onClick={() => {
-                      setChartFilter({
-                        type: "yearMonth",
-                        year: dropYear,
-                        month: idx,
-                      });
-                      closeDropdown();
-                    }}
-                  >
-                    {name}
-                  </Item>
-                ))}
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // ─── Approval Banner ───────────────────────────────────────
-  const ApprovalBanner = () => {
-    if (approvalStatus === "approved") return null;
-
-    const meta = {
-      pending: {
-        bg: "bg-yellow-50 border-yellow-200",
-        text: "text-yellow-800",
-        title: "Account pending approval",
-        body: "Your business has been submitted for review. You'll be notified once our team approves it. In the meantime, feel free to complete your profile.",
-        Icon: Clock,
-      },
-      rejected: {
-        bg: "bg-red-50 border-red-200",
-        text: "text-red-800",
-        title: "Business application rejected",
-        body:
-          business?.businessRejectionReason ||
-          "Your application was rejected. Please review our guidelines and update your profile before resubmitting.",
-        Icon: XCircle,
-      },
-      unverified: {
-        bg: "bg-gray-50 border-gray-200",
-        text: "text-gray-700",
-        title: "Email not verified",
-        body: "Verify your email address to continue setting up your business.",
-        Icon: AlertCircle,
-      },
-    }[approvalStatus];
-
-    if (!meta) return null;
-    const Icon = meta.Icon;
-
-    return (
-      <div
-        className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${meta.bg}`}
-      >
-        <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${meta.text}`} />
-        <div className="flex-1 min-w-0">
-          <h3 className={`text-sm font-semibold ${meta.text}`}>{meta.title}</h3>
-          <p className={`text-xs mt-1 leading-relaxed ${meta.text} opacity-90`}>
-            {meta.body}
-          </p>
-        </div>
-      </div>
-    );
-  };
-
-  // ─── Images Modal ──────────────────────────────────────────
-  const ImagesModal = () => (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={() => setShowImagesModal(false)}
-    >
-      <div
-        className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg p-6 mx-4 mb-4 sm:mb-0 shadow-2xl max-h-[80vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">Business Images</h3>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {imageCount} of {MAX_BUSINESS_IMAGES} · minimum{" "}
-              {MIN_BUSINESS_IMAGES}
-            </p>
-          </div>
-          <button
-            onClick={() => setShowImagesModal(false)}
-            className="p-1 rounded-full hover:bg-gray-100"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
-
-        {imageCount === 0 ? (
-          <div className="text-center py-8">
-            <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">No images uploaded yet</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Upload at least {MIN_BUSINESS_IMAGES} photos of your business from
-              different angles.
-            </p>
-            <button
-              onClick={() => {
-                setShowImagesModal(false);
-                navigate("/business/profile");
-              }}
-              className="mt-4 px-6 py-2 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium inline-flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Upload Images
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {profileImages.map((url, idx) => (
-                <div
-                  key={idx}
-                  className="relative aspect-square rounded-lg overflow-hidden bg-gray-100"
-                >
-                  <img
-                    src={url}
-                    alt={`Business image ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-
-            {!imagesReady && (
-              <p className="text-xs text-orange-600 bg-orange-50 px-3 py-2 rounded-lg mb-3">
-                Upload {MIN_BUSINESS_IMAGES - imageCount} more to reach the
-                minimum.
-              </p>
-            )}
-
-            <button
-              onClick={() => {
-                setShowImagesModal(false);
-                navigate("/business/profile");
-              }}
-              className="w-full py-2.5 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium inline-flex items-center justify-center gap-2"
-            >
-              <Edit3 className="h-4 w-4" />
-              Manage Images
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-
-  // ─── Recent Promotions ─────────────────────────────────────
-  const RecentPromotions = () => (
-    <div className="bg-white border border-gray-200 shadow-sm overflow-hidden rounded-2xl">
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-gray-700 truncate">
-          Recent Promotions
-        </h2>
-        <button
-          onClick={() => navigate("/business/promotions")}
-          className="text-sm text-[#3B82F6] hover:underline flex-shrink-0"
-        >
-          View all
-        </button>
-      </div>
-
-      {promosLoading ? (
-        <div className="divide-y divide-gray-100">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex items-center justify-between px-4 py-3">
-              <div className="flex-1 min-w-0 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-4 w-14 bg-gray-200 rounded-full animate-pulse" />
-                </div>
-                <div className="h-3 w-40 bg-gray-200 rounded animate-pulse" />
-              </div>
-              <div className="h-4 w-4 bg-gray-200 rounded animate-pulse ml-2" />
-            </div>
-          ))}
-        </div>
-      ) : recentPromotions.length === 0 ? (
-        <div className="text-center py-10">
-          <Megaphone className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-500">No promotions yet</p>
-          <button
-            onClick={() => navigate("/business/promotions")}
-            className="mt-3 text-[#3B82F6] hover:underline text-sm font-medium"
-          >
-            Create your first promotion
-          </button>
-        </div>
-      ) : (
-        <div className="divide-y divide-gray-100">
-          {recentPromotions.map((promo) => (
-            <div
-              key={promo._id}
-              onClick={() => navigate("/business/promotions")}
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="font-medium text-gray-900 text-sm truncate"
-                    title={promo.title}
-                  >
-                    {promo.title}
-                  </span>
-                  <span
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 ${promotionStatusColor(
-                      promo.status,
-                    )}`}
-                  >
-                    {promo.status || "draft"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 truncate">
-                  {promo.discountValue != null && (
-                    <>
-                      <span className="flex-shrink-0">
-                        {promo.discountType === "percent"
-                          ? `${promo.discountValue}% off`
-                          : `₦${promo.discountValue} off`}
-                      </span>
-                      <span className="flex-shrink-0">·</span>
-                    </>
-                  )}
-                  <span className="truncate">
-                    {new Date(promo.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-2" />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  // ─── Render ────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-white">
-      <BusinessSidebar onLogout={handleLogout} />
+    <div className="min-h-screen bg-[#FBFBFC] text-gray-900 flex flex-col font-sans">
+      {/* ─────────────────────────────────────────────────────────────
+          1. TOP NAVIGATION HEADER
+      ───────────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <div className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between">
+          {/* Brand Logo */}
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
+            aria-label="LocalSpot Home"
+          >
+            <img
+              src="/logo.png"
+              alt="LocalSpot Logo"
+              className="w-7 h-7 object-contain shrink-0"
+            />
+            <span className="text-base font-extrabold tracking-wider text-gray-900">
+              LOCALSPOT
+            </span>
+          </Link>
 
-      <div className="lg:ml-64 pb-20 lg:pb-8">
-        <header className="sticky top-0 z-30 bg-white border-b border-gray-200 px-3 py-3 lg:py-4 lg:px-6 flex items-center justify-between gap-2">
-          <h1 className="text-lg font-semibold text-gray-900 lg:text-xl truncate">
-            Business Dashboard
-          </h1>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {business && (
-              <button
-                type="button"
-                onClick={() => navigate("/business/profile")}
-                aria-label="Open business profile"
-                className="hidden sm:flex items-center gap-2 min-w-0 rounded-full pl-2 pr-0.5 py-0.5 hover:bg-gray-100 active:bg-gray-200 transition-colors"
-              >
-                <span className="text-sm text-gray-600 hidden md:inline truncate max-w-[140px]">
-                  {business.businessName}
-                </span>
-                <span className="h-8 w-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {business.coverImage ? (
-                    <img
-                      src={business.coverImage}
-                      alt={business.businessName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Store className="h-4 w-4 text-[#3B82F6]" />
-                  )}
-                </span>
-              </button>
-            )}
+          {/* Desktop Nav Links */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+            <Link
+              to="/search"
+              className="hover:text-blue-600 transition-colors"
+            >
+              Explore
+            </Link>
+            <Link
+              to="/about"
+              className="hover:text-blue-600 transition-colors"
+            >
+              About Us
+            </Link>
+            <Link
+              to="/contact"
+              className="hover:text-blue-600 transition-colors"
+            >
+              Contact
+            </Link>
+            <Link
+              to="/saved"
+              className="hover:text-blue-600 transition-colors"
+            >
+              Saved Places
+            </Link>
+          </nav>
 
+          {/* Profile Circle Icon */}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/business/profile"
+              className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 flex items-center justify-center text-gray-700 transition"
+              title="Business profile"
+            >
+              <UserIcon className="w-4 h-4 text-gray-600" />
+            </Link>
+
+            {/* Mobile Menu Button */}
             <button
               type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              aria-label="Log out"
-              className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 px-3 py-2 rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+              aria-label="Toggle menu"
             >
-              {loggingOut ? (
-                <>
-                  <span className="w-3 h-3 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
-                  <span className="hidden sm:inline">Logging out...</span>
-                </>
-              ) : (
-                <>
-                  <LogOut className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Log out</span>
-                </>
-              )}
+              <Menu className="w-5 h-5" />
             </button>
           </div>
-        </header>
+        </div>
 
-        <div className="w-full px-1 sm:px-4 lg:px-6 py-4">
-          <HeroCard />
-
-          <ApprovalBanner />
-
-          {/* Desktop welcome + stat cards */}
-          <div className="hidden lg:block">
-            <div className="flex items-center gap-3 mb-6 min-w-0">
-              <div className="h-12 w-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                {business?.coverImage ? (
-                  <img
-                    src={business.coverImage}
-                    alt={business.businessName}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <Store className="h-6 w-6 text-[#3B82F6]" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2
-                  className="text-2xl font-bold text-gray-900 truncate"
-                  title={business?.businessName}
-                >
-                  Welcome back, {business?.businessName || "Business"}!
-                </h2>
-                <div className="flex items-center gap-3 mt-1">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusMeta.color}`}
-                  >
-                    <statusMeta.Icon className="h-3.5 w-3.5" />
-                    {statusMeta.label}
-                  </span>
-                  {business?.location?.city && (
-                    <span className="text-gray-500 text-sm inline-flex items-center gap-1 truncate">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {business.location.city}
-                      {business.location.state
-                        ? `, ${business.location.state}`
-                        : ""}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              <StatCard
-                icon={Eye}
-                label="Profile Views"
-                value={totalViews}
-                sub="All time"
-              />
-              <StatCard
-                icon={Star}
-                label="Rating"
-                value={rating.toFixed(1)}
-                sub={`${numReviews} reviews`}
-              />
-              <StatCard
-                icon={Megaphone}
-                label="Active Promos"
-                value={activePromotions}
-                sub={`${promotions.length} total`}
-              />
-              <StatCard
-                icon={Package}
-                label="Active Ads"
-                value={activeAds}
-                sub={`${advertisements.length} total`}
-              />
-            </div>
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white px-4 py-3 space-y-2">
+            <Link
+              to="/search"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm text-gray-700 font-medium"
+            >
+              Explore
+            </Link>
+            <Link
+              to="/about"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm text-gray-700 font-medium"
+            >
+              About Us
+            </Link>
+            <Link
+              to="/contact"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm text-gray-700 font-medium"
+            >
+              Contact
+            </Link>
+            <Link
+              to="/saved"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm text-gray-700 font-medium"
+            >
+              Saved Places
+            </Link>
           </div>
+        )}
+      </header>
 
-          {/* Chart + Quick actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-5 shadow-sm min-w-0">
-              <div className="flex items-center justify-between mb-4 gap-2">
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-gray-700 truncate">
-                    Profile Views
-                  </h3>
-                  <span className="text-xs text-gray-400 truncate block">
-                    {formatFilterSubtitle(chartFilter)}
-                  </span>
+      {/* ─────────────────────────────────────────────────────────────
+          2. MAIN CONTAINER (2 COLUMNS: SIDEBAR + DASHBOARD OVERVIEW)
+      ───────────────────────────────────────────────────────────── */}
+      <main className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-7 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* ═════════════════════════════════════════════════════════
+              LEFT COLUMN: Business Profile Card & Connected Menu
+          ═════════════════════════════════════════════════════════ */}
+          <aside className="lg:col-span-3 space-y-6">
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+              {/* Profile Avatar & Info */}
+              <div className="flex flex-col items-start gap-3 pb-5 border-b border-gray-100">
+                <div className="w-16 h-16 rounded-full bg-gray-100 border-2 border-gray-200 overflow-hidden flex items-center justify-center shadow-xs">
+                  <ImageIcon className="w-8 h-8 text-gray-400" />
                 </div>
-                <ChartFilterDropdown />
+
+                <div className="min-w-0 w-full">
+                  <h3
+                    className="text-sm sm:text-base font-bold text-gray-900 truncate"
+                    title={businessName}
+                  >
+                    {businessName}
+                  </h3>
+                  <p
+                    className="text-xs text-gray-500 truncate mt-0.5"
+                    title={businessEmail}
+                  >
+                    {businessEmail}
+                  </p>
+                </div>
               </div>
 
-              {analyticsLoading ? (
-                <div className="h-48 animate-pulse bg-gray-200 rounded" />
-              ) : chartData.length === 0 ? (
-                <div className="h-48 flex items-center justify-center text-sm text-gray-400">
-                  No data for this period
+              {/* Navigation Menu (All Connected to Proper Locations) */}
+              <nav className="pt-3 space-y-1">
+                <Link
+                  to="/business/profile"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition"
+                >
+                  <UserIcon className="w-4 h-4 shrink-0 text-gray-500" />
+                  <span>Business profile</span>
+                </Link>
+
+                <Link
+                  to="/business/ads"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition"
+                >
+                  <Megaphone className="w-4 h-4 shrink-0 text-gray-500" />
+                  <span>Ads manager</span>
+                </Link>
+
+                <Link
+                  to="/business"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-50/70 text-blue-600 transition"
+                >
+                  <BarChart3 className="w-4 h-4 shrink-0" />
+                  <span>Analytics &amp; Business data</span>
+                </Link>
+
+                <Link
+                  to="/business/reviews"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition"
+                >
+                  <Star className="w-4 h-4 shrink-0 text-gray-500" />
+                  <span>Reviews</span>
+                </Link>
+
+                <Link
+                  to="/saved"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition"
+                >
+                  <Heart className="w-4 h-4 shrink-0 text-gray-500" />
+                  <span>Favorites</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 transition"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  <span>Log out</span>
+                </button>
+              </nav>
+            </div>
+          </aside>
+
+          {/* ═════════════════════════════════════════════════════════
+              RIGHT COLUMN: Analytics Dashboard Overview
+          ═════════════════════════════════════════════════════════ */}
+          <div className="lg:col-span-9 space-y-6">
+            {/* Header: Title & Timeframe Filter Pills */}
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-4">
+                Analytics
+              </h1>
+
+              {/* Timeframe Filter Pills (Week, Month, Quarter, Year) */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {["week", "month", "quarter", "year"].map((tf) => {
+                  const isActive = timeframe === tf;
+                  const label =
+                    tf.charAt(0).toUpperCase() + tf.slice(1);
+                  return (
+                    <button
+                      key={tf}
+                      type="button"
+                      onClick={() => {
+                        setTimeframe(tf);
+                        showToast(`Showing ${label} metrics`, "info");
+                      }}
+                      className={`px-4 py-1.5 rounded-full text-xs font-semibold transition whitespace-nowrap ${
+                        isActive
+                          ? "bg-white text-gray-900 border border-gray-900 shadow-xs"
+                          : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────
+                ROW 1: 3 KPI CARDS
+            ───────────────────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Card 1: Total impressions */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] relative">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                  <span className="font-medium">Total impressions</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuCard(
+                        activeMenuCard === "kpi1" ? null : "kpi1"
+                      );
+                    }}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
                 </div>
-              ) : (
-                <div className="h-48 w-full">
+
+                <div className="flex items-baseline justify-between mt-2">
+                  <span className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                    {currentData.kpis.impressions.value}
+                  </span>
+                  <span className="inline-flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                    <ArrowUpRight className="w-3 h-3" />
+                    {currentData.kpis.impressions.change}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 2: Profile views */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] relative">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                  <span className="font-medium">Profile views</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuCard(
+                        activeMenuCard === "kpi2" ? null : "kpi2"
+                      );
+                    }}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex items-baseline justify-between mt-2">
+                  <span className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                    {currentData.kpis.views.value}
+                  </span>
+                  <span className="inline-flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                    <ArrowUpRight className="w-3 h-3" />
+                    {currentData.kpis.views.change}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 3: Search appearances */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] relative">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                  <span className="font-medium">Search appearances</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuCard(
+                        activeMenuCard === "kpi3" ? null : "kpi3"
+                      );
+                    }}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex items-baseline justify-between mt-2">
+                  <span className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                    {currentData.kpis.searchAppearances.value}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                      currentData.kpis.searchAppearances.isPositive
+                        ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                        : "bg-red-50 text-red-500 border border-red-200"
+                    }`}
+                  >
+                    {currentData.kpis.searchAppearances.isPositive ? (
+                      <ArrowUpRight className="w-3 h-3" />
+                    ) : (
+                      <ArrowDownRight className="w-3 h-3" />
+                    )}
+                    {currentData.kpis.searchAppearances.change}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────
+                ROW 2: POPULARITY LINE CHART + TOTAL CLICKS DONUT CHART
+            ───────────────────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Chart: Your business popularity (~60%) */}
+              <div className="lg:col-span-7 bg-white rounded-2xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-900">
+                    Your business popularity
+                  </h3>
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="h-56 sm:h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
+                    <AreaChart
+                      data={currentData.popularity}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    >
                       <defs>
                         <linearGradient
-                          id="viewsGradient"
+                          id="popularityGradient"
                           x1="0"
                           y1="0"
                           x2="0"
@@ -1145,353 +720,344 @@ const BusinessPage = () => {
                         >
                           <stop
                             offset="5%"
-                            stopColor={ACCENT}
+                            stopColor="#60A5FA"
                             stopOpacity={0.3}
                           />
                           <stop
                             offset="95%"
-                            stopColor={ACCENT}
+                            stopColor="#60A5FA"
                             stopOpacity={0}
                           />
                         </linearGradient>
                       </defs>
                       <XAxis
-                        dataKey="label"
-                        tick={{ fontSize: 12 }}
-                        stroke="#9ca3af"
-                        tickMargin={5}
-                        minTickGap={16}
-                        interval="preserveStartEnd"
+                        dataKey="day"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                        tickFormatter={(value, index) => {
+                          const item = currentData.popularity[index];
+                          return item?.date
+                            ? `${value} ${item.date}`
+                            : value;
+                        }}
                       />
                       <YAxis
-                        tick={{ fontSize: 12 }}
-                        stroke="#9ca3af"
-                        width={40}
-                        allowDecimals={false}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                        domain={[0, 10000]}
+                        tickFormatter={(val) =>
+                          val === 0 ? "0" : `${val / 1000}k`
+                        }
                       />
                       <Tooltip
-                        formatter={(value) => [value, "Views"]}
                         contentStyle={{
-                          backgroundColor: "rgba(255,255,255,0.9)",
-                          border: "none",
+                          backgroundColor: "#1F2937",
+                          borderColor: "#374151",
                           borderRadius: "8px",
-                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                          color: "#fff",
+                          fontSize: "12px",
                         }}
+                        formatter={(val) => [`${val} visitors`, "Popularity"]}
                       />
                       <Area
                         type="monotone"
-                        dataKey="amount"
-                        stroke={ACCENT}
-                        strokeWidth={2}
-                        fill="url(#viewsGradient)"
-                        dot={{ r: 2, fill: ACCENT }}
+                        dataKey="value"
+                        stroke="#3B82F6"
+                        strokeWidth={2.5}
+                        fill="url(#popularityGradient)"
+                        dot={false}
+                        activeDot={{ r: 5, fill: "#2563EB" }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 lg:gap-3">
-              <button
-                onClick={() => navigate("/business/profile")}
-                className="flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-0 px-2.5 py-2.5 lg:p-4 bg-[#3B82F6] hover:bg-blue-700 text-white rounded-xl lg:rounded-2xl transition shadow-sm hover:shadow-md min-w-0"
-              >
-                <Edit3 className="h-4 w-4 lg:h-8 lg:w-8 lg:mb-1 flex-shrink-0" />
-                <span className="text-xs lg:text-sm font-medium truncate">
-                  Edit Profile
-                </span>
-              </button>
-              <button
-                onClick={() => setShowImagesModal(true)}
-                className="flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-0 px-2.5 py-2.5 lg:p-4 bg-blue-50 hover:bg-blue-100 text-[#3B82F6] rounded-xl lg:rounded-2xl transition border border-blue-100 min-w-0"
-              >
-                <ImageIcon className="h-4 w-4 lg:h-8 lg:w-8 lg:mb-1 flex-shrink-0" />
-                <span className="text-xs lg:text-sm font-medium truncate">
-                  {imageCount}/{MAX_BUSINESS_IMAGES} Images
-                </span>
-              </button>
-              <button
-                onClick={() => navigate("/business/promotions")}
-                className="flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-0 px-2.5 py-2.5 lg:p-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl lg:rounded-2xl transition min-w-0"
-              >
-                <Megaphone className="h-4 w-4 lg:h-8 lg:w-8 lg:mb-1 flex-shrink-0" />
-                <span className="text-xs lg:text-sm font-medium truncate">
-                  Promotions
-                </span>
-              </button>
-              <button
-                onClick={() => navigate("/business/ads")}
-                className="flex flex-row lg:flex-col items-center justify-center gap-1.5 lg:gap-0 px-2.5 py-2.5 lg:p-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl lg:rounded-2xl transition min-w-0"
-              >
-                <BarChart3 className="h-4 w-4 lg:h-8 lg:w-8 lg:mb-1 flex-shrink-0" />
-                <span className="text-xs lg:text-sm font-medium truncate">
-                  Ads
-                </span>
-              </button>
-              <button
-                onClick={() => navigate("/business/reviews")}
-                className="col-span-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl lg:rounded-2xl px-3 py-2.5 lg:p-3 flex items-center justify-center transition"
-              >
-                <span className="text-xs lg:text-sm font-medium">
-                  View Reviews
-                </span>
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </button>
-            </div>
-          </div>
-
-          {/* Profile completion + images preview */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-stretch">
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-5 shadow-sm min-w-0">
-              <div className="flex items-center justify-between mb-4 gap-2">
-                <h3 className="text-sm font-semibold text-gray-700 truncate">
-                  Profile Completion
-                </h3>
-                <span className="text-xs font-medium text-gray-500 flex-shrink-0">
-                  {completionPct}%
-                </span>
               </div>
 
-              <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden mb-4">
-                <div
-                  className="h-full bg-[#3B82F6] transition-all duration-500"
-                  style={{ width: `${completionPct}%` }}
-                />
-              </div>
-
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                {[
-                  { label: "Business name", done: !!business?.businessName },
-                  { label: "Description", done: !!business?.description },
-                  { label: "Contact phone", done: !!business?.phone },
-                  {
-                    label: "Address / City",
-                    done: !!(business?.address || business?.location?.city),
-                  },
-                  { label: "Cover image", done: !!business?.coverImage },
-                  {
-                    label: `Business images (${imageCount}/${MIN_BUSINESS_IMAGES})`,
-                    done: imagesReady,
-                  },
-                  {
-                    label: "Tags",
-                    done: (business?.tags?.length || 0) > 0,
-                  },
-                  {
-                    label: "Opening hours",
-                    done: (business?.openingHours?.length || 0) > 0,
-                  },
-                ].map((item) => (
-                  <li
-                    key={item.label}
-                    className="flex items-center gap-2 min-w-0 text-gray-600"
+              {/* Right Chart: Total Clicks Donut Chart (~40%) */}
+              <div className="lg:col-span-5 bg-white rounded-2xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-900">
+                    Total Clicks
+                  </h3>
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded"
                   >
-                    {item.done ? (
-                      <CheckCircle2 className="h-4 w-4 text-[#3B82F6] flex-shrink-0" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-gray-300 flex-shrink-0" />
-                    )}
-                    <span
-                      className={`truncate ${
-                        item.done ? "" : "text-gray-400"
-                      }`}
-                    >
-                      {item.label}
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-2">
+                  {currentData.kpis.totalClicks.toLocaleString()}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                  {/* Donut Chart */}
+                  <div className="sm:col-span-5 h-36 w-full flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={currentData.clicksBreakdown}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={38}
+                          outerRadius={56}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {currentData.clicksBreakdown.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#1F2937",
+                            borderRadius: "8px",
+                            fontSize: "11px",
+                            color: "#fff",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Legend Counts */}
+                  <div className="sm:col-span-7 space-y-2 text-xs">
+                    {currentData.clicksBreakdown.map((item) => (
+                      <div
+                        key={item.name}
+                        className="flex items-center justify-between text-gray-600 font-medium"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span className="text-[11px] truncate">
+                            {item.name}
+                          </span>
+                        </div>
+                        <span className="text-xs font-bold text-gray-900">
+                          {item.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────
+                ROW 3: CUSTOMER SOURCES BAR CHART + CONVERSION RATE
+            ───────────────────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Bar Chart: Customer Sources (~75%) */}
+              <div className="lg:col-span-9 bg-white rounded-2xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-900">
+                    Customer Sources
+                  </h3>
+
+                  {/* Legend: From ads & Organic */}
+                  <div className="flex items-center gap-4 text-xs font-medium text-gray-600">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-sm bg-[#14B8A6]" />
+                      From ads
                     </span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => navigate("/business/profile")}
-                className="mt-4 text-[#3B82F6] hover:underline text-sm font-medium"
-              >
-                Complete your profile →
-              </button>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm min-w-0">
-              <div className="flex items-center justify-between mb-3 gap-2">
-                <h3 className="text-sm font-semibold text-gray-700 truncate">
-                  Business Images
-                </h3>
-                <span className="text-xs text-gray-400 flex-shrink-0">
-                  {imageCount}/{MAX_BUSINESS_IMAGES}
-                </span>
-              </div>
-
-              {imageCount === 0 ? (
-                <div className="text-center py-6">
-                  <ImageIcon className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                  <p className="text-xs text-gray-500">No images yet</p>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-sm bg-gray-800" />
+                      Organic
+                    </span>
+                  </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2">
-                  {profileImages.slice(0, 6).map((url, idx) => (
-                    <div
-                      key={idx}
-                      className="aspect-square rounded-lg overflow-hidden bg-gray-100"
+
+                <div className="h-56 sm:h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={currentData.customerSources}
+                      margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
+                      barSize={18}
                     >
-                      <img
-                        src={url}
-                        alt={`Business ${idx + 1}`}
-                        className="w-full h-full object-cover"
+                      <XAxis
+                        dataKey="day"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 11, fill: "#9CA3AF" }}
                       />
-                    </div>
-                  ))}
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                        domain={[0, 3000]}
+                        ticks={[0, 500, 1000, 1500, 2000, 2500, 3000]}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#1F2937",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          color: "#fff",
+                        }}
+                      />
+                      <Bar
+                        dataKey="ads"
+                        fill="#14B8A6"
+                        radius={[6, 6, 0, 0]}
+                        label={{
+                          position: "top",
+                          fill: "#111827",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          formatter: (val) => (val === 2550 ? "2550" : ""),
+                        }}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              )}
+              </div>
 
-              <button
-                onClick={() => setShowImagesModal(true)}
-                className="mt-4 text-[#3B82F6] hover:underline text-sm font-medium"
-              >
-                Manage images →
-              </button>
-            </div>
-          </div>
+              {/* Right Card: Conversion rate (~25%) */}
+              <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
+                    Conversion rate
+                  </h3>
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
 
-          <RecentPromotions />
-        </div>
-      </div>
+                <div className="my-auto">
+                  <span className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
+                    {currentData.kpis.conversionRate}
+                  </span>
+                  <p className="text-[11px] text-gray-400 mt-1 font-medium">
+                    Verified customer visits &amp; inquiries
+                  </p>
+                </div>
 
-      {/* Floating status button (mobile) */}
-      <div className="lg:hidden fixed bottom-24 right-4 z-40">
-        <button
-          onClick={() => setShowStatusModal(true)}
-          className="relative group"
-        >
-          <div
-            className={`absolute inset-0 rounded-full animate-ping ${
-              approvalStatus === "approved"
-                ? "bg-green-500/40"
-                : approvalStatus === "pending"
-                  ? "bg-orange-500/40"
-                  : "bg-red-500/40"
-            }`}
-            style={{ animationDuration: "1.5s" }}
-          />
-          <div
-            className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg border-2 transition-all ${
-              approvalStatus === "approved"
-                ? "bg-green-500 border-green-400"
-                : approvalStatus === "pending"
-                  ? "bg-orange-500 border-orange-400"
-                  : "bg-red-500 border-red-400"
-            }`}
-          >
-            <statusMeta.Icon className="h-6 w-6 text-white" />
-          </div>
-        </button>
-      </div>
-
-      {/* Status modal */}
-      {showStatusModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={() => setShowStatusModal(false)}
-        >
-          <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md p-6 mx-4 mb-4 sm:mb-0 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
-                Account Status
-              </h3>
-              <button
-                onClick={() => setShowStatusModal(false)}
-                className="p-1 rounded-full hover:bg-gray-100"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
+                <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-blue-600 font-semibold">
+                  <Link to="/business/ads" className="hover:underline">
+                    Boost conversion →
+                  </Link>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-gray-500 flex-shrink-0">
-                  Email
-                </span>
-                <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    isEmailVerified
-                      ? "bg-green-50 text-green-600"
-                      : "bg-gray-100 text-gray-500"
-                  }`}
-                >
-                  {isEmailVerified ? "Verified" : "Unverified"}
-                </span>
+            {/* ─────────────────────────────────────────────────────────
+                ROW 4: TOP 5 PLACES (WORLD MAP + LOCATIONS TABLE)
+            ───────────────────────────────────────────────────────── */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Left: World Map with Glowing Radar Pins (lg:col-span-7) */}
+                <div className="lg:col-span-7">
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-900 mb-3">
+                    Top 5 places
+                  </h3>
+
+                  <div className="relative w-full h-56 sm:h-64 rounded-xl bg-gray-50/70 border border-gray-100 overflow-hidden flex items-center justify-center p-2">
+                    {/* SVG Vector World Map Paths */}
+                    <svg
+                      viewBox="0 0 1000 500"
+                      className="w-full h-full opacity-60"
+                      fill="#D1D5DB"
+                    >
+                      {/* Americas */}
+                      <path d="M150,120 Q180,90 220,110 T250,180 T210,250 T180,300 T210,420 T190,460 T160,350 T130,220 Z" />
+                      <path d="M230,100 Q260,80 320,90 T350,140 T300,170 T240,140 Z" />
+                      {/* Europe */}
+                      <path d="M470,120 Q520,100 560,130 T540,180 T480,190 T460,150 Z" />
+                      {/* Africa */}
+                      <path d="M480,210 Q540,200 580,240 T570,360 T510,400 T470,300 T460,240 Z" />
+                      {/* Asia */}
+                      <path d="M590,110 Q700,90 820,120 T860,220 T760,280 T680,240 T600,180 Z" />
+                      {/* Australia */}
+                      <path d="M780,340 Q840,320 880,350 T860,420 T800,430 T760,380 Z" />
+                    </svg>
+
+                    {/* Glowing Location Pins */}
+                    {/* Location 1: North America */}
+                    <div className="absolute top-[32%] left-[24%]">
+                      <div className="w-5 h-5 rounded-full bg-blue-500/30 animate-ping absolute -top-1 -left-1" />
+                      <div className="w-3 h-3 rounded-full bg-blue-600 shadow-md border border-white" />
+                    </div>
+
+                    {/* Location 2: Europe/UK */}
+                    <div className="absolute top-[28%] left-[50%]">
+                      <div className="w-5 h-5 rounded-full bg-blue-500/30 animate-ping absolute -top-1 -left-1" />
+                      <div className="w-3 h-3 rounded-full bg-blue-600 shadow-md border border-white" />
+                    </div>
+
+                    {/* Location 3: West Africa / Nigeria */}
+                    <div className="absolute top-[52%] left-[49%]">
+                      <div className="w-6 h-6 rounded-full bg-blue-500/40 animate-ping absolute -top-1.5 -left-1.5" />
+                      <div className="w-3 h-3 rounded-full bg-blue-600 shadow-md border border-white" />
+                    </div>
+
+                    {/* Location 4: Asia */}
+                    <div className="absolute top-[36%] left-[68%]">
+                      <div className="w-5 h-5 rounded-full bg-blue-500/30 animate-ping absolute -top-1 -left-1" />
+                      <div className="w-3 h-3 rounded-full bg-blue-600 shadow-md border border-white" />
+                    </div>
+
+                    {/* Location 5: Australia */}
+                    <div className="absolute top-[75%] left-[82%]">
+                      <div className="w-5 h-5 rounded-full bg-blue-500/30 animate-ping absolute -top-1 -left-1" />
+                      <div className="w-3 h-3 rounded-full bg-blue-600 shadow-md border border-white" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Table of Top Places (lg:col-span-5) */}
+                <div className="lg:col-span-5">
+                  <div className="flex items-center justify-between mb-3 text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                    <span>Names</span>
+                    <div className="flex gap-10">
+                      <span>#</span>
+                      <span className="w-24">place</span>
+                      <span>volume</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {currentData.topPlaces.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between text-xs font-semibold py-1 border-b border-gray-50 last:border-0"
+                      >
+                        <span className="text-gray-400 w-4">{p.id}</span>
+                        <div className="flex items-center gap-2.5 flex-1 min-w-0 px-2">
+                          <img
+                            src={p.image}
+                            alt={p.name}
+                            className="w-6 h-6 rounded-md object-cover shrink-0 border border-gray-200"
+                          />
+                          <span className="text-gray-800 truncate">
+                            {p.name}
+                          </span>
+                        </div>
+                        <span className="text-gray-900 font-bold shrink-0">
+                          {p.volume}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-gray-500 flex-shrink-0">
-                  Business
-                </span>
-                <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusMeta.color}`}
-                >
-                  <statusMeta.Icon className="h-3 w-3" />
-                  {statusMeta.label}
-                </span>
-              </div>
-
-              <div className="pt-3 border-t border-gray-200">
-                {approvalStatus === "approved" && (
-                  <p className="text-sm text-green-600">
-                    Your business is live and visible to customers.
-                  </p>
-                )}
-                {approvalStatus === "pending" && (
-                  <p className="text-sm text-yellow-600">
-                    Your profile is under review. We'll notify you once it's
-                    approved.
-                  </p>
-                )}
-                {approvalStatus === "rejected" && (
-                  <p className="text-sm text-red-600">
-                    {business?.businessRejectionReason ||
-                      "Your application was rejected. Please update and resubmit."}
-                  </p>
-                )}
-                {approvalStatus === "unverified" && (
-                  <p className="text-sm text-gray-600">
-                    Verify your email to continue.
-                  </p>
-                )}
-              </div>
-
-              <button
-                onClick={() => {
-                  setShowStatusModal(false);
-                  navigate("/business/profile");
-                }}
-                className="w-full mt-3 py-2.5 bg-[#3B82F6] text-white rounded-lg hover:bg-blue-700 transition font-medium"
-              >
-                Edit Business Profile
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowStatusModal(false);
-                  handleLogout();
-                }}
-                disabled={loggingOut}
-                className="w-full py-2.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Log out
-              </button>
             </div>
           </div>
         </div>
-      )}
+      </main>
 
-      {showImagesModal && <ImagesModal />}
-
-      <BusinessBottombar />
+      {/* ─────────────────────────────────────────────────────────────
+          3. EXISTING APPLICATION FOOTER
+      ───────────────────────────────────────────────────────────── */}
+      <Footer />
     </div>
   );
-};
-
-export default BusinessPage;
+}

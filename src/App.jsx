@@ -20,6 +20,9 @@ import BusinessProfile from "./pages/business/BusinessProfile";
 import BusinessPromotion from "./pages/business/BusinessPromotion";
 import BusinessAds from "./pages/business/BusinessAds";
 import BusinessReviews from "./pages/business/BusinessReviews";
+import BusinessVerification from "./pages/business/BusinessVerification";
+import BusinessActivityLog from "./pages/business/BusinessActivityLog";
+import BusinessTransfers from "./pages/business/BusinessTransfers";
 import BusinessSettings from "./pages/business/BusinessSettings";
 import Reset from "./pages/business/Reset";
 
@@ -55,7 +58,17 @@ function App() {
         <Route path="/business/profile" element={<BusinessProfile />} />
         <Route path="/business/promotions" element={<BusinessPromotion />} />
         <Route path="/business/ads" element={<BusinessAds />} />
+        <Route
+          path="/business/ads/create"
+          element={<BusinessAds initialView="create" />}
+        />
         <Route path="/business/reviews" element={<BusinessReviews />} />
+        <Route
+          path="/business/verification"
+          element={<BusinessVerification />}
+        />
+        <Route path="/business/activity" element={<BusinessActivityLog />} />
+        <Route path="/business/transfers" element={<BusinessTransfers />} />
         <Route path="/business/settings" element={<BusinessSettings />} />
 
         {/* admin */}

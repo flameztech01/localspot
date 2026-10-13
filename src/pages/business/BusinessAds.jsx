@@ -1,1270 +1,1750 @@
 // src/pages/business/BusinessAds.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
-  Plus,
-  Image as ImageIcon,
-  Eye,
-  MousePointerClick,
-  MoreVertical,
-  BarChart3,
-  Pencil,
-  Trash2,
-  Send,
-  Pause,
-  Play,
-  X,
-  Loader,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  Ban,
   Megaphone,
-  Upload,
+  Plus,
+  Eye,
+  Heart,
+  Phone,
+  Settings,
+  BarChart3,
+  Calendar,
+  Clock,
+  Search,
+  Trash2,
+  UploadCloud,
+  Check,
+  X,
+  ChevronDown,
+  User as UserIcon,
+  Store,
+  Star,
+  LogOut,
+  Image as ImageIcon,
+  Loader2,
+  Menu,
+  Building2,
+  DollarSign,
+  Layers,
+  ArrowRight,
+  Info,
+  CheckSquare,
+  Square,
+  AlertCircle,
 } from "lucide-react";
 
 import {
   useListMyAdvertisementsQuery,
   useCreateAdvertisementMutation,
-  useUpdateMyAdvertisementMutation,
   useDeleteMyAdvertisementMutation,
-  useSubmitMyAdvertisementMutation,
-  usePauseMyAdvertisementMutation,
-  useResumeMyAdvertisementMutation,
-  useGetMyAdvertisementPerformanceQuery,
-  useListAdvertisementTypesQuery,
-  useListAdvertisementSlotsQuery,
 } from "../../features/adsApiSlice";
-import { useLogoutBusinessAccountMutation } from "../../features/businessApiSlice";
+import {
+  useGetCurrentBusinessAccountQuery,
+  useLogoutBusinessAccountMutation,
+} from "../../features/businessApiSlice";
 import { logout } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
-import BusinessSidebar from "../../components/BusinessSidebar";
-import BusinessBottombar from "../../components/BusinessBottombar";
+import Footer from "../../components/Footer";
 
-// ─── Constants ─────────────────────────────────────────────
-const TABS = [
-  { id: "active", label: "Active", statuses: ["approved"] },
-  { id: "pending", label: "Pending approval", statuses: ["pending"] },
-  { id: "draft", label: "Drafts", statuses: ["draft"] },
-  { id: "rejected", label: "Rejected", statuses: ["rejected"] },
+// ─── Initial Campaigns (Exact items from Screenshot) ─────────────────
+const INITIAL_CAMPAIGNS = [
   {
-    id: "expired",
-    label: "Expired/Disabled",
-    statuses: ["expired", "disabled", "paused"],
+    id: "camp-1",
+    type: "Promotional offer",
+    typeColor: "bg-gray-100 text-gray-700",
+    price: "$1,360",
+    address: "444 Park Ave, Brooklyn, NY 11205",
+    sqm: "45 sq.m",
+    created: "12/06/2024",
+    status: "active",
+    statusTab: "active",
+    views: 678,
+    likes: 5,
+    calls: 1,
+    image:
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
+    actionType: "statistics",
+  },
+  {
+    id: "camp-2",
+    type: "Featured listing",
+    typeColor: "bg-gray-100 text-gray-700",
+    price: "$1,360",
+    address: "444 Park Ave, Brooklyn, NY 11205",
+    sqm: "45 sq.m",
+    created: "12/06/2024",
+    status: "active",
+    statusTab: "active",
+    views: 678,
+    likes: 5,
+    calls: 1,
+    image:
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80",
+    actionType: "statistics",
+  },
+  {
+    id: "camp-3",
+    type: "Full Campaign",
+    typeColor: "bg-gray-100 text-gray-700",
+    price: "$--.---",
+    address: "517 82nd St, Brooklyn, NY 11209",
+    sqm: "00 sq.m",
+    created: "13/12/2024",
+    status: "draft",
+    statusTab: "draft",
+    views: 0,
+    likes: 0,
+    calls: 0,
+    image:
+      "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80",
+    actionType: "finish",
   },
 ];
 
-const inputClass =
-  "w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed transition";
+// Tabs from Screenshot 1
+const STATUS_TABS = [
+  { id: "active", label: "Active", count: 3 },
+  { id: "pending", label: "Pending approval", count: 2 },
+  { id: "draft", label: "Drafts", count: 2 },
+  { id: "rejected", label: "Rejected", count: 0 },
+  { id: "expired", label: "Expired/Disabled", count: 0 },
+];
 
-// ─── Helpers ───────────────────────────────────────────────
-const formatDate = (d) => {
-  if (!d) return "—";
-  try {
-    return new Date(d).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return "—";
-  }
-};
+// Sample Products for Product Selector
+const INITIAL_PRODUCTS = [
+  {
+    id: "p1",
+    name: "Aurelia Cotton Maxi Dress",
+    category: "Dresses",
+    image:
+      "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    id: "p2",
+    name: "Klass Linen Button Shirt",
+    category: "Tops",
+    image:
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    id: "p3",
+    name: "Fiona Ruffled Shell Top",
+    category: "Tops",
+    image:
+      "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=200&q=80",
+  },
+];
 
-const toInputDate = (d) => {
-  if (!d) return "";
-  const date = new Date(d);
-  if (Number.isNaN(date.getTime())) return "";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dd}`;
-};
+// Sales Team Members
+const SALES_TEAM = [
+  {
+    id: "st-1",
+    name: "Laura Fox",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+    assigned: true,
+  },
+  {
+    id: "st-2",
+    name: "Denis Carlson",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+    assigned: false,
+  },
+  {
+    id: "st-3",
+    name: "Ryan Killgore",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
+    assigned: true,
+  },
+  {
+    id: "st-4",
+    name: "Vashitha Rath",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    assigned: false,
+  },
+  {
+    id: "st-5",
+    name: "Ashley Jordan",
+    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80",
+    assigned: true,
+  },
+  {
+    id: "st-6",
+    name: "Sarah McLaudrin",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80",
+    assigned: false,
+  },
+];
 
-const formatBudget = (n) => {
-  const v = Number(n || 0);
-  if (!v) return "$---";
-  return `$${v.toLocaleString()}`;
-};
-
-const formatNumber = (n) => Number(n || 0).toLocaleString();
-
-// ─── Main component ────────────────────────────────────────
-const BusinessAds = () => {
+export default function BusinessAds({ initialView = "list" }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState("active");
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [performanceTarget, setPerformanceTarget] = useState(null);
-  const [formModal, setFormModal] = useState(null); // null | { mode: 'create' } | { mode: 'edit', ad }
-  const [loggingOut, setLoggingOut] = useState(false);
+  // Determine view: 'list' or 'create' based on prop, query, or path
+  const [view, setView] = useState(() => {
+    if (initialView === "create" || location.pathname.includes("/create")) {
+      return "create";
+    }
+    return "list";
+  });
 
-  // ─── Queries ─────────────────────────────────────────────
-  const {
-    data: adsResp,
-    isLoading,
-    error,
-    refetch,
-  } = useListMyAdvertisementsQuery();
+  useEffect(() => {
+    if (location.pathname.includes("/create")) {
+      setView("create");
+    } else {
+      setView("list");
+    }
+  }, [location.pathname]);
 
-  const advertisements = adsResp?.data || [];
-  const isUnauthorized = error?.status === 401;
-
-  const [deleteAd, { isLoading: isDeleting }] = useDeleteMyAdvertisementMutation();
-  const [submitAd, { isLoading: isSubmitting }] = useSubmitMyAdvertisementMutation();
-  const [pauseAd, { isLoading: isPausing }] = usePauseMyAdvertisementMutation();
-  const [resumeAd, { isLoading: isResuming }] = useResumeMyAdvertisementMutation();
+  // Account Data
+  const { data: businessResp } = useGetCurrentBusinessAccountQuery();
+  const business = businessResp?.data || businessResp;
   const [logoutBusinessAccount] = useLogoutBusinessAccountMutation();
 
-  const isMutating = isDeleting || isSubmitting || isPausing || isResuming;
+  const businessName =
+    business?.businessName || "Business account name";
+  const businessEmail =
+    business?.email || "your_business@example.com";
 
-  // ─── Group by status ─────────────────────────────────────
-  const grouped = useMemo(() => {
-    const map = {};
-    TABS.forEach((tab) => {
-      map[tab.id] = advertisements.filter((a) => tab.statuses.includes(a.status));
-    });
-    return map;
-  }, [advertisements]);
+  // List View State
+  const [activeTab, setActiveTab] = useState("active");
+  const [campaigns, setCampaigns] = useState(INITIAL_CAMPAIGNS);
+  const [selectedStatsAd, setSelectedStatsAd] = useState(null);
+  const [activeGearMenuId, setActiveGearMenuId] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const visibleAds = grouped[activeTab] || [];
+  // Create Form State (Exact fields from Screenshot 2)
+  const [campaignName, setCampaignName] = useState(
+    "Weekend Wardrobe Refresh"
+  );
+  const [campaignType, setCampaignType] = useState("Discount");
+  const [campaignGoal, setCampaignGoal] = useState("Increase Sales");
 
-  // ─── Handlers ────────────────────────────────────────────
+  // Timeline
+  const [startDate, setStartDate] = useState("Jan 12, 2025");
+  const [startTime, setStartTime] = useState("09:00");
+  const [endDate, setEndDate] = useState("Jan 14, 2025");
+  const [endTime, setEndTime] = useState("12:00");
+  const [timezone, setTimezone] = useState("Asia/Jakarta (GMT+7)");
+  const [timePeriod, setTimePeriod] = useState("AM/PM");
+
+  // Incentive
+  const [offerType, setOfferType] = useState("Percentage discount");
+  const [minPurchase, setMinPurchase] = useState("$20");
+  const [discountValue, setDiscountValue] = useState("15%");
+  const [promoCode, setPromoCode] = useState("WEEKEND15");
+  const [autoApplyPromo, setAutoApplyPromo] = useState(false);
+
+  // Products
+  const [productApplyMode, setProductApplyMode] = useState("specific"); // 'all' | 'specific'
+  const [selectedCategories, setSelectedCategories] = useState([
+    "Dresses",
+    "Tops",
+  ]);
+  const [selectedProducts, setSelectedProducts] = useState(INITIAL_PRODUCTS);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [excludedSearchQuery, setExcludedSearchQuery] = useState("");
+
+  // Budget
+  const [campaignBudget, setCampaignBudget] = useState("$500");
+  const [dailyBudget, setDailyBudget] = useState("$50");
+  const [expectedDuration, setExpectedDuration] = useState("7 days");
+
+  // Campaign Image
+  const [campaignImagePreview, setCampaignImagePreview] = useState(null);
+  const imageInputRef = useRef(null);
+
+  // Target Audience
+  const [customerSegmentType, setCustomerSegmentType] = useState(
+    "Customer segment"
+  );
+  const [locationsSelected, setLocationsSelected] = useState([
+    "Indonesia",
+    "Malaysia",
+  ]);
+  const [customerTypesSelected, setCustomerTypesSelected] = useState([
+    "Returning",
+    "VIP",
+  ]);
+  const [purchaseHistory, setPurchaseHistory] = useState(
+    "Bought 1+ item in last 30 days"
+  );
+  const [lastActiveDate, setLastActiveDate] = useState(
+    "Active within last 30 days"
+  );
+
+  // Channels
+  const [channelsSelected, setChannelsSelected] = useState([
+    "Email",
+    "Website",
+  ]);
+
+  // Sales Team
+  const [personInCharge, setPersonInCharge] = useState("Mario Prat");
+  const [salesTeamMembers, setSalesTeamMembers] = useState(SALES_TEAM);
+
+  // Close gear menu when clicking outside
+  useEffect(() => {
+    const handleClick = () => setActiveGearMenuId(null);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, []);
+
+  // Filter campaigns
+  const filteredCampaigns = useMemo(() => {
+    if (activeTab === "active") {
+      return campaigns.filter((c) => c.statusTab === "active");
+    }
+    if (activeTab === "draft") {
+      return campaigns.filter((c) => c.statusTab === "draft");
+    }
+    return campaigns.filter((c) => c.statusTab === activeTab);
+  }, [campaigns, activeTab]);
+
+  // Handlers
+  const handleOpenCreate = () => {
+    setView("create");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancelCreate = () => {
+    setView("list");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCampaignImagePreview(URL.createObjectURL(file));
+      showToast("Campaign image uploaded", "success");
+    }
+  };
+
+  const handleToggleCategory = (cat) => {
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  };
+
+  const handleRemoveProduct = (id) => {
+    setSelectedProducts((prev) => prev.filter((p) => p.id !== id));
+    showToast("Product removed from campaign", "info");
+  };
+
+  const handleToggleLocation = (loc) => {
+    setLocationsSelected((prev) =>
+      prev.includes(loc) ? prev.filter((l) => l !== loc) : [...prev, loc]
+    );
+  };
+
+  const handleToggleCustomerType = (ct) => {
+    setCustomerTypesSelected((prev) =>
+      prev.includes(ct) ? prev.filter((t) => t !== ct) : [...prev, ct]
+    );
+  };
+
+  const handleToggleChannel = (ch) => {
+    setChannelsSelected((prev) =>
+      prev.includes(ch) ? prev.filter((c) => c !== ch) : [...prev, ch]
+    );
+  };
+
+  const handleToggleTeamMember = (id) => {
+    setSalesTeamMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, assigned: !m.assigned } : m))
+    );
+  };
+
+  const handleSaveDraft = () => {
+    const newDraft = {
+      id: `camp-${Date.now()}`,
+      type: campaignType,
+      typeColor: "bg-gray-100 text-gray-700",
+      price: campaignBudget || "$--.---",
+      address: "444 Park Ave, Brooklyn, NY 11205",
+      sqm: "45 sq.m",
+      created: new Date().toLocaleDateString("en-GB"),
+      status: "draft",
+      statusTab: "draft",
+      views: 0,
+      likes: 0,
+      calls: 0,
+      image:
+        campaignImagePreview ||
+        "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80",
+      actionType: "finish",
+    };
+    setCampaigns([newDraft, ...campaigns]);
+    showToast("Campaign saved to drafts", "info");
+    setView("list");
+  };
+
+  const handleLaunchCampaign = () => {
+    if (!campaignName.trim()) {
+      showToast("Please enter a campaign name", "error");
+      return;
+    }
+    const newCampaign = {
+      id: `camp-${Date.now()}`,
+      type: campaignType,
+      typeColor: "bg-gray-100 text-gray-700",
+      price: campaignBudget || "$1,360",
+      address: "444 Park Ave, Brooklyn, NY 11205",
+      sqm: "45 sq.m",
+      created: new Date().toLocaleDateString("en-GB"),
+      status: "active",
+      statusTab: "active",
+      views: 1,
+      likes: 0,
+      calls: 0,
+      image:
+        campaignImagePreview ||
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
+      actionType: "statistics",
+    };
+    setCampaigns([newCampaign, ...campaigns]);
+    showToast("Campaign launched successfully!", "success");
+    setView("list");
+  };
+
   const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
     try {
       await logoutBusinessAccount().unwrap().catch(() => {});
     } catch (_) {}
     dispatch(logout());
-    try {
-      localStorage.removeItem("persist:root");
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("token");
-      sessionStorage.clear();
-    } catch (_) {}
-    navigate("/business/signin", { replace: true });
-    setTimeout(() => window.location.reload(), 50);
+    localStorage.removeItem("token");
+    localStorage.removeItem("userInfo");
+    showToast("Logged out", "info");
+    navigate("/business/signin");
   };
-
-  const handleSubmit = async (id) => {
-    setOpenMenuId(null);
-    try {
-      const r = await submitAd(id).unwrap();
-      showToast(r?.message || "Submitted for review", "success");
-    } catch (err) {
-      showToast(err?.data?.message || "Failed to submit", "error");
-    }
-  };
-
-  const handlePause = async (id) => {
-    setOpenMenuId(null);
-    try {
-      const r = await pauseAd(id).unwrap();
-      showToast(r?.message || "Ad paused", "success");
-    } catch (err) {
-      showToast(err?.data?.message || "Failed to pause", "error");
-    }
-  };
-
-  const handleResume = async (id) => {
-    setOpenMenuId(null);
-    try {
-      const r = await resumeAd(id).unwrap();
-      showToast(r?.message || "Ad resumed", "success");
-    } catch (err) {
-      showToast(err?.data?.message || "Failed to resume", "error");
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    try {
-      await deleteAd(deleteTarget._id).unwrap();
-      showToast("Advertisement deleted", "success");
-      setDeleteTarget(null);
-    } catch (err) {
-      showToast(err?.data?.message || "Failed to delete", "error");
-    }
-  };
-
-  // ─── Guards ──────────────────────────────────────────────
-  if (isUnauthorized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white px-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
-          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-7 w-7 text-red-500" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-900 mb-2">
-            Session expired
-          </h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Please log in again to continue.
-          </p>
-          <button
-            onClick={() => navigate("/business/signin", { replace: true })}
-            className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
-          >
-            Go to sign in
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-white">
-      <BusinessSidebar onLogout={handleLogout} />
+    <div className="min-h-screen bg-[#FBFBFC] text-gray-900 flex flex-col font-sans">
+      {/* ─────────────────────────────────────────────────────────────
+          1. TOP NAVIGATION HEADER (Matching Screenshots)
+      ───────────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <div className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between">
+          {/* Brand Logo */}
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
+            aria-label="LocalSpot Home"
+          >
+            <img
+              src="/logo.png"
+              alt="LocalSpot Logo"
+              className="w-7 h-7 object-contain shrink-0"
+            />
+            <span className="text-base font-extrabold tracking-wider text-gray-900">
+              LOCALSPOT
+            </span>
+          </Link>
 
-      <div className="lg:ml-64 pb-24 lg:pb-10">
-        <main className="max-w-5xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
-          {/* ─── Header ─── */}
-          <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
-              Ad campaigns
-            </h1>
-            <button
-              type="button"
-              onClick={() => setFormModal({ mode: "create" })}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-[#3B82F6] to-indigo-500 hover:from-blue-700 hover:to-indigo-600 rounded-lg transition shadow-sm"
+          {/* Desktop Nav Links (from screenshots: Explore, About Us, Contact, Saved Places) */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+            <Link
+              to="/search"
+              className="hover:text-blue-600 transition-colors"
             >
-              <Plus className="h-4 w-4" />
-              Start a new advert
-            </button>
-          </div>
-
-          {/* ─── Tabs ─── */}
-          <nav className="mb-6 -mx-4 lg:mx-0 px-4 lg:px-0 overflow-x-auto">
-            <div className="flex items-center gap-2 min-w-max">
-              {TABS.map((tab) => {
-                const active = activeTab === tab.id;
-                const count = grouped[tab.id]?.length || 0;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      setOpenMenuId(null);
-                    }}
-                    className={`px-4 py-2 text-xs lg:text-sm font-medium rounded-full border transition whitespace-nowrap ${
-                      active
-                        ? "bg-white text-gray-900 border-gray-900"
-                        : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
-                    }`}
-                  >
-                    {tab.label} ({count})
-                  </button>
-                );
-              })}
-            </div>
+              Explore
+            </Link>
+            <Link
+              to="/about"
+              className="hover:text-blue-600 transition-colors"
+            >
+              About Us
+            </Link>
+            <Link
+              to="/contact"
+              className="hover:text-blue-600 transition-colors"
+            >
+              Contact
+            </Link>
+            <Link
+              to="/saved"
+              className="hover:text-blue-600 transition-colors"
+            >
+              Saved Places
+            </Link>
           </nav>
 
-          {/* ─── Loading ─── */}
-          {isLoading && (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="rounded-2xl border border-gray-200 overflow-hidden flex gap-4 p-4"
-                >
-                  <div className="w-24 h-24 rounded-xl bg-gray-100 animate-pulse flex-shrink-0" />
-                  <div className="flex-1 space-y-3 py-2">
-                    <div className="h-4 w-32 bg-gray-100 rounded animate-pulse" />
-                    <div className="h-6 w-40 bg-gray-100 rounded animate-pulse" />
-                    <div className="h-3 w-56 bg-gray-100 rounded animate-pulse" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Right User Avatar Profile Icon */}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/business/profile"
+              className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 flex items-center justify-center text-gray-700 transition"
+              title="Business Profile"
+            >
+              <UserIcon className="w-4 h-4 text-gray-600" />
+            </Link>
 
-          {/* ─── Error ─── */}
-          {!isLoading && error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-              <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-              <p className="text-sm font-semibold text-red-900">
-                Failed to load campaigns
-              </p>
-              <p className="text-xs text-red-700 mt-1">
-                {error?.data?.message || "Something went wrong"}
-              </p>
+            {/* Mobile Menu Toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+              aria-label="Toggle menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white px-4 py-3 space-y-2">
+            <Link
+              to="/search"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm text-gray-700 font-medium"
+            >
+              Explore
+            </Link>
+            <Link
+              to="/about"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm text-gray-700 font-medium"
+            >
+              About Us
+            </Link>
+            <Link
+              to="/contact"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm text-gray-700 font-medium"
+            >
+              Contact
+            </Link>
+            <Link
+              to="/saved"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block py-2 text-sm text-gray-700 font-medium"
+            >
+              Saved Places
+            </Link>
+          </div>
+        )}
+      </header>
+
+      {/* ─────────────────────────────────────────────────────────────
+          2. BREADCRUMB (Shown on Create New Ad)
+      ───────────────────────────────────────────────────────────── */}
+      {view === "create" && (
+        <div className="bg-white border-b border-gray-200/80">
+          <div className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-3">
+            <nav
+              className="flex items-center gap-2 text-xs text-gray-500 font-medium"
+              aria-label="Breadcrumb"
+            >
+              <Link
+                to="/business"
+                className="hover:text-blue-600 transition-colors"
+              >
+                My profile
+              </Link>
+              <span className="text-gray-400 font-normal">›</span>
               <button
                 type="button"
-                onClick={() => refetch()}
-                className="mt-4 px-4 py-2 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition"
+                onClick={handleCancelCreate}
+                className="hover:text-blue-600 transition-colors"
               >
-                Try again
+                Ads manager
               </button>
-            </div>
-          )}
-
-          {/* ─── Empty ─── */}
-          {!isLoading && !error && visibleAds.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
-                <Megaphone className="h-7 w-7 text-[#3B82F6]" />
-              </div>
-              <h3 className="text-base font-bold text-gray-900">
-                {activeTab === "active"
-                  ? "No active campaigns"
-                  : `No ${TABS.find((t) => t.id === activeTab)?.label.toLowerCase()}`}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
-                {activeTab === "active"
-                  ? "Start a new advert to boost your business visibility."
-                  : "Nothing to see here — try a different tab."}
-              </p>
-              {activeTab === "active" && (
-                <button
-                  type="button"
-                  onClick={() => setFormModal({ mode: "create" })}
-                  className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition"
-                >
-                  <Plus className="h-4 w-4" />
-                  Start a new advert
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ─── Card list ─── */}
-          {!isLoading && !error && visibleAds.length > 0 && (
-            <div className="space-y-4">
-              {visibleAds.map((ad) => (
-                <AdCard
-                  key={ad._id}
-                  ad={ad}
-                  openMenuId={openMenuId}
-                  setOpenMenuId={setOpenMenuId}
-                  onViewStats={() => setPerformanceTarget(ad)}
-                  onEdit={() => setFormModal({ mode: "edit", ad })}
-                  onDelete={() => {
-                    setOpenMenuId(null);
-                    setDeleteTarget(ad);
-                  }}
-                  onSubmit={() => handleSubmit(ad._id)}
-                  onPause={() => handlePause(ad._id)}
-                  onResume={() => handleResume(ad._id)}
-                  isMutating={isMutating}
-                />
-              ))}
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* ─── Delete confirm ─── */}
-      {deleteTarget && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => !isDeleting && setDeleteTarget(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 space-y-4"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-gray-900">
-                  Delete campaign?
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  "{deleteTarget.title}" will be permanently removed. This
-                  cannot be undone.
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(null)}
-                disabled={isDeleting}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-60"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-red-500 hover:bg-red-600 transition disabled:opacity-60"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader className="h-3.5 w-3.5 animate-spin" />
-                    Deleting…
-                  </>
-                ) : (
-                  "Delete"
-                )}
-              </button>
-            </div>
+              <span className="text-gray-400 font-normal">›</span>
+              <span className="text-gray-900 font-semibold">
+                Create new ad
+              </span>
+            </nav>
           </div>
         </div>
       )}
 
-      {/* ─── Performance modal ─── */}
-      {performanceTarget && (
-        <PerformanceModal
-          ad={performanceTarget}
-          onClose={() => setPerformanceTarget(null)}
-        />
-      )}
+      {/* ─────────────────────────────────────────────────────────────
+          3. MAIN LAYOUT (2 COLUMNS: SIDEBAR + CONTENT)
+      ───────────────────────────────────────────────────────────── */}
+      <main className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-7 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* ═════════════════════════════════════════════════════════
+              LEFT COLUMN: Business Profile Card & Menu
+          ═════════════════════════════════════════════════════════ */}
+          <aside className="lg:col-span-3 space-y-6">
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+              {/* Profile Avatar & Info (exact layout from screenshot) */}
+              <div className="flex flex-col items-start gap-3 pb-5 border-b border-gray-100">
+                <div className="w-16 h-16 rounded-full bg-gray-100 border-2 border-gray-200 overflow-hidden flex items-center justify-center shadow-xs">
+                  <ImageIcon className="w-8 h-8 text-gray-400" />
+                </div>
 
-      {/* ─── Create/Edit modal ─── */}
-      {formModal && (
-        <AdFormModal
-          mode={formModal.mode}
-          ad={formModal.ad || null}
-          onClose={() => setFormModal(null)}
-          onSuccess={() => {
-            setFormModal(null);
-            refetch();
-          }}
-          onNotify={showToast}
-        />
-      )}
+                <div className="min-w-0 w-full">
+                  <h3
+                    className="text-sm sm:text-base font-bold text-gray-900 truncate"
+                    title={businessName}
+                  >
+                    {businessName}
+                  </h3>
+                  <p
+                    className="text-xs text-gray-500 truncate mt-0.5"
+                    title={businessEmail}
+                  >
+                    {businessEmail}
+                  </p>
+                </div>
+              </div>
 
-      <BusinessBottombar />
-    </div>
-  );
-};
+              {/* Navigation Menu */}
+              <nav className="pt-3 space-y-1">
+                <Link
+                  to="/business/profile"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition"
+                >
+                  <UserIcon className="w-4 h-4 shrink-0 text-gray-500" />
+                  <span>Business profile</span>
+                </Link>
 
-// ──────────────────────────────────────────────────────────
-// Ad card
-// ──────────────────────────────────────────────────────────
-const AdCard = ({
-  ad,
-  openMenuId,
-  setOpenMenuId,
-  onViewStats,
-  onEdit,
-  onDelete,
-  onSubmit,
-  onPause,
-  onResume,
-  isMutating,
-}) => {
-  const typeName = ad.type?.name || "Campaign";
-  const canEdit = ["draft", "rejected", "paused"].includes(ad.status);
-  const canSubmit = ["draft", "rejected"].includes(ad.status);
-  const canPause = ad.status === "approved";
-  const canResume = ad.status === "paused";
-  const canDelete = ad.status !== "approved";
+                <button
+                  type="button"
+                  onClick={() => setView("list")}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+                    view === "list" || view === "create"
+                      ? "bg-blue-50/70 text-blue-600"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  <Megaphone className="w-4 h-4 shrink-0" />
+                  <span>Ads manager</span>
+                </button>
 
-  return (
-    <article className="rounded-2xl border border-gray-200 bg-white overflow-hidden hover:shadow-sm transition relative">
-      <div className="flex items-stretch">
-        {/* Thumbnail */}
-        <div className="w-28 sm:w-36 lg:w-40 bg-gray-100 flex-shrink-0 relative">
-          {ad.image ? (
-            <img
-              src={ad.image}
-              alt={ad.title}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center min-h-[120px]">
-              <ImageIcon className="h-7 w-7 text-gray-400" />
+                <Link
+                  to="/business"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition"
+                >
+                  <BarChart3 className="w-4 h-4 shrink-0 text-gray-500" />
+                  <span>Analytics &amp; Business data</span>
+                </Link>
+
+                <Link
+                  to="/business/reviews"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition"
+                >
+                  <Star className="w-4 h-4 shrink-0 text-gray-500" />
+                  <span>Reviews</span>
+                </Link>
+
+                <Link
+                  to="/saved"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition"
+                >
+                  <Heart className="w-4 h-4 shrink-0 text-gray-500" />
+                  <span>Favorites</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 transition"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  <span>Log out</span>
+                </button>
+              </nav>
             </div>
-          )}
-        </div>
+          </aside>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0 p-4 lg:p-5 flex flex-col justify-between gap-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <span className="inline-block px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-semibold mb-1.5">
-                {typeName}
-              </span>
+          {/* ═════════════════════════════════════════════════════════
+              RIGHT COLUMN: Main Content Area
+          ═════════════════════════════════════════════════════════ */}
+          <div className="lg:col-span-9 space-y-6">
+            {/* ═══════════════════════════════════════════════════════
+                VIEW 1: AD CAMPAIGNS LIST (Screenshot 1)
+            ═══════════════════════════════════════════════════════ */}
+            {view === "list" && (
+              <div className="space-y-6">
+                {/* Header Row: Title & Start a new advert button */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                    Ad campaigns
+                  </h1>
 
-              <p className="text-lg lg:text-xl font-bold text-gray-900 truncate">
-                {formatBudget(ad.budget)}
-              </p>
-
-              <p className="text-xs text-gray-500 mt-0.5 truncate">
-                {ad.title || ad.link || "Untitled campaign"}
-              </p>
-
-              <p className="text-xs font-semibold text-gray-700 mt-1 tabular-nums">
-                {formatNumber(ad.impressions)} imp
-              </p>
-            </div>
-
-            {/* Right side */}
-            <div className="flex flex-col items-end gap-2 flex-shrink-0">
-              <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                Created: {formatDate(ad.createdAt)}
-              </span>
-
-              <div className="flex items-center gap-1.5">
-                {ad.status === "draft" ? (
                   <button
                     type="button"
-                    onClick={onSubmit}
-                    disabled={isMutating}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition disabled:opacity-50 whitespace-nowrap"
+                    onClick={handleOpenCreate}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm font-semibold text-white shadow-sm transition transform active:scale-95"
                   >
-                    Finish & publish
+                    <Megaphone className="w-4 h-4" />
+                    <span>Start a new advert</span>
                   </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={onViewStats}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition whitespace-nowrap"
-                  >
-                    Statistics
-                  </button>
-                )}
+                </div>
 
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setOpenMenuId(openMenuId === ad._id ? null : ad._id)
-                    }
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
-                    aria-label="More options"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
+                {/* Filter Tabs Row */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {STATUS_TABS.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
+                          isActive
+                            ? "bg-white text-gray-900 border border-gray-900 shadow-xs"
+                            : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                      >
+                        {tab.label} ({tab.count})
+                      </button>
+                    );
+                  })}
+                </div>
 
-                  {openMenuId === ad._id && (
-                    <>
+                {/* Campaigns Cards List */}
+                <div className="space-y-4">
+                  {filteredCampaigns.length === 0 ? (
+                    <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+                      <Megaphone className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                      <h3 className="text-sm font-bold text-gray-700 mb-1">
+                        No campaigns in this tab
+                      </h3>
+                      <p className="text-xs text-gray-400 mb-4">
+                        Launch an advertisement to promote your business and drive visits.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleOpenCreate}
+                        className="px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl"
+                      >
+                        Create an advert
+                      </button>
+                    </div>
+                  ) : (
+                    filteredCampaigns.map((camp) => (
                       <div
-                        className="fixed inset-0 z-20"
-                        onClick={() => setOpenMenuId(null)}
-                      />
-                      <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-30">
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              onEdit();
-                            }}
-                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                          >
-                            <Pencil className="h-3.5 w-3.5 text-gray-400" />
-                            Edit
-                          </button>
-                        )}
+                        key={camp.id}
+                        className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-gray-300 transition"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                          {/* Left: Image Container */}
+                          <div className="md:col-span-4 h-36 sm:h-40 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden relative flex items-center justify-center shrink-0">
+                            {camp.image ? (
+                              <img
+                                src={camp.image}
+                                alt={camp.type}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <ImageIcon className="w-12 h-12 text-gray-300" />
+                            )}
+                          </div>
 
-                        {canSubmit && (
-                          <button
-                            type="button"
-                            onClick={onSubmit}
-                            disabled={isMutating}
-                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
-                          >
-                            <Send className="h-3.5 w-3.5 text-blue-500" />
-                            Submit for review
-                          </button>
-                        )}
+                          {/* Middle: Content */}
+                          <div className="md:col-span-5 space-y-1.5 min-w-0">
+                            <span className="inline-block px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-gray-100 text-gray-700">
+                              {camp.type}
+                            </span>
 
-                        {canPause && (
-                          <button
-                            type="button"
-                            onClick={onPause}
-                            disabled={isMutating}
-                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
-                          >
-                            <Pause className="h-3.5 w-3.5 text-orange-500" />
-                            Pause
-                          </button>
-                        )}
+                            <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+                              {camp.price}
+                            </h3>
 
-                        {canResume && (
-                          <button
-                            type="button"
-                            onClick={onResume}
-                            disabled={isMutating}
-                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50"
-                          >
-                            <Play className="h-3.5 w-3.5 text-emerald-500" />
-                            Resume
-                          </button>
-                        )}
+                            <p className="text-xs text-gray-600 font-medium truncate">
+                              {camp.address}
+                            </p>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            onViewStats();
-                          }}
-                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                        >
-                          <BarChart3 className="h-3.5 w-3.5 text-gray-400" />
-                          View stats
-                        </button>
+                            <p className="text-xs font-bold text-gray-800">
+                              {camp.sqm}
+                            </p>
+                          </div>
 
-                        {canDelete && (
-                          <button
-                            type="button"
-                            onClick={onDelete}
-                            className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center gap-2"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Delete
-                          </button>
-                        )}
+                          {/* Right: Date, Actions, and Metrics */}
+                          <div className="md:col-span-3 flex flex-col justify-between items-start md:items-end h-full space-y-4 pt-2 md:pt-0">
+                            <p className="text-[11px] text-gray-400 font-medium">
+                              Created: {camp.created}
+                            </p>
+
+                            {/* Buttons */}
+                            <div className="flex items-center gap-2">
+                              {camp.actionType === "statistics" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedStatsAd(camp)}
+                                  className="px-4 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700 shadow-2xs transition"
+                                >
+                                  Statistics
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={handleOpenCreate}
+                                  className="px-4 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700 shadow-2xs transition"
+                                >
+                                  Finish and publish
+                                </button>
+                              )}
+
+                              {/* Settings Gear Dropdown */}
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveGearMenuId(
+                                      activeGearMenuId === camp.id
+                                        ? null
+                                        : camp.id
+                                    );
+                                  }}
+                                  className="w-8 h-8 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 shadow-2xs transition"
+                                  title="Campaign options"
+                                >
+                                  <Settings className="w-3.5 h-3.5" />
+                                </button>
+
+                                {activeGearMenuId === camp.id && (
+                                  <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 z-30 animate-in fade-in duration-100"
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveGearMenuId(null);
+                                        handleOpenCreate();
+                                      }}
+                                      className="w-full text-left px-3.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50 font-medium"
+                                    >
+                                      Edit campaign
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveGearMenuId(null);
+                                        showToast(
+                                          "Campaign status toggled",
+                                          "info"
+                                        );
+                                      }}
+                                      className="w-full text-left px-3.5 py-1.5 text-xs text-gray-700 hover:bg-gray-50 font-medium"
+                                    >
+                                      Pause / Resume
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveGearMenuId(null);
+                                        setCampaigns(
+                                          campaigns.filter(
+                                            (c) => c.id !== camp.id
+                                          )
+                                        );
+                                        showToast(
+                                          "Campaign removed",
+                                          "error"
+                                        );
+                                      }}
+                                      className="w-full text-left px-3.5 py-1.5 text-xs text-red-600 hover:bg-red-50 font-medium"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Metrics Counter Footer */}
+                            <div className="flex items-center gap-3.5 text-xs text-gray-400">
+                              <span className="flex items-center gap-1">
+                                <Eye className="w-3.5 h-3.5" />
+                                {camp.views}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-3.5 h-3.5" />
+                                {camp.likes}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3.5 h-3.5" />
+                                {camp.calls}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </>
+                    ))
                   )}
                 </div>
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Bottom stats */}
-          <div className="flex items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
-            <span className="inline-flex items-center gap-1">
-              <Eye className="h-3.5 w-3.5" />
-              {formatNumber(ad.impressions)}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <MousePointerClick className="h-3.5 w-3.5" />
-              {formatNumber(ad.clicks)}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              {formatNumber(ad.conversions)}
-            </span>
-            <StatusPill status={ad.status} />
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-};
+            {/* ═══════════════════════════════════════════════════════
+                VIEW 2: CREATE A NEW ADVERT (Screenshot 2)
+            ═══════════════════════════════════════════════════════ */}
+            {view === "create" && (
+              <div className="space-y-6">
+                {/* Header Row: Title & Cancel */}
+                <div className="flex items-center justify-between">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                    Create a new advert
+                  </h1>
 
-// ──────────────────────────────────────────────────────────
-// Status pill
-// ──────────────────────────────────────────────────────────
-const StatusPill = ({ status }) => {
-  const config =
-    {
-      approved: {
-        label: "Active",
-        cls: "text-emerald-700 bg-emerald-50",
-        Icon: CheckCircle2,
-      },
-      pending: {
-        label: "Pending",
-        cls: "text-amber-700 bg-amber-50",
-        Icon: Clock,
-      },
-      rejected: {
-        label: "Rejected",
-        cls: "text-red-700 bg-red-50",
-        Icon: XCircle,
-      },
-      paused: {
-        label: "Paused",
-        cls: "text-orange-700 bg-orange-50",
-        Icon: Pause,
-      },
-      disabled: {
-        label: "Disabled",
-        cls: "text-gray-600 bg-gray-100",
-        Icon: Ban,
-      },
-      expired: {
-        label: "Expired",
-        cls: "text-gray-600 bg-gray-100",
-        Icon: Clock,
-      },
-      draft: {
-        label: "Draft",
-        cls: "text-blue-700 bg-blue-50",
-        Icon: Pencil,
-      },
-    }[status] || {
-      label: status,
-      cls: "text-gray-600 bg-gray-100",
-      Icon: AlertCircle,
-    };
+                  <button
+                    type="button"
+                    onClick={handleCancelCreate}
+                    className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-600 hover:text-gray-900 transition bg-white border border-gray-200 px-3.5 py-2 rounded-xl shadow-2xs"
+                  >
+                    <X className="w-4 h-4 text-gray-500" />
+                    <span>Cancel</span>
+                  </button>
+                </div>
 
-  const Icon = config.Icon;
-  return (
-    <span
-      className={`ml-auto inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${config.cls}`}
-    >
-      <Icon className="h-3 w-3" />
-      {config.label}
-    </span>
-  );
-};
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-8">
+                  {/* ─────────────────────────────────────────────────
+                      1. Basic Info
+                  ───────────────────────────────────────────────── */}
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                      Basic Info
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Campaign Name
+                        </label>
+                        <input
+                          type="text"
+                          value={campaignName}
+                          onChange={(e) => setCampaignName(e.target.value)}
+                          placeholder="e.g. Weekend Wardrobe Refresh"
+                          className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
 
-// ──────────────────────────────────────────────────────────
-// Ad form modal (create + edit)
-// ──────────────────────────────────────────────────────────
-const AdFormModal = ({ mode, ad, onClose, onSuccess, onNotify }) => {
-  const isEdit = mode === "edit" && ad;
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Campaign Type
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={campaignType}
+                            onChange={(e) => setCampaignType(e.target.value)}
+                            className="w-full appearance-none px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+                          >
+                            <option value="Discount">Discount</option>
+                            <option value="Promotional offer">
+                              Promotional offer
+                            </option>
+                            <option value="Featured listing">
+                              Featured listing
+                            </option>
+                            <option value="Full Campaign">
+                              Full Campaign
+                            </option>
+                          </select>
+                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                      </div>
 
-  const { data: typesResp } = useListAdvertisementTypesQuery();
-  const { data: slotsResp } = useListAdvertisementSlotsQuery();
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Goal
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={campaignGoal}
+                            onChange={(e) => setCampaignGoal(e.target.value)}
+                            className="w-full appearance-none px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+                          >
+                            <option value="Increase Sales">
+                              Increase Sales
+                            </option>
+                            <option value="Brand Awareness">
+                              Brand Awareness
+                            </option>
+                            <option value="Drive Foot Traffic">
+                              Drive Foot Traffic
+                            </option>
+                          </select>
+                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-  const types = typesResp?.data || [];
-  const slots = slotsResp?.data || [];
+                  {/* ─────────────────────────────────────────────────
+                      2. Timeline
+                  ───────────────────────────────────────────────── */}
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                      Timeline
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {/* Start Date & Time */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-gray-700">
+                          Start Date &amp; Time
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="w-full px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+                          />
+                          <Calendar className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className="w-full px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+                          />
+                          <Clock className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                      </div>
 
-  const [createAd, { isLoading: isCreating }] =
-    useCreateAdvertisementMutation();
-  const [updateAd, { isLoading: isUpdating }] =
-    useUpdateMyAdvertisementMutation();
+                      {/* End Date & Time */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-gray-700">
+                          End Date &amp; Time
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="w-full px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+                          />
+                          <Calendar className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className="w-full px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+                          />
+                          <Clock className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                      </div>
 
-  const isSaving = isCreating || isUpdating;
+                      {/* Timezone */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-gray-700">
+                          Timezone
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={timezone}
+                            onChange={(e) => setTimezone(e.target.value)}
+                            className="w-full appearance-none px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+                          >
+                            <option value="Asia/Jakarta (GMT+7)">
+                              Asia/Jakarta (GMT+7)
+                            </option>
+                            <option value="Europe/London (GMT+0)">
+                              Europe/London (GMT+0)
+                            </option>
+                            <option value="America/New_York (GMT-5)">
+                              America/New_York (GMT-5)
+                            </option>
+                          </select>
+                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                        <div className="relative">
+                          <select
+                            value={timePeriod}
+                            onChange={(e) => setTimePeriod(e.target.value)}
+                            className="w-full appearance-none px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+                          >
+                            <option value="AM/PM">AM/PM</option>
+                            <option value="24 Hours">24 Hours</option>
+                          </select>
+                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-  const [form, setForm] = useState({
-    type: ad?.type?._id || ad?.type || "",
-    slot: ad?.slot?._id || ad?.slot || "",
-    title: ad?.title || "",
-    description: ad?.description || "",
-    link: ad?.link || "",
-    startDate: toInputDate(ad?.startDate),
-    endDate: toInputDate(ad?.endDate),
-    budget: ad?.budget != null ? String(ad.budget) : "",
-  });
+                  {/* ─────────────────────────────────────────────────
+                      3. Incentive Setup
+                  ───────────────────────────────────────────────── */}
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                      Incentive Setup
+                    </h3>
+                    <div className="space-y-4">
+                      {/* Row 1: Offer Type & Min Purchase */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                            Offer Type
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={offerType}
+                              onChange={(e) => setOfferType(e.target.value)}
+                              className="w-full appearance-none px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+                            >
+                              <option value="Percentage discount">
+                                Percentage discount
+                              </option>
+                              <option value="Fixed amount discount">
+                                Fixed amount discount
+                              </option>
+                              <option value="Free Gift">Free Gift</option>
+                            </select>
+                            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                          </div>
+                        </div>
 
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(ad?.image || null);
-  const fileInputRef = useRef(null);
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                            Minimum Purchase Requirement
+                          </label>
+                          <input
+                            type="text"
+                            value={minPurchase}
+                            onChange={(e) => setMinPurchase(e.target.value)}
+                            placeholder="$20"
+                            className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
 
-  useEffect(() => {
-    return () => {
-      if (imagePreview?.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+                      {/* Row 2: Discount Value & Promo Code */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                            Discount Value
+                          </label>
+                          <input
+                            type="text"
+                            value={discountValue}
+                            onChange={(e) => setDiscountValue(e.target.value)}
+                            placeholder="15%"
+                            className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-red-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-red-400"
+                          />
+                          <p className="text-[10px] text-red-500 mt-1">
+                            Discount value is reflected during customer checkout.
+                          </p>
+                        </div>
 
-  const setField = (field, value) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                            Promo Code
+                          </label>
+                          <input
+                            type="text"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value)}
+                            placeholder="Enter Promo Code"
+                            className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                          />
+                          <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={autoApplyPromo}
+                              onChange={(e) =>
+                                setAutoApplyPromo(e.target.checked)
+                              }
+                              className="w-3.5 h-3.5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-gray-600">
+                              Automatic promotion apply
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-  const handleImageSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    if (imagePreview?.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
-    setImagePreview(URL.createObjectURL(file));
-    e.target.value = "";
-  };
+                  {/* ─────────────────────────────────────────────────
+                      4. Products
+                  ───────────────────────────────────────────────── */}
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                      Products
+                    </h3>
 
-  const handleRemoveImage = () => {
-    if (imagePreview?.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
-    setImageFile(null);
-    setImagePreview(null);
-  };
+                    {/* Apply To Toggle Buttons */}
+                    <div className="mb-4">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Apply To
+                      </label>
+                      <div className="grid grid-cols-2 gap-3 max-w-sm">
+                        <button
+                          type="button"
+                          onClick={() => setProductApplyMode("all")}
+                          className={`py-2 px-3 rounded-xl text-xs font-semibold transition border ${
+                            productApplyMode === "all"
+                              ? "bg-blue-50 text-blue-600 border-blue-300"
+                              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          All products
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProductApplyMode("specific")}
+                          className={`py-2 px-3 rounded-xl text-xs font-semibold transition border ${
+                            productApplyMode === "specific"
+                              ? "bg-blue-50 text-blue-600 border-blue-300"
+                              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          ✓ Specific Products
+                        </button>
+                      </div>
+                    </div>
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+                    {/* 3 Columns: Categories, Product Selector, Excluded Products */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                      {/* Categories Checkboxes */}
+                      <div className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                        <p className="text-xs font-bold text-gray-700 mb-2">
+                          Categories
+                        </p>
+                        {["Dresses", "Tops", "Outerwear", "Pants", "Skirts"].map(
+                          (cat) => {
+                            const isChecked = selectedCategories.includes(cat);
+                            return (
+                              <label
+                                key={cat}
+                                className="flex items-center gap-2 cursor-pointer text-xs text-gray-700 hover:text-gray-900"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => handleToggleCategory(cat)}
+                                  className="w-3.5 h-3.5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                                />
+                                <span>{cat}</span>
+                              </label>
+                            );
+                          }
+                        )}
+                      </div>
 
-    if (!form.type) {
-      onNotify?.("Please choose an ad type", "error");
-      return;
-    }
-    if (!form.slot) {
-      onNotify?.("Please choose a slot", "error");
-      return;
-    }
-    if (!form.title.trim()) {
-      onNotify?.("Title is required", "error");
-      return;
-    }
-    if (!form.startDate || !form.endDate) {
-      onNotify?.("Start and end dates are required", "error");
-      return;
-    }
-    if (new Date(form.startDate) >= new Date(form.endDate)) {
-      onNotify?.("End date must be after start date", "error");
-      return;
-    }
+                      {/* Product Selector with Selected list */}
+                      <div className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                        <p className="text-xs font-bold text-gray-700 mb-1">
+                          Product Selector
+                        </p>
+                        <div className="relative mb-2">
+                          <input
+                            type="text"
+                            value={productSearchQuery}
+                            onChange={(e) =>
+                              setProductSearchQuery(e.target.value)
+                            }
+                            placeholder="Search Product"
+                            className="w-full pl-3 pr-7 py-1.5 text-xs border border-gray-200 rounded-lg bg-white"
+                          />
+                          <Search className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2" />
+                        </div>
 
-    const fd = new FormData();
-    fd.append("type", form.type);
-    fd.append("slot", form.slot);
-    fd.append("title", form.title.trim());
-    if (form.description.trim())
-      fd.append("description", form.description.trim());
-    if (form.link.trim()) fd.append("link", form.link.trim());
-    fd.append("startDate", form.startDate);
-    fd.append("endDate", form.endDate);
-    if (form.budget !== "") fd.append("budget", String(form.budget));
-    if (imageFile) fd.append("image", imageFile);
+                        <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                          {selectedProducts.map((p) => (
+                            <div
+                              key={p.id}
+                              className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-white border border-gray-200 text-xs"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <img
+                                  src={p.image}
+                                  alt={p.name}
+                                  className="w-7 h-7 rounded object-cover shrink-0"
+                                />
+                                <span className="truncate text-[11px] font-medium text-gray-800">
+                                  {p.name}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveProduct(p.id)}
+                                className="text-gray-400 hover:text-red-500 shrink-0"
+                                title="Remove product"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-    try {
-      const r = isEdit
-        ? await updateAd({ id: ad._id, ...Object.fromEntries(fd) }).unwrap()
-        : await createAd(fd).unwrap();
+                      {/* Excluded Products */}
+                      <div className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
+                        <p className="text-xs font-bold text-gray-700 mb-1">
+                          Excluded Products
+                        </p>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={excludedSearchQuery}
+                            onChange={(e) =>
+                              setExcludedSearchQuery(e.target.value)
+                            }
+                            placeholder="Search Product"
+                            className="w-full pl-3 pr-7 py-1.5 text-xs border border-gray-200 rounded-lg bg-white"
+                          />
+                          <Search className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2" />
+                        </div>
+                        <p className="text-[11px] text-gray-400 italic pt-2">
+                          No products currently excluded from this offer.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-      onNotify?.(
-        r?.message || (isEdit ? "Ad updated" : "Ad created"),
-        "success",
-      );
-      onSuccess?.();
-    } catch (err) {
-      onNotify?.(
-        err?.data?.message || (isEdit ? "Failed to update" : "Failed to create"),
-        "error",
-      );
-    }
-  };
+                  {/* ─────────────────────────────────────────────────
+                      5. Budget & Cost Control
+                  ───────────────────────────────────────────────── */}
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                      Budget &amp; Cost Control
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Campaign Budget
+                        </label>
+                        <input
+                          type="text"
+                          value={campaignBudget}
+                          onChange={(e) => setCampaignBudget(e.target.value)}
+                          placeholder="$500"
+                          className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
 
-  const selectedSlot = slots.find((s) => s._id === form.slot);
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Daily Budget Limit
+                        </label>
+                        <input
+                          type="text"
+                          value={dailyBudget}
+                          onChange={(e) => setDailyBudget(e.target.value)}
+                          placeholder="$50"
+                          className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
 
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 overflow-y-auto"
-      onClick={() => !isSaving && onClose()}
-    >
-      <form
-        onSubmit={handleSubmit}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg shadow-2xl max-h-[92vh] flex flex-col"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
-          <div className="min-w-0">
-            <h2 className="text-base font-bold text-gray-900">
-              {isEdit ? "Edit campaign" : "New campaign"}
-            </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {isEdit
-                ? "Update the details and save."
-                : "Fill in the details — you can save it as a draft first."}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => !isSaving && onClose()}
-            disabled={isSaving}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0 disabled:opacity-60"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Expected Duration
+                        </label>
+                        <input
+                          type="text"
+                          value={expectedDuration}
+                          onChange={(e) => setExpectedDuration(e.target.value)}
+                          placeholder="7 days"
+                          className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-        {/* Body */}
-        <div className="p-5 overflow-y-auto flex-1 space-y-4">
-          {/* Image */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
-              Creative image
-            </label>
-            {imagePreview ? (
-              <div className="relative w-full aspect-[2/1] rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
-                <img
-                  src={imagePreview}
-                  alt="Creative"
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  disabled={isSaving}
-                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition disabled:opacity-60"
-                  aria-label="Remove"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  {/* ─────────────────────────────────────────────────
+                      6. Campaign Image File
+                  ───────────────────────────────────────────────── */}
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                      Campaign Image File
+                    </h3>
+                    <div
+                      onClick={() => imageInputRef.current?.click()}
+                      className="border-2 border-dashed border-gray-200 hover:border-blue-400 bg-gray-50/50 hover:bg-blue-50/20 rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[140px]"
+                    >
+                      {campaignImagePreview ? (
+                        <div className="relative w-full max-w-sm h-36 rounded-xl overflow-hidden shadow-sm">
+                          <img
+                            src={campaignImagePreview}
+                            alt="Campaign Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCampaignImagePreview(null);
+                            }}
+                            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shadow"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-2 shadow-2xs">
+                            <UploadCloud className="w-5 h-5" />
+                          </div>
+                          <p className="text-xs text-gray-700 font-semibold">
+                            Drag and drop your image or{" "}
+                            <span className="text-blue-600 underline">
+                              Browse image
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-1">
+                            Max size 10MB
+                          </p>
+                        </>
+                      )}
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
+
+                  {/* ─────────────────────────────────────────────────
+                      7. Target Audience
+                  ───────────────────────────────────────────────── */}
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                      Target Audience
+                    </h3>
+                    <div className="space-y-4">
+                      {/* Customer Type Select */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Customer Type
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={customerSegmentType}
+                            onChange={(e) =>
+                              setCustomerSegmentType(e.target.value)
+                            }
+                            className="w-full appearance-none px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+                          >
+                            <option value="Customer segment">
+                              Customer segment
+                            </option>
+                            <option value="All active users">
+                              All active users
+                            </option>
+                            <option value="Local area residents">
+                              Local area residents
+                            </option>
+                          </select>
+                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Location Pills */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                          Location
+                        </label>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          {["Indonesia", "Singapore", "Malaysia"].map((loc) => {
+                            const isSelected = locationsSelected.includes(loc);
+                            return (
+                              <button
+                                key={loc}
+                                type="button"
+                                onClick={() => handleToggleLocation(loc)}
+                                className={`px-4 py-2 rounded-xl text-xs font-semibold transition border ${
+                                  isSelected
+                                    ? "bg-blue-50 text-blue-600 border-blue-300"
+                                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                                }`}
+                              >
+                                {isSelected ? `✓ ${loc}` : loc}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Customer type Pills */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                          Customer type
+                        </label>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          {["New", "Returning", "VIP"].map((ct) => {
+                            const isSelected = customerTypesSelected.includes(ct);
+                            return (
+                              <button
+                                key={ct}
+                                type="button"
+                                onClick={() => handleToggleCustomerType(ct)}
+                                className={`px-4 py-2 rounded-xl text-xs font-semibold transition border ${
+                                  isSelected
+                                    ? "bg-blue-50 text-blue-600 border-blue-300"
+                                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                                }`}
+                              >
+                                {isSelected ? `✓ ${ct}` : ct}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Purchase History & Last Active Date */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                            Purchase History
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={purchaseHistory}
+                              onChange={(e) =>
+                                setPurchaseHistory(e.target.value)
+                              }
+                              className="w-full appearance-none px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+                            >
+                              <option value="Bought 1+ item in last 30 days">
+                                Bought 1+ item in last 30 days
+                              </option>
+                              <option value="Bought 3+ items this year">
+                                Bought 3+ items this year
+                              </option>
+                              <option value="First-time purchaser">
+                                First-time purchaser
+                              </option>
+                            </select>
+                            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                            Last Active Date
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={lastActiveDate}
+                              onChange={(e) =>
+                                setLastActiveDate(e.target.value)
+                              }
+                              className="w-full appearance-none px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+                            >
+                              <option value="Active within last 30 days">
+                                Active within last 30 days
+                              </option>
+                              <option value="Active within last 7 days">
+                                Active within last 7 days
+                              </option>
+                              <option value="All recorded users">
+                                All recorded users
+                              </option>
+                            </select>
+                            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ─────────────────────────────────────────────────
+                      8. Channels & Distribution
+                  ───────────────────────────────────────────────── */}
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                      Channels &amp; Distribution
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      {["Email", "Website", "Mobile App"].map((ch) => {
+                        const isSelected = channelsSelected.includes(ch);
+                        return (
+                          <button
+                            key={ch}
+                            type="button"
+                            onClick={() => handleToggleChannel(ch)}
+                            className={`px-4 py-2 rounded-xl text-xs font-semibold transition border ${
+                              isSelected
+                                ? "bg-blue-50 text-blue-600 border-blue-300"
+                                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                            }`}
+                          >
+                            {isSelected ? `✓ ${ch}` : ch}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* ─────────────────────────────────────────────────
+                      9. Sales Team Assignment
+                  ───────────────────────────────────────────────── */}
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                      Sales Team Assignment
+                    </h3>
+                    <div className="space-y-4">
+                      {/* Person in charge */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Person in charge
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={personInCharge}
+                            onChange={(e) => setPersonInCharge(e.target.value)}
+                            className="w-full appearance-none px-3.5 py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9"
+                          >
+                            <option value="Mario Prat">Mario Prat</option>
+                            <option value="Laura Fox">Laura Fox</option>
+                            <option value="Ashley Jordan">Ashley Jordan</option>
+                          </select>
+                          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Multi-select checkboxes */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                          Sales Team Assignment
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                          {salesTeamMembers.map((member) => (
+                            <label
+                              key={member.id}
+                              className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none transition ${
+                                member.assigned
+                                  ? "bg-blue-50/50 border-blue-200 text-gray-900"
+                                  : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={member.assigned}
+                                onChange={() =>
+                                  handleToggleTeamMember(member.id)
+                                }
+                                className="w-3.5 h-3.5 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                              />
+                              <img
+                                src={member.avatar}
+                                alt={member.name}
+                                className="w-6 h-6 rounded-full object-cover shrink-0"
+                              />
+                              <span className="text-xs font-medium truncate">
+                                {member.name}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons at Bottom of Form */}
+                  <div className="pt-6 border-t border-gray-100 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      className="px-5 py-2.5 rounded-xl border border-gray-300 bg-white text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 transition shadow-2xs"
+                    >
+                      Save to draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLaunchCampaign}
+                      className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm font-semibold text-white transition shadow-sm"
+                    >
+                      Launch campaign
+                    </button>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isSaving}
-                className="w-full aspect-[2/1] rounded-xl border-2 border-dashed border-gray-200 hover:border-[#3B82F6] bg-gray-50 flex flex-col items-center justify-center gap-2 transition disabled:opacity-60"
-              >
-                <ImageIcon className="h-8 w-8 text-gray-400" />
-                <span className="text-xs font-semibold text-gray-600">
-                  Click to upload creative
-                </span>
-                <span className="text-[10px] text-gray-400">
-                  Required before submitting for review
-                </span>
-              </button>
             )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageSelect}
-              className="hidden"
-            />
-            {imagePreview && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isSaving}
-                className="mt-2 text-xs font-semibold text-[#3B82F6] hover:underline disabled:opacity-60"
-              >
-                Change image
-              </button>
-            )}
-          </div>
-
-          {/* Type + Slot */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Ad type <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={form.type}
-                onChange={(e) => setField("type", e.target.value)}
-                disabled={isSaving || types.length === 0}
-                className={inputClass}
-              >
-                <option value="">Select a type</option>
-                {types.map((t) => (
-                  <option key={t._id} value={t._id}>
-                    {t.name}
-                    {t.category ? ` (${t.category})` : ""}
-                  </option>
-                ))}
-              </select>
-              {types.length === 0 && (
-                <p className="text-[10px] text-orange-600 mt-1">
-                  No types available
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Slot <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={form.slot}
-                onChange={(e) => setField("slot", e.target.value)}
-                disabled={isSaving || slots.length === 0}
-                className={inputClass}
-              >
-                <option value="">Select a slot</option>
-                {slots.map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {s.name}
-                    {s.position ? ` — ${s.position}` : ""}
-                  </option>
-                ))}
-              </select>
-              {selectedSlot?.dimensions?.width && (
-                <p className="text-[10px] text-gray-400 mt-1">
-                  Recommended: {selectedSlot.dimensions.width}×
-                  {selectedSlot.dimensions.height}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Title */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
-              Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => setField("title", e.target.value)}
-              placeholder="e.g. Grand opening — 30% off"
-              maxLength={100}
-              disabled={isSaving}
-              className={inputClass}
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
-              Description
-            </label>
-            <textarea
-              rows={3}
-              value={form.description}
-              onChange={(e) => setField("description", e.target.value)}
-              placeholder="Short details about your campaign..."
-              maxLength={500}
-              disabled={isSaving}
-              className={`${inputClass} resize-none`}
-            />
-            <p className="text-[10px] text-gray-400 mt-1">
-              {form.description.length}/500
-            </p>
-          </div>
-
-          {/* Link */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
-              Destination link
-            </label>
-            <input
-              type="url"
-              value={form.link}
-              onChange={(e) => setField("link", e.target.value)}
-              placeholder="https://your-business.com/offer"
-              disabled={isSaving}
-              className={inputClass}
-            />
-          </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                Start <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={form.startDate}
-                onChange={(e) => setField("startDate", e.target.value)}
-                disabled={isSaving}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                End <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={form.endDate}
-                onChange={(e) => setField("endDate", e.target.value)}
-                disabled={isSaving}
-                className={inputClass}
-              />
-            </div>
-          </div>
-
-          {/* Budget */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
-              Budget
-            </label>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={form.budget}
-              onChange={(e) => setField("budget", e.target.value)}
-              placeholder="0.00"
-              disabled={isSaving}
-              className={inputClass}
-            />
           </div>
         </div>
+      </main>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSaving}
-            className="px-4 py-2.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition disabled:opacity-60"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-semibold text-white bg-[#3B82F6] hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSaving ? (
-              <>
-                <Loader className="h-3.5 w-3.5 animate-spin" />
-                Saving…
-              </>
-            ) : (
-              <>
-                <Upload className="h-3.5 w-3.5" />
-                {isEdit ? "Save changes" : "Create campaign"}
-              </>
-            )}
-          </button>
+      {/* ─────────────────────────────────────────────────────────────
+          4. STATISTICS MODAL (When user clicks "Statistics")
+      ───────────────────────────────────────────────────────────── */}
+      {selectedStatsAd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-200 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                  {selectedStatsAd.type}
+                </span>
+                <h3 className="text-base font-bold text-gray-900 mt-1">
+                  Campaign Performance
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedStatsAd(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="p-3 rounded-xl bg-gray-50 text-center">
+                <p className="text-[11px] text-gray-400 font-medium">Views</p>
+                <p className="text-lg font-black text-gray-900">
+                  {selectedStatsAd.views.toLocaleString()}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-gray-50 text-center">
+                <p className="text-[11px] text-gray-400 font-medium">Likes</p>
+                <p className="text-lg font-black text-gray-900">
+                  {selectedStatsAd.likes}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-gray-50 text-center">
+                <p className="text-[11px] text-gray-400 font-medium">Inquiries</p>
+                <p className="text-lg font-black text-gray-900">
+                  {selectedStatsAd.calls}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-xs text-gray-600 bg-blue-50/40 p-3.5 rounded-xl border border-blue-100 mb-5">
+              <div className="flex justify-between">
+                <span>Address target:</span>
+                <strong className="text-gray-800">
+                  {selectedStatsAd.address}
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Created date:</span>
+                <strong className="text-gray-800">
+                  {selectedStatsAd.created}
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Budget allocated:</span>
+                <strong className="text-gray-800">
+                  {selectedStatsAd.price}
+                </strong>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedStatsAd(null)}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
-      </form>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          5. EXISTING APPLICATION FOOTER
+      ───────────────────────────────────────────────────────────── */}
+      <Footer />
     </div>
   );
-};
-
-// ──────────────────────────────────────────────────────────
-// Performance modal
-// ──────────────────────────────────────────────────────────
-const PerformanceModal = ({ ad, onClose }) => {
-  const [range, setRange] = useState("30d");
-
-  const { from, to } = useMemo(() => {
-    const now = new Date();
-    const to = now.toISOString();
-    let from;
-    switch (range) {
-      case "7d":
-        from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        break;
-      case "90d":
-        from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
-        break;
-      case "30d":
-      default:
-        from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        break;
-    }
-    return { from, to };
-  }, [range]);
-
-  const { data, isLoading, error } = useGetMyAdvertisementPerformanceQuery({
-    id: ad._id,
-    from,
-    to,
-  });
-
-  const perf = data?.data;
-  const totals = perf?.totals || {
-    impressions: 0,
-    clicks: 0,
-    conversions: 0,
-    ctr: 0,
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 overflow-y-auto"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col"
-      >
-        <div className="flex items-start justify-between p-5 border-b border-gray-100">
-          <div className="min-w-0">
-            <h3 className="text-base font-bold text-gray-900">
-              Campaign performance
-            </h3>
-            <p className="text-xs text-gray-500 mt-0.5 truncate">{ad.title}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="p-5 overflow-y-auto flex-1">
-          <div className="flex gap-1.5 mb-4">
-            {[
-              { value: "7d", label: "7 days" },
-              { value: "30d", label: "30 days" },
-              { value: "90d", label: "90 days" },
-            ].map((r) => (
-              <button
-                key={r.value}
-                type="button"
-                onClick={() => setRange(r.value)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-full transition ${
-                  range === r.value
-                    ? "bg-[#3B82F6] text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-2 gap-3">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-20 rounded-xl bg-gray-100 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="text-center py-8">
-              <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">
-                {error?.data?.message || "Failed to load stats"}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <KpiTile
-                label="Impressions"
-                value={formatNumber(totals.impressions)}
-                icon={Eye}
-              />
-              <KpiTile
-                label="Clicks"
-                value={formatNumber(totals.clicks)}
-                icon={MousePointerClick}
-              />
-              <KpiTile
-                label="CTR"
-                value={`${totals.ctr || 0}%`}
-                icon={BarChart3}
-                accent
-              />
-              <KpiTile
-                label="Conversions"
-                value={formatNumber(totals.conversions)}
-                icon={CheckCircle2}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="p-5 border-t border-gray-100 flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const KpiTile = ({ label, value, icon: Icon, accent = false }) => (
-  <div
-    className={`rounded-xl border p-3.5 ${
-      accent ? "bg-blue-50 border-blue-100" : "bg-white border-gray-200"
-    }`}
-  >
-    <div className="flex items-center gap-2 mb-1.5">
-      <Icon
-        className={`h-3.5 w-3.5 ${accent ? "text-[#3B82F6]" : "text-gray-400"}`}
-      />
-      <span
-        className={`text-[10px] font-bold uppercase tracking-wider ${
-          accent ? "text-[#3B82F6]" : "text-gray-500"
-        }`}
-      >
-        {label}
-      </span>
-    </div>
-    <p
-      className={`text-xl font-bold tabular-nums ${
-        accent ? "text-[#3B82F6]" : "text-gray-900"
-      }`}
-    >
-      {value}
-    </p>
-  </div>
-);
-
-export default BusinessAds;
+}
