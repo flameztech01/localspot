@@ -11,8 +11,8 @@ export const businessApiSlice = apiSlice.injectEndpoints({
     // =====================================================================
 
     // GET /api/v1/business/public
-    // Query: kind, category, city, country, minRating, featured, q,
-    //        sort, page, limit
+    // Query: kind, category, city, country, minRating, featured,
+    //        kycVerified, q, sort, page, limit
     listPublicBusinesses: builder.query({
       query: (params = {}) => ({
         url: `${BUSINESS_URL}/public`,
@@ -58,7 +58,7 @@ export const businessApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: formData,
       }),
-      invalidatesTags: ["BusinessApplication", "Auth"],
+      invalidatesTags: ["BusinessApplication", "Auth", "ActivityLog"],
     }),
 
     // GET /api/v1/business/application
@@ -79,7 +79,7 @@ export const businessApiSlice = apiSlice.injectEndpoints({
         method: "PUT",
         body: formData,
       }),
-      invalidatesTags: ["BusinessApplication", "Auth"],
+      invalidatesTags: ["BusinessApplication", "Auth", "ActivityLog"],
     }),
 
     // DELETE /api/v1/business/application
@@ -88,7 +88,74 @@ export const businessApiSlice = apiSlice.injectEndpoints({
         url: `${BUSINESS_URL}/application`,
         method: "DELETE",
       }),
-      invalidatesTags: ["BusinessApplication", "Auth"],
+      invalidatesTags: ["BusinessApplication", "Auth", "ActivityLog"],
+    }),
+
+    // =====================================================================
+    // SIGNED-IN BUSINESS — KYC / Trust Badge
+    // =====================================================================
+
+    // POST /api/v1/business/kyc
+    // Body: FormData
+    //   text:  representativeType, ownerLegalName, ownerDob,
+    //          idType, idNumber,
+    //          registeredBusinessName, registrationType, cacNumber,
+    //          cacStatus, operatingAddress,
+    //          riskCategory, foodLicenceNumber, foodLicenceExpiry,
+    //          liquorLicenceNumber, kycDeclarationAccepted
+    //   files: idDocument, cacDocument, activityProof,
+    //          utilityBill, regulatoryLicence
+    //          (+ optional logo, coverImage, images)
+    // Do NOT set Content-Type — browser sets multipart boundary
+    submitBusinessKYC: builder.mutation({
+      query: (formData) => ({
+        url: `${BUSINESS_URL}/kyc`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["BusinessKYC", "Auth", "ActivityLog"],
+    }),
+
+    // GET /api/v1/business/kyc
+    getMyBusinessKYC: builder.query({
+      query: () => ({
+        url: `${BUSINESS_URL}/kyc`,
+        method: "GET",
+      }),
+      providesTags: ["BusinessKYC"],
+    }),
+
+    // PUT /api/v1/business/kyc
+    // Same multipart shape as submit — only send what changed.
+    // Editing a rejected KYC re-submits it (status → "pending").
+    updateBusinessKYC: builder.mutation({
+      query: (formData) => ({
+        url: `${BUSINESS_URL}/kyc`,
+        method: "PUT",
+        body: formData,
+      }),
+      invalidatesTags: ["BusinessKYC", "Auth", "ActivityLog"],
+    }),
+
+    // =====================================================================
+    // SIGNED-IN BUSINESS — Activity log
+    // =====================================================================
+
+    // GET /api/v1/business/activity?page=&limit=&category=&q=
+    // category: "all" | "Verification" | "Profile" | "Advertising"
+    //         | "Reviews" | "Security" | "Billing" | "Account" | "System"
+    getMyActivityLog: builder.query({
+      query: ({
+        page = 1,
+        limit = 50,
+        category = "all",
+        q = "",
+      } = {}) => ({
+        url: `${BUSINESS_URL}/activity`,
+        method: "GET",
+        params: { page, limit, category, q },
+      }),
+      providesTags: ["ActivityLog"],
     }),
 
     // =====================================================================
@@ -136,6 +203,7 @@ export const businessApiSlice = apiSlice.injectEndpoints({
         "BusinessApplication",
         "Auth",
         "PublicBusinessList",
+        "ActivityLog",
       ],
     }),
 
@@ -153,6 +221,7 @@ export const businessApiSlice = apiSlice.injectEndpoints({
         "BusinessApplication",
         "Auth",
         "PublicBusinessList",
+        "ActivityLog",
       ],
     }),
 
@@ -169,6 +238,74 @@ export const businessApiSlice = apiSlice.injectEndpoints({
         "BusinessList",
         "PublicBusinessList",
         "FeaturedBusinesses",
+        "ActivityLog",
+      ],
+    }),
+
+    // =====================================================================
+    // ADMIN — KYC review
+    // =====================================================================
+
+    // GET /api/v1/business/kyc-submissions?status=&page=&limit=
+    // status: "pending" | "approved" | "rejected" | "all"
+    listBusinessKYC: builder.query({
+      query: ({ status = "pending", page = 1, limit = 20 } = {}) => ({
+        url: `${BUSINESS_URL}/kyc-submissions`,
+        method: "GET",
+        params: { status, page, limit },
+      }),
+      providesTags: (result) =>
+        result?.data
+          ? [
+              ...result.data.map(({ _id }) => ({
+                type: "Business",
+                id: _id,
+              })),
+              "BusinessKYCList",
+            ]
+          : ["BusinessKYCList"],
+    }),
+
+    // GET /api/v1/business/kyc-submissions/:id
+    getBusinessKYCById: builder.query({
+      query: (id) => ({
+        url: `${BUSINESS_URL}/kyc-submissions/${id}`,
+        method: "GET",
+      }),
+      providesTags: (_result, _err, id) => [{ type: "Business", id }],
+    }),
+
+    // PATCH /api/v1/business/kyc-submissions/:id/approve
+    approveBusinessKYC: builder.mutation({
+      query: (id) => ({
+        url: `${BUSINESS_URL}/kyc-submissions/${id}/approve`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (_result, _err, id) => [
+        { type: "Business", id },
+        "BusinessKYCList",
+        "BusinessKYC",
+        "Auth",
+        "PublicBusinessList",
+        "ActivityLog",
+      ],
+    }),
+
+    // PATCH /api/v1/business/kyc-submissions/:id/reject
+    // Body: { reason }
+    rejectBusinessKYC: builder.mutation({
+      query: ({ id, reason }) => ({
+        url: `${BUSINESS_URL}/kyc-submissions/${id}/reject`,
+        method: "PATCH",
+        body: { reason },
+      }),
+      invalidatesTags: (_result, _err, { id }) => [
+        { type: "Business", id },
+        "BusinessKYCList",
+        "BusinessKYC",
+        "Auth",
+        "PublicBusinessList",
+        "ActivityLog",
       ],
     }),
   }),
@@ -185,10 +322,24 @@ export const {
   useUpdateBusinessApplicationMutation,
   useWithdrawBusinessApplicationMutation,
 
-  // Admin approval — names unchanged from before
+  // Signed-in business — KYC
+  useSubmitBusinessKYCMutation,
+  useGetMyBusinessKYCQuery,
+  useUpdateBusinessKYCMutation,
+
+  // Signed-in business — activity log
+  useGetMyActivityLogQuery,
+
+  // Admin — application review
   useListBusinessesQuery,
   useGetBusinessByIdQuery,
   useApproveBusinessMutation,
   useRejectBusinessMutation,
   useToggleBusinessFeaturedMutation,
+
+  // Admin — KYC review
+  useListBusinessKYCQuery,
+  useGetBusinessKYCByIdQuery,
+  useApproveBusinessKYCMutation,
+  useRejectBusinessKYCMutation,
 } = businessApiSlice;

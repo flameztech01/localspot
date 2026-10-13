@@ -11,10 +11,12 @@ import {
   FiAlertCircle,
   FiRefreshCw,
   FiImage,
+  FiCalendar,
 } from "react-icons/fi";
 import { FaHeart, FaStar } from "react-icons/fa";
 
 import { useGetFeaturedBusinessesQuery } from "../features/discoveryApiSlice";
+import BookingModal from "./BookingModal";
 
 const GAP = 16;
 
@@ -165,12 +167,12 @@ const SkeletonCard = () => (
 // ──────────────────────────────────────────────────────────
 // Place Card
 // ──────────────────────────────────────────────────────────
-const PlaceCard = ({ place, saved, onToggleSave }) => {
+const PlaceCard = ({ place, saved, onToggleSave, onBookNow }) => {
   const [imgBroken, setImgBroken] = useState(false);
   const showReal = place.img && !imgBroken;
 
   return (
-    <article className="flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:rounded-2xl">
+    <article className="group flex w-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:rounded-2xl transition-all hover:shadow-md hover:border-gray-300">
       <div className="relative aspect-[3/2] w-full overflow-hidden sm:aspect-[4/3]">
         {showReal ? (
           <img
@@ -179,7 +181,7 @@ const PlaceCard = ({ place, saved, onToggleSave }) => {
             loading="lazy"
             referrerPolicy="no-referrer"
             onError={() => setImgBroken(true)}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <ImagePlaceholder name={place.name} />
@@ -198,7 +200,7 @@ const PlaceCard = ({ place, saved, onToggleSave }) => {
           onClick={() => onToggleSave(place.id)}
           aria-label={saved ? "Remove from saved places" : "Save place"}
           aria-pressed={saved}
-          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm transition-colors hover:bg-white sm:right-2 sm:top-2 sm:h-8 sm:w-8"
+          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm transition-colors hover:bg-white sm:right-2 sm:top-2 sm:h-8 sm:w-8 z-10"
         >
           {saved ? (
             <FaHeart size={11} className="text-red-500 sm:hidden" />
@@ -211,6 +213,22 @@ const PlaceCard = ({ place, saved, onToggleSave }) => {
             <FiHeart size={14} className="hidden sm:block" />
           )}
         </button>
+
+        {/* Book Now Hover Button */}
+        <div className="absolute inset-0 hidden items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/35 sm:flex">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onBookNow?.(place);
+            }}
+            className="pointer-events-auto inline-flex items-center gap-1.5 translate-y-2 rounded-full bg-white px-5 py-2.5 text-xs font-bold text-gray-900 opacity-0 shadow-xl transition-all duration-200 hover:bg-[#60A5FA] hover:text-white hover:scale-105 active:scale-95 group-hover:translate-y-0 group-hover:opacity-100 cursor-pointer"
+          >
+            <FiCalendar className="text-[#3B82F6]" size={13} />
+            <span>Book Now</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col p-2.5 sm:p-4">
@@ -265,6 +283,13 @@ const Featured = () => {
   const [pageCount, setPageCount] = useState(1);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedPlaceForBooking, setSelectedPlaceForBooking] = useState(null);
+
+  const handleOpenBooking = (place) => {
+    setSelectedPlaceForBooking(place);
+    setBookingModalOpen(true);
+  };
 
   const {
     data: apiData,
@@ -457,6 +482,7 @@ const Featured = () => {
                     place={place}
                     saved={saved.includes(place.id)}
                     onToggleSave={toggleSave}
+                    onBookNow={handleOpenBooking}
                   />
                 </div>
               ))}
@@ -483,6 +509,13 @@ const Featured = () => {
           </>
         )}
       </div>
+
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
+        place={selectedPlaceForBooking}
+      />
     </section>
   );
 };

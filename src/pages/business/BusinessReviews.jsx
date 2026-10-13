@@ -1,635 +1,291 @@
-// src/pages/business/BusinessReviews.jsx
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/business/BusinessLogin.jsx
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import {
-  Star,
-  Pencil,
-  Loader,
-  AlertCircle,
-  MessageSquare,
-  Send,
-  Trash2,
-  X,
-  RefreshCw,
-  User as UserIcon,
-  LogOut,
-  CornerDownRight,
-} from "lucide-react";
+import { FiEye, FiEyeOff, FiBriefcase } from "react-icons/fi";
 
-import {
-  useListMyBusinessReviewsQuery,
-  useGetMyBusinessReviewStatsQuery,
-  useReplyToReviewMutation,
-  useUpdateReviewReplyMutation,
-  useDeleteReviewReplyMutation,
-} from "../../features/reviewApiSlice";
-import { useLogoutUserMutation } from "../../features/authApiSlice";
-import { logout } from "../../features/auth/authSlice";
+import { useLoginUserMutation } from "../../features/authApiSlice";
+import { setCredentials } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
-import BusinessSidebar from "../../components/BusinessSidebar";
-import BusinessBottombar from "../../components/BusinessBottombar";
 
-// ─── Helpers ───────────────────────────────────────────────
-const formatDate = (d) => {
-  if (!d) return "";
-  try {
-    return new Date(d).toLocaleDateString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return "";
-  }
-};
+// ─── Static data ────────────────────────────────────────────
+const sliderImages = [
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=1200",
+];
 
-const Stars = ({ value = 0, size = "sm" }) => {
-  const cls =
-    size === "lg" ? "h-5 w-5" : size === "md" ? "h-4 w-4" : "h-3.5 w-3.5";
-  return (
-    <div className="inline-flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          className={`${cls} ${
-            i <= Math.round(value)
-              ? "text-amber-400 fill-amber-400"
-              : "text-gray-200"
-          }`}
-        />
-      ))}
-    </div>
-  );
-};
-
-const initials = (name) => {
-  if (!name) return "";
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-};
-
-// ─── Main ──────────────────────────────────────────────────
-const BusinessReviews = () => {
+const BusinessLogin = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { showToast } = useToast();
 
-  const [replyModal, setReplyModal] = useState(null); // { review, mode }
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const [loginUser, { isLoading }] = useLoginUserMutation();
 
-  const {
-    data: reviewsResp,
-    isLoading,
-    error,
-    refetch,
-    isFetching,
-  } = useListMyBusinessReviewsQuery({ limit: 50 });
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({ email: "", password: "" });
 
-  const { data: statsResp } = useGetMyBusinessReviewStatsQuery();
+  // Slider
+  const [activeImage, setActiveImage] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveImage((prev) => (prev + 1) % sliderImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const reviews = reviewsResp?.data || [];
-  const stats = statsResp?.data || {};
-  const isUnauthorized = error?.status === 401;
-
-  const [replyToReview, { isLoading: isReplying }] = useReplyToReviewMutation();
-  const [updateReply, { isLoading: isUpdatingReply }] =
-    useUpdateReviewReplyMutation();
-  const [deleteReply, { isLoading: isDeletingReply }] =
-    useDeleteReviewReplyMutation();
-  const [logoutUser] = useLogoutUserMutation();
-
-  const isMutating = isReplying || isUpdatingReply || isDeletingReply;
-
-  const totalReviews = stats.totalReviews ?? reviews.length;
-
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      await logoutUser().unwrap().catch(() => {});
-    } catch (_) {}
-    dispatch(logout());
-    try {
-      localStorage.removeItem("persist:root");
-      localStorage.removeItem("userInfo");
-      localStorage.removeItem("token");
-      sessionStorage.clear();
-    } catch (_) {}
-    navigate("/signin", { replace: true });
-    setTimeout(() => window.location.reload(), 50);
-  };
-
-  const handleSaveReply = async (text) => {
-    if (!replyModal) return;
-    const { review, mode } = replyModal;
-    try {
-      if (mode === "edit") {
-        const r = await updateReply({ id: review._id, text }).unwrap();
-        showToast(r?.message || "Reply updated", "success");
-      } else {
-        const r = await replyToReview({ id: review._id, text }).unwrap();
-        showToast(r?.message || "Reply posted", "success");
-      }
-      setReplyModal(null);
-    } catch (err) {
-      showToast(err?.data?.message || "Failed to save reply", "error");
-    }
-  };
-
-  const handleDeleteReply = async () => {
-    if (!deleteTarget) return;
-    try {
-      const r = await deleteReply(deleteTarget._id).unwrap();
-      showToast(r?.message || "Reply deleted", "success");
-      setDeleteTarget(null);
-    } catch (err) {
-      showToast(err?.data?.message || "Failed to delete", "error");
-    }
-  };
-
-  // ─── Guards ──────────────────────────────────────────────
-  if (isUnauthorized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white px-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
-          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-7 w-7 text-red-500" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-900 mb-2">
-            Session expired
-          </h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Please log in again to continue.
-          </p>
-          <button
-            onClick={() => navigate("/signin", { replace: true })}
-            className="w-full py-2.5 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition"
-          >
-            Go to sign in
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-white">
-      <BusinessSidebar onLogout={handleLogout} />
-
-      <div className="lg:ml-64 pb-24 lg:pb-10">
-        {/* ─── Header ─── */}
-        <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
-          <div className="max-w-5xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between gap-3">
-            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight truncate">
-              Reviews
-            </h1>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => refetch()}
-                disabled={isFetching}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition disabled:opacity-50"
-                aria-label="Refresh"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
-                />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/business/application")}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-[#3B82F6] hover:bg-blue-700 rounded-lg transition"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <main className="max-w-5xl mx-auto px-4 lg:px-8 py-6">
-          {/* ─── Tabs ─── */}
-          <nav className="mb-6">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="px-4 py-2 text-xs lg:text-sm font-medium rounded-full border bg-white text-gray-900 border-gray-900"
-              >
-                Reviews about you ({totalReviews})
-              </button>
-            </div>
-          </nav>
-
-          {/* ─── Loading ─── */}
-          {isLoading && (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="rounded-2xl border border-gray-200 p-5 space-y-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 animate-pulse" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3.5 w-32 bg-gray-100 rounded animate-pulse" />
-                      <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
-                    </div>
-                    <div className="h-4 w-20 bg-gray-100 rounded animate-pulse" />
-                  </div>
-                  <div className="h-3 w-full bg-gray-100 rounded animate-pulse" />
-                  <div className="h-3 w-3/4 bg-gray-100 rounded animate-pulse" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ─── Error ─── */}
-          {!isLoading && error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-              <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-              <p className="text-sm font-semibold text-red-900">
-                Failed to load reviews
-              </p>
-              <p className="text-xs text-red-700 mt-1">
-                {error?.data?.message || "Something went wrong"}
-              </p>
-              <button
-                type="button"
-                onClick={() => refetch()}
-                className="mt-4 px-4 py-2 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition"
-              >
-                Try again
-              </button>
-            </div>
-          )}
-
-          {/* ─── Empty ─── */}
-          {!isLoading && !error && reviews.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
-                <MessageSquare className="h-7 w-7 text-[#3B82F6]" />
-              </div>
-              <h3 className="text-base font-bold text-gray-900">
-                No reviews yet
-              </h3>
-              <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
-                When customers leave feedback, you'll see it here and can reply.
-              </p>
-            </div>
-          )}
-
-          {/* ─── Reviews list ─── */}
-          {!isLoading && !error && reviews.length > 0 && (
-            <div className="space-y-3">
-              {reviews.map((review) => (
-                <ReviewCard
-                  key={review._id}
-                  review={review}
-                  onReply={() => setReplyModal({ review, mode: "create" })}
-                  onEditReply={() => setReplyModal({ review, mode: "edit" })}
-                  onDeleteReply={() => setDeleteTarget(review)}
-                  isMutating={isMutating}
-                />
-              ))}
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* ─── Reply modal ─── */}
-      {replyModal && (
-        <ReplyModal
-          review={replyModal.review}
-          mode={replyModal.mode}
-          onClose={() => !isMutating && setReplyModal(null)}
-          onSave={handleSaveReply}
-          isSaving={isReplying || isUpdatingReply}
-        />
-      )}
-
-      {/* ─── Delete reply confirm ─── */}
-      {deleteTarget && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => !isDeletingReply && setDeleteTarget(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 space-y-4"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-gray-900">
-                  Delete reply?
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Your reply will be removed. The customer's review stays
-                  visible.
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(null)}
-                disabled={isDeletingReply}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-60"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteReply}
-                disabled={isDeletingReply}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-red-500 hover:bg-red-600 transition disabled:opacity-60"
-              >
-                {isDeletingReply ? (
-                  <>
-                    <Loader className="h-3.5 w-3.5 animate-spin" />
-                    Deleting…
-                  </>
-                ) : (
-                  "Delete reply"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <BusinessBottombar />
-    </div>
-  );
-};
-
-// ──────────────────────────────────────────────────────────
-// Review card
-// ──────────────────────────────────────────────────────────
-const ReviewCard = ({
-  review,
-  onReply,
-  onEditReply,
-  onDeleteReply,
-  isMutating,
-}) => {
-  const reviewer = review.user || {};
-  const name = reviewer.fullName || reviewer.businessName || "Customer";
-  const hasReply = !!review.reply?.text;
-
-  return (
-    <article className="rounded-2xl border border-gray-200 bg-white p-5 lg:p-6">
-      <div className="flex items-start gap-4">
-        {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-[#F5F1EC] flex items-center justify-center overflow-hidden flex-shrink-0">
-          {reviewer.profilePhoto ? (
-            <img
-              src={reviewer.profilePhoto}
-              alt={name}
-              className="w-full h-full object-cover"
-            />
-          ) : initials(name) ? (
-            <span className="text-[11px] font-bold text-gray-500">
-              {initials(name)}
-            </span>
-          ) : (
-            <UserIcon className="h-4 w-4 text-gray-400" />
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          {/* Name + date + stars */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="text-sm font-bold text-gray-900 truncate">
-                {name}
-              </h3>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {formatDate(review.createdAt)}
-              </p>
-            </div>
-            <Stars value={review.rating || 0} size="sm" />
-          </div>
-
-          {/* Comment */}
-          {review.comment && (
-            <p className="text-sm text-gray-600 leading-relaxed mt-2 whitespace-pre-line">
-              {review.comment}
-            </p>
-          )}
-
-          {/* Review images (if any) */}
-          {Array.isArray(review.images) && review.images.length > 0 && (
-            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-              {review.images.map((url, i) => (
-                <a
-                  key={i}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100"
-                >
-                  <img
-                    src={url}
-                    alt={`Review ${i + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </a>
-              ))}
-            </div>
-          )}
-
-          {/* Nested reply block */}
-          {hasReply && (
-            <div className="mt-4 rounded-xl bg-[#F5F1EC] p-4 flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
-                <UserIcon className="h-3.5 w-3.5 text-gray-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-bold text-gray-900">
-                  Your business
-                </h4>
-                <p className="text-[11px] text-gray-400 mt-0.5">
-                  {formatDate(review.reply.repliedAt || review.updatedAt)}
-                </p>
-                <p className="text-xs text-gray-700 leading-relaxed mt-1.5 whitespace-pre-line">
-                  {review.reply.text}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="mt-3 flex items-center gap-4 text-xs">
-            {!hasReply ? (
-              <button
-                type="button"
-                onClick={onReply}
-                disabled={isMutating}
-                className="inline-flex items-center gap-1 font-medium text-gray-500 hover:text-gray-900 transition disabled:opacity-50"
-              >
-                <CornerDownRight className="h-3.5 w-3.5" />
-                Reply
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={onEditReply}
-                  disabled={isMutating}
-                  className="font-medium text-gray-500 hover:text-gray-900 transition disabled:opacity-50"
-                >
-                  Edit reply
-                </button>
-                <button
-                  type="button"
-                  onClick={onDeleteReply}
-                  disabled={isMutating}
-                  className="font-medium text-gray-500 hover:text-red-600 transition disabled:opacity-50"
-                >
-                  Delete
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-};
-
-// ──────────────────────────────────────────────────────────
-// Reply modal
-// ──────────────────────────────────────────────────────────
-const ReplyModal = ({ review, mode, onClose, onSave, isSaving }) => {
-  const { showToast } = useToast();
-  const isEdit = mode === "edit";
-  const [text, setText] = useState(isEdit ? review?.reply?.text || "" : "");
-
-  const reviewer = review?.user || {};
-  const name = reviewer.fullName || reviewer.businessName || "Customer";
+  const handleChange = (e) =>
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const trimmed = text.trim();
-    if (!trimmed) {
-      showToast("Reply cannot be empty", "error");
-      return;
+
+    try {
+      const result = await loginUser({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      }).unwrap();
+
+      dispatch(
+        setCredentials({
+          ...result.data,
+          token: result.token,
+        }),
+      );
+
+      showToast(result?.message || "Logged in successfully", "success");
+
+      const role = result.data?.role;
+      const appStatus = result.data?.businessApplicationStatus;
+
+      // Route based on role + application state
+      if (role === "admin") {
+        navigate("/admin", { replace: true });
+      } else if (role === "business") {
+        navigate("/business", { replace: true });
+      } else if (appStatus === "pending" || appStatus === "rejected") {
+        navigate("/business/application", { replace: true });
+      } else {
+        // Regular user — send them to apply or home
+        navigate("/", { replace: true });
+      }
+    } catch (err) {
+      const msg =
+        err?.data?.message ||
+        err?.data?.errors?.[0]?.message ||
+        "Login failed. Please check your credentials.";
+      showToast(msg, "error");
     }
-    if (trimmed.length > 500) {
-      showToast("Reply is too long (max 500 chars)", "error");
-      return;
-    }
-    await onSave(trimmed);
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 overflow-y-auto"
-      onClick={() => !isSaving && onClose()}
-    >
-      <form
-        onSubmit={handleSubmit}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg shadow-2xl max-h-[92vh] flex flex-col"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
-          <div className="min-w-0">
-            <h2 className="text-base font-bold text-gray-900">
-              {isEdit ? "Edit your reply" : "Reply to review"}
-            </h2>
-            <p className="text-xs text-gray-500 mt-0.5 truncate">{name}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSaving}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex-shrink-0 disabled:opacity-60"
-            aria-label="Close"
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row font-sans text-gray-900">
+      {/* ============ LEFT: IMAGE SLIDER ============ */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gray-900 overflow-hidden lg:sticky lg:top-0 lg:h-screen">
+        {sliderImages.map((img, index) => (
+          <img
+            key={index}
+            src={img}
+            alt={`Venue slide ${index + 1}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+              index === activeImage ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ))}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+
+        <div className="absolute top-0 left-0 right-0 z-20 px-10 py-8 flex items-center justify-between text-sm text-white/90">
+          <Link
+            to="/"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <img
+              src="/logo.png"
+              alt="LocalSpot"
+              className="h-7 w-7 object-contain brightness-0 invert"
+            />
+            <span className="font-bold tracking-wide text-white">
+              LOCALSPOT
+            </span>
+          </Link>
+          <div className="flex items-center gap-5">
+            <Link to="/support" className="hover:text-white transition-colors">
+              Support
+            </Link>
+            <span className="text-white/40">|</span>
+            <span className="text-white/80">
+              New here?{" "}
+              <Link
+                to="/business/signup"
+                className="font-semibold text-white hover:underline"
+              >
+                Sign up
+              </Link>
+            </span>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="p-5 overflow-y-auto flex-1 space-y-4">
-          {/* Original review preview */}
-          <div className="rounded-xl bg-gray-50 p-3.5 border border-gray-100">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Stars value={review.rating || 0} size="sm" />
-              <span className="text-[11px] text-gray-400">
-                {formatDate(review.createdAt)}
-              </span>
-            </div>
-            {review.comment && (
-              <p className="text-xs text-gray-600 line-clamp-3 whitespace-pre-line">
-                {review.comment}
-              </p>
-            )}
-          </div>
-
-          {/* Reply textarea */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
-              Your reply <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              rows={5}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Thank the customer or address their concern professionally..."
-              maxLength={500}
-              disabled={isSaving}
-              autoFocus
-              className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent disabled:bg-gray-50 resize-none"
-            />
-            <p className="text-[10px] text-gray-400 mt-1 text-right">
-              {text.length}/500
+        <div className="absolute bottom-10 left-12 right-12 z-10 flex flex-col gap-4">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold text-white mb-3">
+              Welcome back.
+            </h2>
+            <p className="text-sm text-white/80 leading-relaxed">
+              Sign in to manage your business profile, promotions, ads, and
+              reviews — all in one place.
             </p>
           </div>
+
+          <p className="text-[10px] text-white/50 text-center tracking-wide">
+            &copy; LocalSpot Systems Ltd. Business Account Center - Where Local
+            Ecommerce Meets Directory
+          </p>
+        </div>
+      </div>
+
+      {/* ============ RIGHT: FORM ============ */}
+      <div className="w-full lg:w-1/2 flex flex-col bg-slate-50 lg:bg-white lg:h-screen lg:overflow-y-auto">
+        {/* Mobile header */}
+        <div className="lg:hidden sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white shadow-sm">
+          <Link to="/" className="flex items-center gap-2">
+            <img
+              src="/logo.png"
+              alt="LocalSpot"
+              className="h-6 w-6 object-contain"
+            />
+            <span className="text-sm font-bold tracking-wide">LOCALSPOT</span>
+          </Link>
+          <div className="flex items-center gap-3 text-xs text-gray-600">
+            <Link to="/support">Support</Link>
+            <span>|</span>
+            <Link
+              to="/business/signup"
+              className="font-medium text-blue-600 hover:underline"
+            >
+              Sign up
+            </Link>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSaving}
-            className="px-4 py-2.5 rounded-lg text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition disabled:opacity-60"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving || !text.trim()}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-xs font-semibold text-white bg-[#3B82F6] hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSaving ? (
-              <>
-                <Loader className="h-3.5 w-3.5 animate-spin" />
-                Saving…
-              </>
-            ) : (
-              <>
-                <Send className="h-3.5 w-3.5" />
-                {isEdit ? "Save changes" : "Post reply"}
-              </>
-            )}
-          </button>
+        <div className="flex-grow flex items-center justify-center py-10 px-4 sm:px-6 lg:px-12">
+          <div className="w-full max-w-[480px]">
+            <div className="flex justify-center mb-6 lg:hidden">
+              <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500">
+                <FiBriefcase size={22} />
+              </div>
+            </div>
+
+            <div className="text-center lg:text-left mb-8">
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                Log in to your business
+              </h1>
+              <p className="text-sm text-gray-500 mt-2">
+                Welcome back — enter your credentials to continue
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Email */}
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    placeholder="name@business.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {/* Password */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <Link
+                      to="/business/reset"
+                      className="text-xs font-medium text-blue-600 hover:underline"
+                    >
+                      Forgot?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      name="password"
+                      required
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 pr-10 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    >
+                      {showPassword ? (
+                        <FiEyeOff size={16} />
+                      ) : (
+                        <FiEye size={16} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3 text-sm font-medium text-white bg-[#3B82F6] rounded-lg hover:bg-blue-700 transition-colors shadow-sm mt-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Logging in...
+                    </>
+                  ) : (
+                    "Log in"
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center lg:text-left">
+                <p className="text-xs text-gray-500">
+                  Don't have a business account?{" "}
+                  <Link
+                    to="/business/signup"
+                    className="font-medium text-blue-600 hover:underline"
+                  >
+                    Sign up
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
 
-export default BusinessReviews;
+export default BusinessLogin;

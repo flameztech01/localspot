@@ -37,7 +37,10 @@ import {
   useListAdvertisementTypesQuery,
   useListAdvertisementSlotsQuery,
 } from "../../features/adsApiSlice";
-import { useLogoutUserMutation } from "../../features/authApiSlice";
+import {
+  useGetCurrentUserQuery,
+  useLogoutUserMutation,
+} from "../../features/authApiSlice";
 import { logout } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import BusinessSidebar from "../../components/BusinessSidebar";
@@ -91,7 +94,7 @@ const formatBudget = (n) => {
 
 const formatNumber = (n) => Number(n || 0).toLocaleString();
 
-// ─── Main component ────────────────────────────────────────
+// ─── Main Component ────────────────────────────────────────
 const BusinessAds = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -101,10 +104,13 @@ const BusinessAds = () => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [performanceTarget, setPerformanceTarget] = useState(null);
-  const [formModal, setFormModal] = useState(null); // null | { mode: 'create' } | { mode: 'edit', ad }
+  const [formModal, setFormModal] = useState(null); // null | { mode: "create" } | { mode: "edit", ad }
   const [loggingOut, setLoggingOut] = useState(false);
 
   // ─── Queries ─────────────────────────────────────────────
+  const { data: userResp } = useGetCurrentUserQuery();
+  const [logoutUser] = useLogoutUserMutation();
+
   const {
     data: adsResp,
     isLoading,
@@ -119,10 +125,10 @@ const BusinessAds = () => {
     useDeleteMyAdvertisementMutation();
   const [submitAd, { isLoading: isSubmitting }] =
     useSubmitMyAdvertisementMutation();
-  const [pauseAd, { isLoading: isPausing }] = usePauseMyAdvertisementMutation();
+  const [pauseAd, { isLoading: isPausing }] =
+    usePauseMyAdvertisementMutation();
   const [resumeAd, { isLoading: isResuming }] =
     useResumeMyAdvertisementMutation();
-  const [logoutUser] = useLogoutUserMutation();
 
   const isMutating = isDeleting || isSubmitting || isPausing || isResuming;
 
@@ -154,7 +160,6 @@ const BusinessAds = () => {
       sessionStorage.clear();
     } catch (_) {}
     navigate("/signin", { replace: true });
-    setTimeout(() => window.location.reload(), 50);
   };
 
   const handleSubmit = async (id) => {

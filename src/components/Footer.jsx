@@ -38,7 +38,7 @@ const SocialIcon = ({ href, label, icon: Icon }) => (
 const Footer = () => {
   return (
     <footer className="w-full border-t border-gray-200/90 bg-white py-10 sm:py-12 mt-auto">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-8 xl:px-10">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           {/* Brand Column (4 cols) */}

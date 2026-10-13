@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiMapPin, FiHeart, FiCheck } from "react-icons/fi";
+import { FiMapPin, FiHeart, FiCheck, FiCalendar } from "react-icons/fi";
 import { FaHeart, FaStar } from "react-icons/fa";
+import BookingModal from "./BookingModal";
 
 const categoryFallbackImages = {
   Hotels:
@@ -28,6 +29,7 @@ const categoryFallbackImages = {
 
 const PlaceCard = ({ place, isSaved = false, onToggleSave }) => {
   const [imgError, setImgError] = useState(false);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
 
   const imgSrc =
     !imgError && place.images && place.images.length > 0
@@ -137,13 +139,29 @@ const PlaceCard = ({ place, isSaved = false, onToggleSave }) => {
               type="button"
               onClick={handleSaveClick}
               aria-label={isSaved ? "Remove from favorites" : "Save place"}
-              className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm text-gray-700 shadow-sm transition-transform active:scale-90 hover:bg-white hover:text-red-500"
+              className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm text-gray-700 shadow-sm transition-transform active:scale-90 hover:bg-white hover:text-red-500 z-10"
             >
               {isSaved ? (
                 <FaHeart size={13} className="text-red-500" />
               ) : (
                 <FiHeart size={13} />
               )}
+            </button>
+          </div>
+
+          {/* Book Now Hover Button */}
+          <div className="absolute inset-0 hidden items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/35 md:flex">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setBookingModalOpen(true);
+              }}
+              className="pointer-events-auto inline-flex items-center gap-1.5 translate-y-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-gray-900 opacity-0 shadow-xl transition-all duration-200 hover:bg-[#60A5FA] hover:text-white hover:scale-105 active:scale-95 group-hover:translate-y-0 group-hover:opacity-100 cursor-pointer"
+            >
+              <FiCalendar className="text-[#3B82F6]" size={12} />
+              <span>Book Now</span>
             </button>
           </div>
         </div>
@@ -214,6 +232,13 @@ const PlaceCard = ({ place, isSaved = false, onToggleSave }) => {
           </div>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
+        place={place}
+      />
     </div>
   );
 };
