@@ -175,6 +175,34 @@ const VOICES = [
     role: 'Managing Director, Bean & Blossom Cafe',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
   },
+  {
+    quote:
+      'Finding weekend breakfast spots in Port Harcourt used to mean asking on group chats and hoping the info was fresh. With LocalSpot, I found hidden spots I had driven past for years.',
+    author: 'Chidinma E.',
+    role: 'Food Enthusiast, Port Harcourt',
+    avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=200',
+  },
+  {
+    quote:
+      'As a boutique cafe owner in Lekki, listing our weekly specials on Localspot increased our foot traffic by over 35% in our first two months. The merchant dashboard is a breath of fresh air.',
+    author: 'Femi A.',
+    role: 'Managing Director, Bean & Blossom Cafe',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
+  },
+  {
+    quote:
+      'Finding weekend breakfast spots in Port Harcourt used to mean asking on group chats and hoping the info was fresh. With LocalSpot, I found hidden spots I had driven past for years.',
+    author: 'Chidinma E.',
+    role: 'Food Enthusiast, Port Harcourt',
+    avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=200',
+  },
+  {
+    quote:
+      'As a boutique cafe owner in Lekki, listing our weekly specials on Localspot increased our foot traffic by over 35% in our first two months. The merchant dashboard is a breath of fresh air.',
+    author: 'Femi A.',
+    role: 'Managing Director, Bean & Blossom Cafe',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
+  },
 ]
 
 const About = () => {
@@ -531,54 +559,7 @@ const About = () => {
         </section>
 
         {/* ================= LEADERSHIP & TEAM ================= */}
-        <section className="py-16 sm:py-24 bg-white">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-14">
-              <span className="inline-block rounded-md bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">
-                The Architects
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
-                Meet the leadership team
-              </h2>
-              <p className="mt-3 text-sm sm:text-base text-gray-600">
-                A dedicated team of technologists, hospitality veterans, and community builders committed to spotlighting the best in local culture.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {TEAM.map((member) => (
-                <div
-                  key={member.name}
-                  className="group rounded-2xl border border-gray-200/90 bg-white p-5 shadow-xs transition-all hover:shadow-md hover:border-gray-300"
-                >
-                  <div className="aspect-square w-full overflow-hidden rounded-xl bg-gray-100 mb-4">
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <h3 className="text-base font-bold text-gray-900">{member.name}</h3>
-                  <p className="text-xs font-semibold text-blue-600 mb-2">{member.role}</p>
-                  <p className="text-xs text-gray-500 leading-relaxed mb-4">{member.bio}</p>
-                  
-                  <div className="flex items-center gap-3 pt-2 border-t border-gray-100 text-gray-500">
-                    <a
-                      href={member.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${member.name} on LinkedIn Pulse`}
-                      className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-semibold"
-                    >
-                      <FaLinkedinIn size={13} />
-                      <span>LinkedIn Pulse</span>
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+       
 
         {/* ================= COMMUNITY VOICES / TESTIMONIALS ================= */}
         <section className="py-16 sm:py-20 bg-blue-50/50 border-y border-blue-100/80">
