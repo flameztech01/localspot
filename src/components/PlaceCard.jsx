@@ -232,6 +232,13 @@ const PlaceCard = ({ place, isSaved = false, onToggleSave }) => {
           </div>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      <BookingModal
+        isOpen={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
+        place={place}
+      />
     </div>
   );
 };
