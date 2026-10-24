@@ -269,7 +269,7 @@ const Navbar = () => {
       {/* Become a business — only for regular users who aren't already businesses */}
       {isRegularUser && (
         <Link
-          to="/business/apply"
+          to="/business/verification"
           onClick={() => setMenuOpen(false)}
           className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
         >
@@ -412,7 +412,7 @@ const Navbar = () => {
         key: "become-business",
         render: (
           <NavLink
-            to="/business/apply"
+            to="/business/verification"
             onClick={() => setOpen(false)}
             className={mobileLink}
           >
